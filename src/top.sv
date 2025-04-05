@@ -8,6 +8,10 @@ module top (
     output logic [5:0]   LCD_G,
     output logic [4:0]   LCD_B
 );
+    // Tang Nano 9K:
+    logic rst_n = Reset_Button;
+    // Tang Nano 20K:
+    // logic rst_n = !Reset_Button;
 
     // PLL ... make it by IP Generator -> Hard Module -> Clock -> rPLL -> clockin 27, clockout 9
     // (480+43+8) * (272+8+12) * 60Hz = 9.3MHz
@@ -23,10 +27,7 @@ module top (
 
     lcd lcd_inst (
         .PixelClk  (LCD_CLK),
-        // Tang Nano 20K:
-        // .nRST      (!Reset_Button),
-        // Tang Nano 9K:
-        .nRST      (Reset_Button),
+        .nRST      (rst_n),
         .Character (char),
 
         .LCD_DE    (LCD_DEN),
