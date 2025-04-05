@@ -4,7 +4,26 @@
 version: '0.2'
 work_dir: .
 design_root_dir: /Users/scott/repo/sokoide/fpga/lcd_cpu_bsram
-simulations: []
-source_files: []
+simulations:
+  - name: tb_lcd
+    options: +define+DEBUG_MODE -top work.tb_lcd -L dut +acc+b -waves waveform.vcd
+  - name: tb_cpu
+    options: +define+DEBUG_MODE -top wokrk.tb_cpu -L dut +acc+b -waves waveform.vcd
+source_files:
+  - language: verilog
+    path: src/cpu.sv
+    options: +define+DEBUG_MODE
+  - language: verilog
+    path: src/gowin_sdpb/gowin_sdpb.v
+    options: +define+DEBUG_MODE
+  - language: verilog
+    path: src/lcd.sv
+    options: +define+DEBUG_MODE
+  - language: verilog
+    path: src/tb_lcd.sv
+    options: +define+DEBUG_MODE
+  - language: verilog
+    path: src/tb_cpu.sv
+    options: +define+DEBUG_MODE
 library_search_paths:
   - $STD_LIBS/ieee93

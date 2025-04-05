@@ -229,8 +229,8 @@ module lcd (
 
 
   always_ff @(posedge PixelClk or negedge nRST) begin
-    logic [15:0] x = H_PixelCount - H_BackPorch;
-    logic [15:0] y = V_PixelCount - V_BackPorch;
+    automatic logic [15:0] x = H_PixelCount - H_BackPorch;
+    automatic logic [15:0] y = V_PixelCount - V_BackPorch;
 
     if (!nRST) begin
       LCD_R <= 5'b00000;
@@ -240,7 +240,7 @@ module lcd (
       // draw the digit
       if ((x >= START_X) && (x < START_X + NUMBER_WIDTH) &&
           (y >= START_Y) && (y < START_Y + NUMBER_HEIGHT)) begin
-        logic [7:0] digit = Character;
+        automatic logic [7:0] digit = Character;
         if (digit >= 0 && digit < 10) begin
           if (font[digit][y-START_Y][8-x+START_X] == 1'b1) begin
             LCD_R <= 5'b00000;  // green
@@ -252,12 +252,12 @@ module lcd (
             LCD_B <= 5'b00000;
           end
         end else begin
-          LCD_R <= 5'b11111;  // red (foo is not 0, 1, 2)
+          LCD_R <= 5'b11111;  // red (char is not 0, 1, 2)
           LCD_G <= 6'b000000;
           LCD_B <= 5'b00000;
         end
       end else begin
-        LCD_R <= 5'b00000;  // その他の領域は黒
+        LCD_R <= 5'b00000;  // black
         LCD_G <= 6'b000000;
         LCD_B <= 5'b00000;
       end
