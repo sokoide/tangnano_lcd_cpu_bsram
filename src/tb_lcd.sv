@@ -31,7 +31,6 @@ module tb_lcd;
     rst_n = 1;  // release
 
     repeat (500*300*10) @(posedge clk);
-    #500*300*5;
 
     $display("=== Test End ===");
     $finish;

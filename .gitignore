@@ -8,6 +8,10 @@ obj_dir/*
 waveform.vcd
 waveform.view
 tmp.*
+*.log
+*.html
+*.xml
+temp
 
 # dsim
 dsim_work/
