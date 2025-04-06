@@ -121,6 +121,9 @@ module top (
       v_resetb <= 0;
       v_ceb = 1;  // enable read
       v_oce = 1;  // enable output
+      f_ce = 1;  // enable font read
+      f_oce = 1;  // enable font output
+      f_reset = 0;
       boot_mode  <= 1;
       boot_write <= 1;
       boot_data = 8'h0;
