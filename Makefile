@@ -37,7 +37,7 @@ download: $(FS)
 	$(PRG) --device $(DEVICE) --fsFile $(FS) --operation_index 2
 
 wave:
-	gtkwave ./waveform.vcd
+	gtkwave ./src/waveform.vcd
 
 clean:
 	rm -rf obj_dir waveform.*

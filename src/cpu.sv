@@ -1,3 +1,5 @@
+`include "consts.svh"
+
 module cpu();
 
 
