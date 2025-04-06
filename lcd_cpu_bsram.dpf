@@ -2,7 +2,7 @@
 # Note: The contents of this file are automatically generated.
 # Any changes made by hand may be overwritten.
 version: '0.2'
-work_dir: ./src
+work_dir: ./
 design_root_dir: /Users/scott/repo/sokoide/fpga/lcd_cpu_bsram
 simulations:
   - name: tb_top
@@ -13,27 +13,26 @@ simulations:
     options: +define+DEBUG_MODE -top work.tb_cpu -L dut +acc+b -waves waveform.vcd
 source_files:
   - language: verilog
-    path: cpu.sv
-    options: +define+DEBUG_MODE
+    path: src/cpu.sv
+    options: +define+DEBUG_MODE -incdir ./include
   - language: verilog
-    path: gowin_sdpb/gowin_sdpb.v
-    options: +define+DEBUG_MODE
+    path: src/gowin_sdpb/gowin_sdpb.v
+    options: +define+DEBUG_MODE -incdir ./include
   - language: verilog
-    path: lcd.sv
-    options: +define+DEBUG_MODE
+    path: src/lcd.sv
+    options: +define+DEBUG_MODE -incdir ./include
   - language: verilog
-    path: tb_lcd.sv
-    options: +define+DEBUG_MODE
+    path: src/tb_lcd.sv
+    options: +define+DEBUG_MODE -incdir ./include
   - language: verilog
-    path: tb_cpu.sv
-    options: +define+DEBUG_MODE
+    path: src/tb_cpu.sv
+    options: +define+DEBUG_MODE -incdir ./include
   - language: verilog
-    path: tb_top.sv
-    options: +define+DEBUG_MODE
+    path: src/tb_top.sv
+    options: +define+DEBUG_MODE -incdir ./include
   - language: verilog
-    path: uart_master/tb/prim_sim.v
+    path: src/uart_master/tb/prim_sim.v
   - language: verilog
-    path: gowin_sdpb/gowin_sdpb.v
-    options: +define+DEBUG_MODE
+    path: src/gowin_sdpb/gowin_sdpb.v
 library_search_paths:
   - $STD_LIBS/ieee93

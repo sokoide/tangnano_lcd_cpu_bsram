@@ -1,5 +1,9 @@
-SRC=src/top.sv src/lcd.sv src/gowin_rpll/gowin_rpll.v impl/pnr/lcd_cpu_bsram.vo
-TEST=src/tb_lcd.sv
+SRCS= \
+	src/top.sv \
+	src/lcd.sv \
+	src/gowin_rpll/gowin_rpll9.v \
+	src/gowin_rpll/gowin_rpll54.v \
+	impl/pnr/lcd_cpu_bsram.vo
 
 export BASE=lcd_cpu_bsram
 PROJ=$(BASE).gprj
@@ -17,7 +21,7 @@ export PATH
 
 .PHONY: clean wave synthesize download
 
-synthesize: $(SRC)
+synthesize: $(SRCS)
 	$(GWSH) proj.tcl
 
 $(FS): synthesize
@@ -37,7 +41,7 @@ download: $(FS)
 	$(PRG) --device $(DEVICE) --fsFile $(FS) --operation_index 2
 
 wave:
-	gtkwave ./src/waveform.vcd
+	gtkwave ./waveform.vcd
 
 clean:
 	rm -rf obj_dir waveform.*

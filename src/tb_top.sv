@@ -72,9 +72,6 @@ module tb_top;
     end
   end
 
-  // Multiplexer for the memory address.
-  // assign mem_addr = boot_mode ? boot_addr : cpu_pc;
-
   initial begin
     $display("=== Test Started ===");
     clk   = 0;
