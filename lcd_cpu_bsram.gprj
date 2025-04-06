@@ -9,6 +9,7 @@
         <File path="src/gowin_rpll/gowin_rpll54.v" type="file.verilog" enable="1"/>
         <File path="src/gowin_rpll/gowin_rpll9.v" type="file.verilog" enable="1"/>
         <File path="src/gowin_sdpb/gowin_sdpb.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_sdpb/gowin_sdpb_vram.v" type="file.verilog" enable="1"/>
         <File path="src/lcd.sv" type="file.verilog" enable="1"/>
         <File path="src/tb_cpu.sv" type="file.verilog" enable="1"/>
         <File path="src/tb_lcd.sv" type="file.verilog" enable="1"/>

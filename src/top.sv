@@ -8,7 +8,7 @@ module top (
     output logic [5:0] LCD_G,
     output logic [4:0] LCD_B,
 
-    output logic       MEMORY_CLK
+    output logic MEMORY_CLK
 );
   // Tang Nano 9K:
   wire rst_n = ResetButton;
@@ -27,18 +27,17 @@ module top (
   );
   Gowin_rPLL54 rpll54_inst (
       .clkout(MEMORY_CLK),  //  9MHz
-      .clkin (XTAL_IN)   //  27MHz
+      .clkin(XTAL_IN)  //  27MHz
   );
 
-  // BSRAM 8KB, address 8192, data width 8
+  // RAM 8KB, address 8192, data width 8
   logic cea, ceb, oce;
   logic reseta, resetb;
   logic [12:0] ada, adb;
   logic [7:0] din;
   logic [7:0] dout;
 
-
-  Gowin_SDPB bsram_inst (
+  Gowin_SDPB ram_inst (
       .dout(dout),  //output [7:0] dout, read data
       .clka(MEMORY_CLK),  //input clka
       .cea(cea),  //input cea, write enable
@@ -52,59 +51,82 @@ module top (
       .adb(adb)  //input [12:0] adb, for read
   );
 
+  // Text VRAM, address 1024, data width 8
+  logic v_cea, v_ceb, v_oce;
+  logic v_reseta, v_resetb;
+  logic [9:0] v_ada, v_adb;
+  logic [7:0] v_din;
+  logic [7:0] v_dout;
+  Gowin_SDPB_vram vram_inst (
+      .dout(v_dout),  //output [7:0] dout, read data
+      .clka(MEMORY_CLK),  //input clka
+      .cea(v_cea),  //input cea, write enable
+      .reseta(v_reseta),  //input reseta
+      .clkb(MEMORY_CLK),  //input clkb
+      .ceb(v_ceb),  //input ceb, read enable
+      .resetb(v_resetb),  //input resetb
+      .oce(v_oce),  //input oce, timing when the read value is reflected on dout
+      .ada(v_ada),  //input [9:0] ada, for write
+      .din(v_din),  //input [7:0] din, wirtten data
+      .adb(v_adb)  //input [9:0] adb, for read
+  );
+
 
   // LCD
-  logic [7:0] char = 8'd7;
-
   lcd lcd_inst (
       .PixelClk (LCD_CLK),
       .nRST     (rst_n),
-      .Character(char),
+      .v_dout   (v_dout),
 
       .LCD_DE(LCD_DEN),
       .LCD_B (LCD_B),
       .LCD_G (LCD_G),
-      .LCD_R (LCD_R)
+      .LCD_R (LCD_R),
+      .v_adb (v_adb)
   );
 
 
-//   Bootloader signals
-  logic        boot_mode;  // 1 during boot, 0 after boot is done
-  logic        boot_write;  // Internal signal to control when to write
-  logic [ 7:0] boot_data;
-  parameter int unsigned MAX_BOOT_DATA = 127;
+  //   Bootloader signals
+  logic       boot_mode;  // 1 during boot, 0 after boot is done
+  logic       boot_write;  // Internal signal to control when to write
+  logic [7:0] boot_data;
+  parameter int unsigned MAX_BOOT_DATA = 1024;
 
-// set the following initial test values
-// 0x200: 0x00
-// 0x201: 0x01
-// 0x202: 0x02
-// ...
-// 0x27F: 0x7F
+  // set the following initial test values in vram
+  // 0x0000: 0x00
+  // 0x0001: 0x01
+  // 0x0002: 0x02
+  // ...
+  // 0x007F: 0x7F
   always_ff @(posedge MEMORY_CLK or negedge rst_n) begin
     if (!rst_n) begin
-      ada        <= 13'h0200;  // Start address for boot data
+      v_ada    <= 10'h0;  // Start address for boot data
+      v_cea    <= 0;  // disaable write
+      v_reseta <= 0;
+      v_resetb <= 0;
+      v_ceb = 1;  // enable read
+      v_oce = 1;  // enable output
       boot_mode  <= 1;
       boot_write <= 1;
-      cea        <= 0;  // disaable write
-      reseta     <= 0;
-      boot_data = 8'h00;
+      boot_data = 8'h0;
     end else if (boot_mode) begin
       if (boot_write) begin
-        din <= boot_data;
-        cea <= 1;  // enable write
+        v_din <= boot_data;
+        v_cea <= 1;  // enable write
         boot_write <= 0;  // Prevent immediate increment in the same cycle
       end else begin
-        cea <= 0;  // disable write
-        if (boot_data == MAX_BOOT_DATA) begin
+        v_cea <= 0;  // disable write
+        if (v_ada == 10'h3FF) begin
           boot_mode <= 0;  // End boot process after writing all data
         end else begin
-          boot_data <= boot_data + 1;
-          ada <= (ada + 1) & 13'h1FFF;
+          // boot_data <= v_ada[6:0];  // Set the data to be written
+          boot_data <= (boot_data + 1) & 8'h7F;
+          v_ada <= (v_ada + 1) & 10'h03FF;
           boot_write <= 1;  // Enable write for the next address
         end
       end
     end else begin
-      cea <= 0;  // write disable
+      v_cea <= 0;  // write disable
     end
   end
 
