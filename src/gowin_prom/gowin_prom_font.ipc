@@ -1,0 +1,15 @@
+[General]
+file=gowin_prom_font
+ipc_version=4
+module=Gowin_pROM_font
+target_device=gw1nr9c-004
+type=ram_prom
+version=1.0
+
+[Config]
+DEPTH=4096
+LANG=0
+MEM_FILE=../../data/font.mi
+READ=0
+RESET_MODE=true
+WIDTH=8

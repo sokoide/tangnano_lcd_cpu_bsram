@@ -71,18 +71,33 @@ module top (
       .adb(v_adb)  //input [9:0] adb, for read
   );
 
+  // pROM for font
+  // 16bytes/char x 256 chars = 4KB
+  logic f_ce, f_oce, f_reset;
+  logic [ 7:0] f_dout;
+  logic [11:0] f_ad;
+  Gowin_pROM_font prom_font_inst (
+      .dout(f_dout),  //output [7:0] dout
+      .clk(MEMORY_CLK),  //input clk
+      .oce(f_oce),  //input oce
+      .ce(f_ce),  //input ce
+      .reset(f_reset),  //input reset
+      .ad(f_ad)  //input [11:0] ad
+  );
 
   // LCD
   lcd lcd_inst (
-      .PixelClk (LCD_CLK),
-      .nRST     (rst_n),
-      .v_dout   (v_dout),
+      .PixelClk(LCD_CLK),
+      .nRST    (rst_n),
+      .v_dout  (v_dout),
+      .f_dout(f_dout),
 
       .LCD_DE(LCD_DEN),
       .LCD_B (LCD_B),
       .LCD_G (LCD_G),
       .LCD_R (LCD_R),
-      .v_adb (v_adb)
+      .v_adb (v_adb),
+      .f_ad(f_ad)
   );
 
 

@@ -3,6 +3,9 @@ SRCS= \
 	src/lcd.sv \
 	src/gowin_rpll/gowin_rpll9.v \
 	src/gowin_rpll/gowin_rpll54.v \
+	src/gowin_sdpb/gowin_sdpb.v \
+	src/gowin_sdpb/gowin_sdpb_vram.v \
+	src/gowin_prom/gowin_prom_font.v \
 	impl/pnr/lcd_cpu_bsram.vo
 
 export BASE=lcd_cpu_bsram

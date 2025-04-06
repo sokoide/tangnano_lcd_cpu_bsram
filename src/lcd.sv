@@ -1,13 +1,16 @@
-`include "consts.svh"module lcd (
+`include "consts.svh"
+module lcd (
     input logic       PixelClk,
     input logic       nRST,
     input logic [7:0] v_dout,
+    input logic [7:0] f_dout,
 
-    output logic       LCD_DE,
-    output logic [4:0] LCD_B,
-    output logic [5:0] LCD_G,
-    output logic [4:0] LCD_R,
-    output logic [9:0] v_adb
+    output logic        LCD_DE,
+    output logic [ 4:0] LCD_B,
+    output logic [ 5:0] LCD_G,
+    output logic [ 4:0] LCD_R,
+    output logic [ 9:0] v_adb,
+    output logic [11:0] f_ad
 );
 
   // Horizontal and Vertical pixel counters
@@ -2248,21 +2251,21 @@ font[92][0] = 8'h0;
 
       // draw the char
       // if (0 <= x && x < H_PixelValid && 0 <= y && y < V_PixelValid) begin
-        if (char >= 0 && char <= 127) begin
-          if (font[char][y%16][7-x%8] == 1'b1) begin
-            LCD_R <= 5'b00000;  // green, foreground
-            LCD_G <= 6'b111111;
-            LCD_B <= 5'b00000;
-          end else begin
-            LCD_R <= 5'b00000;  // black, background
-            LCD_G <= 6'b000000;
-            LCD_B <= 5'b00000;
-          end
+      if (char >= 0 && char <= 127) begin
+        if (font[char][y%16][7-x%8] == 1'b1) begin
+          LCD_R <= 5'b00000;  // green, foreground
+          LCD_G <= 6'b111111;
+          LCD_B <= 5'b00000;
         end else begin
-          LCD_R <= 5'b11111;  // red (char is not defined)
+          LCD_R <= 5'b00000;  // black, background
           LCD_G <= 6'b000000;
           LCD_B <= 5'b00000;
         end
+      end else begin
+        LCD_R <= 5'b11111;  // red (char is not defined)
+        LCD_G <= 6'b000000;
+        LCD_B <= 5'b00000;
+      end
       // end else begin
       //   LCD_R <= 5'b00000;  // cyan (light blue)
       //   LCD_G <= 6'b111111;
