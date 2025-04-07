@@ -10,6 +10,7 @@ module top (
 
     output logic MEMORY_CLK
 );
+
   // Tang Nano 9K:
   wire rst_n = ResetButton;
   // Tang Nano 20K:
@@ -26,8 +27,8 @@ module top (
       .clkin (XTAL_IN)   //  27MHz
   );
   Gowin_rPLL54 rpll54_inst (
-      .clkout(MEMORY_CLK),  //  9MHz
-      .clkin(XTAL_IN)  //  27MHz
+      .clkout(MEMORY_CLK),  //  54MHz
+      .clkin(XTAL_IN)       //  27MHz
   );
 
   // RAM 8KB, address 8192, data width 8
@@ -90,18 +91,38 @@ module top (
       .PixelClk(LCD_CLK),
       .nRST    (rst_n),
       .v_dout  (v_dout),
-      .f_dout(f_dout),
+      .f_dout  (f_dout),
 
       .LCD_DE(LCD_DEN),
       .LCD_B (LCD_B),
       .LCD_G (LCD_G),
       .LCD_R (LCD_R),
       .v_adb (v_adb),
-      .f_ad(f_ad)
+      .f_ad  (f_ad)
   );
 
+  // CPU instance
+  logic [15:0] ad; // read address
+  logic [23:0] counter;
 
-  //   Bootloader signals
+  cpu cpu1 (
+      .rst_n(rst_n),
+      .clk(counter[22]),
+      .counter(counter),
+      .dout(dout),
+      .ad(ad)
+  );
+
+  // Update counter (for CPU timing)
+  always_ff @(posedge XTAL_IN or negedge rst_n) begin
+    if (!rst_n) begin
+      counter <= 24'd0;
+    end else begin
+      counter <= counter + 1;
+    end
+  end
+
+  //   VRAM Bootloader signals
   logic       boot_mode;  // 1 during boot, 0 after boot is done
   logic       boot_write;  // Internal signal to control when to write
   logic [7:0] boot_data;

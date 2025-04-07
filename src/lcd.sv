@@ -68,9 +68,7 @@ module lcd (
       // get fontline
 
       // draw the char
-      // if (0 <= x && x < H_PixelValid && 0 <= y && y < V_PixelValid) begin
       if (char >= 0 && char <= 127) begin
-        // if (font[char][y%16][7-x%8] == 1'b1) begin
         if (fontline[7-x%8] == 1'b1) begin
           LCD_R <= 5'b00000;  // green, foreground
           LCD_G <= 6'b111111;
@@ -85,11 +83,6 @@ module lcd (
         LCD_G <= 6'b000000;
         LCD_B <= 5'b00000;
       end
-      // end else begin
-      //   LCD_R <= 5'b00000;  // cyan (light blue)
-      //   LCD_G <= 6'b111111;
-      //   LCD_B <= 5'b11111;
-      // end
     end else begin
       LCD_R <= 5'b11111;  // yellow
       LCD_G <= 6'b111111;
