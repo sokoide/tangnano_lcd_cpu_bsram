@@ -11,7 +11,7 @@
 ### Interface PIN connections
 
 | Pin No. | Symbol | Function |
-|-||--|
+|---------|--------|----------|
 | 1       | LEDK   | Back light power supply negative |
 | 2       | LEDA   | Back light power supply positive |
 | 3       | GND    | Ground |
@@ -35,15 +35,15 @@
 
 ### Parallel RGP Input Timing
 
-| Item   | Symbol  | Values (Min.) | Values (Typ.) | Values (Max.) | Unit  | Remark |
-|--------|-|------|------|------|------||
+| Item   | Symbol| Values (Min.) | Values (Typ.) | Values (Max.) | Unit  | Remark |
+|--------|-------|---------------|---------------|---------------|-------|--------|
 | DCLK Frequency | Fclk    | 8    | 9    | 12   | MHz  ||
-| **Hsync**      | |      |      |      |      ||
+| **Hsync**      |         |      |      |      |      ||
 | Period time    | Th      | 485  | 531  | 589  | DCLK ||
 | Display Period | Thdisp  | -    | 480- | -    | DCLK ||
 | Back Porch     | Thbp    | 3    | 43   | 43   | DCLK ||
 | Front Porch    | Thfp    | 2    | 4    | 75   | DCLK ||
-| **Vsync**      | |      |      |      |      ||
+| **Vsync**      |         |      |      |      |      ||
 | Period time    | Tv      | 276  | 292  | 321  | H    ||
 | Display Period | Tvdisp  | -    | 272  | -    | H    ||
 | Back Porch     | Tvbp    | 2    | 12   | 12   | H    ||
