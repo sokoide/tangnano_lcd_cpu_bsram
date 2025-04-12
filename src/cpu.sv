@@ -87,7 +87,7 @@ module cpu (
         case (state)
           INIT: begin
             if (v_ada <= COLUMNS * ROWS) begin
-              v_ada <= v_ada + 1;
+              v_ada <= v_ada + 1 & VRAMW;
             end else begin
               v_ada <= 10'h0000;
               // v_cea <= 0;
@@ -95,7 +95,7 @@ module cpu (
             end
             v_cea <= 1;
             v_din <= char_code;
-            char_code <= (char_code < 8'h7F) ? char_code + 1 : 8'h20;
+            char_code <= (char_code < 8'h7F) ? (char_code + 1) & 8'hFF : 8'h20;
             state <= WAIT_64K_CLKS;
           end
 
@@ -205,7 +205,7 @@ module cpu (
               // JMP absolute
               8'h4C: begin
                 pc <= {operands[15:8], operands[7:0]};
-                adb <= {operands[15:8], operands[7:0]};
+                adb <= {operands[15:8], operands[7:0]} & RAMW;
                 state <= FETCH_REQ;
                 fetch_stage <= FETCH_OPCODE;
               end
@@ -214,8 +214,8 @@ module cpu (
                 ra = operands[7:0];
                 flg_z = (ra == 0 ? 1 : 0);
                 flg_n = (ra[7] == 1 ? 1 : 0);
-                pc <= pc + 2;
-                adb <= pc + 2;
+                pc <= pc + 2 & RAMW;
+                adb <=pc + 2 & RAMW;
                 state <= FETCH_REQ;
                 fetch_stage <= FETCH_OPCODE;
               end
@@ -231,8 +231,8 @@ module cpu (
                   flg_z = (ra == 0 ? 1 : 0);
                   flg_n = (ra[7] == 1 ? 1 : 0);
                   ra <= dout;
-                  pc <= pc + 2;
-                  adb <= pc + 2;
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -248,8 +248,8 @@ module cpu (
                   ra = dout;
                   flg_z = (ra == 0 ? 1 : 0);
                   flg_n = (ra[7] == 1 ? 1 : 0);
-                  pc <= pc + 2;
-                  adb <= pc + 2;
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -258,15 +258,15 @@ module cpu (
               8'hAD: begin
                 // fetch operand[15:0]'s value from memory and store it to ra.
                 if (data_available == 0) begin
-                  adb <= operands[15:0];
+                  adb <= operands[15:0] & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
                 end else begin
                   ra = dout;
                   flg_z = (ra == 0 ? 1 : 0);
                   flg_n = (ra[7] == 1 ? 1 : 0);
-                  pc <= pc + 3;
-                  adb <= pc + 3;
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -275,15 +275,15 @@ module cpu (
               8'hBD: begin
                 // fetch operand[15:0] + rx's value from memory and store it to ra.
                 if (data_available == 0) begin
-                  adb <= operands[15:0] + rx;
+                  adb <= operands[15:0] + rx & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
                 end else begin
                   ra = dout;
                   flg_z = (ra == 0 ? 1 : 0);
                   flg_n = (ra[7] == 1 ? 1 : 0);
-                  pc <= pc + 3;
-                  adb <= adb + 3;
+                  pc <= pc + 3 & RAMW;
+                  adb <= adb + 3 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -292,15 +292,15 @@ module cpu (
               8'hB9: begin
                 // fetch operand[15:0] + ry's value from memory and store it to ra.
                 if (data_available == 0) begin
-                  adb <= operands[15:0] + ry;
+                  adb <= operands[15:0] + ry & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
                 end else begin
                   ra = dout;
                   flg_z = (ra == 0 ? 1 : 0);
                   flg_n = (ra[7] == 1 ? 1 : 0);
-                  pc <= pc + 3;
-                  adb <= adb + 3;
+                  pc <= pc + 3 & RAMW;
+                  adb <= adb + 3 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -316,8 +316,8 @@ module cpu (
                   ra = dout;
                   flg_z = (ra == 0 ? 1 : 0);
                   flg_n = (ra[7] == 1 ? 1 : 0);
-                  pc <= pc + 2;
-                  adb <= adb + 2;
+                  pc <= pc + 2 & RAMW;
+                  adb <= adb + 2 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -333,8 +333,8 @@ module cpu (
                   ra = dout;
                   flg_z = (ra == 0 ? 1 : 0);
                   flg_n = (ra[7] == 1 ? 1 : 0);
-                  pc <= pc + 2;
-                  adb <= adb + 2;
+                  pc <= pc + 2 & RAMW;
+                  adb <= adb + 2 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -345,7 +345,7 @@ module cpu (
                 flg_z = (rx == 0 ? 1 : 0);
                 flg_n = (rx[7] == 1 ? 1 : 0);
                 pc <= pc + 2;
-                adb <= adb + 2;
+                adb <= adb + 2 & RAMW;
                 state <= FETCH_REQ;
                 fetch_stage <= FETCH_OPCODE;
               end
@@ -359,8 +359,8 @@ module cpu (
                   rx = dout;
                   flg_z = (rx == 0 ? 1 : 0);
                   flg_n = (rx[7] == 1 ? 1 : 0);
-                  pc <= pc + 2;
-                  adb <= adb + 2;
+                  pc <= pc + 2 & RAMW;
+                  adb <= adb + 2 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -375,8 +375,8 @@ module cpu (
                   rx = dout;
                   flg_z = (rx == 0 ? 1 : 0);
                   flg_n = (rx[7] == 1 ? 1 : 0);
-                  pc <= pc + 2;
-                  adb <= adb + 2;
+                  pc <= pc + 2 & RAMW;
+                  adb <= adb + 2 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -384,15 +384,15 @@ module cpu (
               // LDX absolute
               8'hAE: begin
                 if (data_available == 0) begin
-                  adb <= operands[15:0];
+                  adb <= operands[15:0] & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
                 end else begin
                   rx = dout;
                   flg_z = (rx == 0 ? 1 : 0);
                   flg_n = (rx[7] == 1 ? 1 : 0);
-                  pc <= pc + 3;
-                  adb <= adb + 3;
+                  pc <= pc + 3 & RAMW;
+                  adb <= adb + 3 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -400,15 +400,15 @@ module cpu (
               // LDX absolute, Y
               8'hBE: begin
                 if (data_available == 0) begin
-                  adb <= operands[15:0] + ry;
+                  adb <= operands[15:0] + ry & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
                 end else begin
                   rx = dout;
                   flg_z = (rx == 0 ? 1 : 0);
                   flg_n = (rx[7] == 1 ? 1 : 0);
-                  pc <= pc + 3;
-                  adb <= adb + 3;
+                  pc <= pc + 3 & RAMW;
+                  adb <= adb + 3 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -418,8 +418,8 @@ module cpu (
                 ry = operands[7:0];
                 flg_z = (ra == 0 ? 1 : 0);
                 flg_n = (ra[7] == 1 ? 1 : 0);
-                pc <= pc + 2;
-                adb <= adb + 2;
+                pc <= pc + 2 & RAMW;
+                adb <= adb + 2 & RAMW;
                 state <= FETCH_REQ;
                 fetch_stage <= FETCH_OPCODE;
               end
@@ -433,8 +433,8 @@ module cpu (
                   ry = dout;
                   flg_z = (ry == 0 ? 1 : 0);
                   flg_n = (ry[7] == 1 ? 1 : 0);
-                  pc <= pc + 2;
-                  adb <= adb + 2;
+                  pc <= pc + 2 & RAMW;
+                  adb <= adb + 2 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -449,8 +449,8 @@ module cpu (
                   ry = dout;
                   flg_z = (ry == 0 ? 1 : 0);
                   flg_n = (ry[7] == 1 ? 1 : 0);
-                  pc <= pc + 2;
-                  adb <= adb + 2;
+                  pc <= pc + 2 & RAMW;
+                  adb <= adb + 2 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -458,15 +458,15 @@ module cpu (
               // LDY absolute
               8'hAC: begin
                 if (data_available == 0) begin
-                  adb <= operands[15:0];
+                  adb <= operands[15:0] & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
                 end else begin
                   ry = dout;
                   flg_z = (ry == 0 ? 1 : 0);
                   flg_n = (ry[7] == 1 ? 1 : 0);
-                  pc <= pc + 3;
-                  adb <= adb + 3;
+                  pc <= pc + 3 & RAMW;
+                  adb <= adb + 3 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -474,15 +474,15 @@ module cpu (
               // LDY abosolute, X
               8'hBC: begin
                 if (data_available == 0) begin
-                  adb = operands[15:0] + rx;
+                  adb = operands[15:0] + rx & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
                 end else begin
                   ry = dout;
                   flg_z = (ry == 0 ? 1 : 0);
                   flg_n = (ry[7] == 1 ? 1 : 0);
-                  pc <= pc + 3;
-                  adb <= adb + 3;
+                  pc <= pc + 3 & RAMW;
+                  adb <= adb + 3 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end

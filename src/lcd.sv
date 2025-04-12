@@ -66,7 +66,7 @@ module lcd (
     end else if (active_area) begin
       // get char code
       if (-4 <= x && x < H_PixelValid -4 + 8 && 0 <= y && y < V_PixelValid && (x+4) % 8 == 0) begin
-        v_adb <= ((x + 2) / 8 + (y / 16) * 60 ) & 10'b11_1111_1111;
+        v_adb <= (x + 2) / 8 + (y / 16) * 60  & VRAMW;
       end else if (-3 <= x && x < H_PixelValid -3 + 8 && 0 <= y && y < V_PixelValid && (x+3) % 8 == 0) begin
         char <= v_dout;
       end else if (-2 <= x && x < H_PixelValid -2 + 8 && 0 <= y && y < V_PixelValid && (x+2) % 8 == 0) begin

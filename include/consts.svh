@@ -3,6 +3,10 @@
 `ifndef CONSTS_SVH
 `define CONSTS_SVH
 
+// RAM
+localparam int RAMW = 13'b1_1111_1111_1111;
+localparam int VRAMW = 10'b11_1111_1111;
+
 // LCD
 localparam int COLUMNS = 60;
 localparam int ROWS = 17;
