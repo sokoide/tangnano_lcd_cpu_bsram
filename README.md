@@ -90,10 +90,10 @@
 |     |     |     |     |     |     |     |     |     | -   |     |     |     |     |     |     |     |
 | 0x6 | RTS | ADC |     |     |     | ADC | ROR |     | PLA | ADC | ROR |     | JMP | ADC | ROR |     |
 |     | impl| idx |     |     |     | zp  | zp  |     | impl| imm | acc |     | ind | abs | abs |     |
-|     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |
+|     |     | +   |     |     |     | +   |     |     |     | +   |     |     |     | +   |     |     |
 | 0x7 | BVS | ADC |     |     |     | ADC | ROR |     | SEI | ADC |     |     |     | ADC | ROR |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
-|     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |
+|     |     |     |     |     |     | +   |     |     |     | +   |     |     |     | +   |     |     |
 | 0x8 |     | STA |     |     | STY | STA | STX |     | DEY |     | TXA |     | STY | STA | STX |     |
 |     |     | idx |     |     | zp  | zp  | zp  |     | impl|     | impl|     | abs | abs | abs |     |
 |     |     |     |     |     |     | +   |     |     |     |     | +   |     |     | +   |     |     |

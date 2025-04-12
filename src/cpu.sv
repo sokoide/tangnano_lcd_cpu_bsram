@@ -440,6 +440,54 @@ module cpu (
                   8'hC8: begin
                     state <= DECODE_EXECUTE;
                   end
+                  // ADC immediate
+                  8'h69: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // ADC zero page
+                  8'h65: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // ADC zero page, X
+                  8'h75: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // ADC absolute
+                  8'h6D: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // ADC absolute, X
+                  8'h7D: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // ADC absolute, Y
+                  8'h79: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // ADC (indirect, X)
+                  8'h61: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // ADC (indirect), Y
+                  8'h71: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
                   // CMP immediate
                   8'hC9: begin
                     adb <= pc + 1 & RAMW;
@@ -1001,6 +1049,162 @@ module cpu (
                 adb <= pc + 1 & RAMW;
                 fetch_stage <= FETCH_OPCODE;
               end
+              // ADC immediate
+              8'h69: begin
+                automatic logic [8:0] temp;  // make it 9bit to include carry
+                temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+
+                flg_c = temp > 8'hFF ? 1 : 0;
+                flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                ra = temp[7:0];
+
+                flg_n = ra[7];
+                flg_z = (ra == 8'h00) ? 1 : 0;
+
+                pc <= pc + 2 & RAMW;
+                adb <= pc + 2 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // ADC zero page
+              8'h65: begin
+                if (data_available == 0) begin
+                  adb <= operands[7:0];
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic [8:0] temp;  // make it 9bit to include carry
+                  temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                  flg_c = temp > 8'hFF ? 1 : 0;
+                  flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                  ra = temp[7:0];
+
+                  flg_n = ra[7];
+                  flg_z = (ra == 8'h00) ? 1 : 0;
+
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ADC zero page, X
+              8'h75: begin
+                if (data_available == 0) begin
+                  adb <= operands[7:0] + rx & 8'hFF;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic [8:0] temp;  // make it 9bit to include carry
+                  temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                  flg_c = temp > 8'hFF ? 1 : 0;
+                  flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                  ra = temp[7:0];
+
+                  flg_n = ra[7];
+                  flg_z = (ra == 8'h00) ? 1 : 0;
+
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ADC absolute
+              8'h6D: begin
+                if (data_available == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & RAMW;
+                  adb <= addr;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic [8:0] temp;  // make it 9bit to include carry
+                  temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                  flg_c = temp > 8'hFF ? 1 : 0;
+                  flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                  ra = temp[7:0];
+
+                  flg_n = ra[7];
+                  flg_z = (ra == 8'h00) ? 1 : 0;
+
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ADC absolute, X
+              8'h7D: begin
+                if (data_available == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + rx & RAMW;
+                  adb <= addr;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic [8:0] temp;  // make it 9bit to include carry
+                  temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                  flg_c = temp > 8'hFF ? 1 : 0;
+                  flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                  ra = temp[7:0];
+
+                  flg_n = ra[7];
+                  flg_z = (ra == 8'h00) ? 1 : 0;
+
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ADC absolute, Y
+              8'h79: begin
+                if (data_available == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + ry & RAMW;
+                  adb <= addr;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic [8:0] temp;  // make it 9bit to include carry
+                  temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                  flg_c = temp > 8'hFF ? 1 : 0;
+                  flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                  ra = temp[7:0];
+
+                  flg_n = ra[7];
+                  flg_z = (ra == 8'h00) ? 1 : 0;
+
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ADC (indirect, X)
+              8'h61: begin
+                if (data_available == 0) begin
+                  adb <= operands[7:0] + rx & 8'hFF;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic [8:0] temp;  // make it 9bit to include carry
+                  temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                  flg_c = temp > 8'hFF ? 1 : 0;
+                  flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                  ra = temp[7:0];
+
+                  flg_n = ra[7];
+                  flg_z = (ra == 8'h00) ? 1 : 0;
+
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // TODO: ADC (indirect), Y
+              8'h71: begin
+              end
+
               // CMP immediate
               8'hC9: begin
                 automatic logic [7:0] result = ra - operands[7:0];
@@ -1109,21 +1313,8 @@ module cpu (
                   fetch_stage <= FETCH_OPCODE;
                 end
               end
-              // CMP (indirect), Y
+              // TODO: CMP (indirect), Y
               8'hD1: begin
-                if (data_available == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                end else begin
-                  automatic logic [7:0] result = ra - dout;
-                  flg_c = ra >= dout ? 1 : 0;
-                  flg_z = result == 0 ? 1 : 0;
-                  flg_n = result[7] == 1 ? 1 : 0;
-                  pc <= pc + 2 & RAMW;
-                  adb <= pc + 2 & RAMW;
-                  fetch_stage <= FETCH_OPCODE;
-                end
               end
               // CPX immediate
               8'hE0: begin
