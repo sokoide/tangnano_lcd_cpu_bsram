@@ -28,7 +28,7 @@ module top (
   );
   Gowin_rPLL54 rpll54_inst (
       .clkout(MEMORY_CLK),  //  54MHz
-      .clkin(XTAL_IN)       //  27MHz
+      .clkin (XTAL_IN)      //  27MHz
   );
 
   // RAM
@@ -43,29 +43,29 @@ module top (
   logic [7:0] v_din;
   logic [7:0] v_dout;
 
-  ram ram_inst(
-    // common
-    .MEMORY_CLK(MEMORY_CLK),
-    // regular RAM
-    .dout(dout),
-    .cea(cea),
-    .ceb(ceb),
-    .oce(oce),
-    .reseta(reseta),
-    .resetb(resetb),
-    .ada(ada),
-    .adb(adb),
-    .din(din),
-    // VRAM
-    .v_dout(v_dout),
-    .v_cea(v_cea),
-    .v_ceb(v_ceb),
-    .v_oce(v_oce),
-    .v_reseta(v_reseta),
-    .v_resetb(v_resetb),
-    .v_ada(v_ada),
-    .v_adb(v_adb),
-    .v_din(v_din)
+  ram ram_inst (
+      // common
+      .MEMORY_CLK(MEMORY_CLK),
+      // regular RAM
+      .dout(dout),
+      .cea(cea),
+      .ceb(ceb),
+      .oce(oce),
+      .reseta(reseta),
+      .resetb(resetb),
+      .ada(ada),
+      .adb(adb),
+      .din(din),
+      // VRAM
+      .v_dout(v_dout),
+      .v_cea(v_cea),
+      .v_ceb(v_ceb),
+      .v_oce(v_oce),
+      .v_reseta(v_reseta),
+      .v_resetb(v_resetb),
+      .v_ada(v_ada),
+      .v_adb(v_adb),
+      .v_din(v_din)
   );
 
   // pROM for font
@@ -98,15 +98,20 @@ module top (
   );
 
   // CPU instance
-  logic [15:0] ad; // read address
+  logic [15:0] ad;  // read address
   logic [23:0] counter;
 
   cpu cpu1 (
       .rst_n(rst_n),
-      .clk(counter[22]),
+      .clk(counter[14]),
       .counter(counter),
       .dout(dout),
-      .ad(ad)
+      .din(din),
+      .ada(ada),
+      .adb(adb),
+      .v_ada(v_ada),
+      .v_cea(v_cea),
+      .v_din(v_din)
   );
 
   // Update counter (for CPU timing)
@@ -124,16 +129,8 @@ module top (
   logic [7:0] boot_data;
   parameter int unsigned MAX_BOOT_DATA = 1024;
 
-  // set the following initial test values in vram
-  // 0x0000: 0x00
-  // 0x0001: 0x01
-  // 0x0002: 0x02
-  // ...
-  // 0x007F: 0x7F
   always_ff @(posedge MEMORY_CLK or negedge rst_n) begin
     if (!rst_n) begin
-      v_ada    <= 10'h0;  // Start address for boot data
-      v_cea    <= 0;  // disaable write
       v_reseta <= 0;
       v_resetb <= 0;
       v_ceb = 1;  // enable read
@@ -144,24 +141,6 @@ module top (
       boot_mode  <= 1;
       boot_write <= 1;
       boot_data = 8'h0;
-    end else if (boot_mode) begin
-      if (boot_write) begin
-        v_din <= boot_data;
-        v_cea <= 1;  // enable write
-        boot_write <= 0;  // Prevent immediate increment in the same cycle
-      end else begin
-        v_cea <= 0;  // disable write
-        if (v_ada == 10'h3FF) begin
-          boot_mode <= 0;  // End boot process after writing all data
-        end else begin
-          // boot_data <= v_ada[6:0];  // Set the data to be written
-          boot_data <= (boot_data + 1) & 8'h7F;
-          v_ada <= (v_ada + 1) & 10'h03FF;
-          boot_write <= 1;  // Enable write for the next address
-        end
-      end
-    end else begin
-      v_cea <= 0;  // write disable
     end
   end
 

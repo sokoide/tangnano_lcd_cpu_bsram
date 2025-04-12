@@ -4,6 +4,9 @@
 `define CONSTS_SVH
 
 // LCD
+parameter int COLUMNS = 60;
+parameter int ROWS = 17;
+
 parameter int H_PixelValid = 16'd480;
 parameter int H_BackPorch   = 16'd43;
 parameter int H_FrontPorch  = 16'd4+16'd4;
