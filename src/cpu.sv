@@ -5,13 +5,14 @@ module cpu (
 `endif
     input  logic        rst_n,
     input  logic        clk,
-    input  logic [ 7:0] dout,       // RAM data which was read
-    output logic [ 7:0] din,        // RAM data to write
-    output logic [12:0] ada,        // write RAM
-    output logic [12:0] adb,        // read RAM
-    output logic [ 9:0] v_ada,      // write VRAM
-    output logic        v_cea,      // VRAM write enable
-    output logic [ 7:0] v_din       // VRAM data to write
+    input  logic [ 7:0] dout,   // RAM data which was read
+    output logic [ 7:0] din,    // RAM data to write
+    output logic [12:0] ada,    // write RAM
+    output logic        cea,    // RAM write enable
+    output logic [12:0] adb,    // read RAM
+    output logic [ 9:0] v_ada,  // write VRAM
+    output logic        v_cea,  // VRAM write enable
+    output logic [ 7:0] v_din   // VRAM data to write
 );
 
   // Internal registers.
@@ -81,7 +82,7 @@ module cpu (
       counter                                           <= 32'h0;
     end else begin
       begin
-        counter <= (counter +1 ) & 32'hFFFFFFFF;
+        counter <= (counter + 1) & 32'hFFFFFFFF;
 
         // --- case(state) ---
         case (state)
@@ -128,6 +129,7 @@ module cpu (
               FETCH_OPCODE: begin
                 opcode <= dout;
                 data_available <= 0;
+                cea <= 0; // disable write
                 case (dout)
                   // JMP immediate
                   8'h4C: begin
@@ -164,16 +166,12 @@ module cpu (
                     fetch_stage <= FETCH_OPERAND1OF2;
                     state <= FETCH_REQ;
                   end
-                  // LDA indirect, X
-                  8'hA1: begin
-                    fetch_stage <= FETCH_OPERAND1;
-                    state <= FETCH_REQ;
-                  end
-                  // LDA indirect, Y
-                  8'hB1: begin
-                    fetch_stage <= FETCH_OPERAND1;
-                    state <= FETCH_REQ;
-                  end
+                  // TODO: LDA (indirect, X)
+                  // 8'hA1: begin
+                  // end
+                  // TODO: LDA (indirect), Y
+                  // 8'hB1: begin
+                  // end
                   // LDX immediate
                   8'hA2: begin
                     fetch_stage <= FETCH_OPERAND1;
@@ -224,6 +222,33 @@ module cpu (
                     fetch_stage <= FETCH_OPERAND1OF2;
                     state <= FETCH_REQ;
                   end
+                  // STA zero page
+                  8'h85: begin
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // STA zero page, X
+                  8'h95: begin
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // STA absolute
+                  8'h8D: begin
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // STA absolute, X
+                  8'h9D: begin
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // STA absolute, Y
+                  8'h99: begin
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // TODO: STA (indirext, X)
+                  // TODO: STA (indirext), Y
 
                   // TODO: support more instructions
 
@@ -265,7 +290,7 @@ module cpu (
                 flg_z = (ra == 0 ? 1 : 0);
                 flg_n = (ra[7] == 1 ? 1 : 0);
                 pc <= pc + 2 & RAMW;
-                adb <=pc + 2 & RAMW;
+                adb <= pc + 2 & RAMW;
                 state <= FETCH_REQ;
                 fetch_stage <= FETCH_OPCODE;
               end
@@ -333,7 +358,7 @@ module cpu (
                   flg_z = (ra == 0 ? 1 : 0);
                   flg_n = (ra[7] == 1 ? 1 : 0);
                   pc <= pc + 3 & RAMW;
-                  adb <= adb + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -350,52 +375,30 @@ module cpu (
                   flg_z = (ra == 0 ? 1 : 0);
                   flg_n = (ra[7] == 1 ? 1 : 0);
                   pc <= pc + 3 & RAMW;
-                  adb <= adb + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
               end
-              // LDA indirect, X
-              8'hA1: begin
-                // fetch operand[7:0] + rx's value from memory and store it to ra.
-                if (data_available == 0) begin
-                  adb <= (operands[7:0] + rx) & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                end else begin
-                  ra = dout;
-                  flg_z = (ra == 0 ? 1 : 0);
-                  flg_n = (ra[7] == 1 ? 1 : 0);
-                  pc <= pc + 2 & RAMW;
-                  adb <= adb + 2 & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_OPCODE;
-                end
-              end
-              // LDA indirect, Y
-              8'hB1: begin
-                // fetch operand[7:0] + ry's value from memory and store it to ra.
-                if (data_available == 0) begin
-                  adb <= (operands[7:0] + ry) & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                end else begin
-                  ra = dout;
-                  flg_z = (ra == 0 ? 1 : 0);
-                  flg_n = (ra[7] == 1 ? 1 : 0);
-                  pc <= pc + 2 & RAMW;
-                  adb <= adb + 2 & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_OPCODE;
-                end
-              end
+              // TODO: LDA (indirect, X)
+              // 8'hA1: begin
+              // fetch operand[7:0] + rx's and the next value from the zero page
+              // in little endian.
+              // then read an 8bit data pointed by the address.
+              // end
+              // TODO: LDA (indirect), Y
+              // 8'hB1: begin
+              // fetch operand[7:0] and the next value from the zero page
+              // in litte endian.
+              // then read an 8bit data pointed by the address+ry.
+              // end
               // LDX immediate
               8'hA2: begin
                 rx = operands[7:0];
                 flg_z = (rx == 0 ? 1 : 0);
                 flg_n = (rx[7] == 1 ? 1 : 0);
-                pc <= pc + 2;
-                adb <= adb + 2 & RAMW;
+                pc <= pc + 2 & RAMW;
+                adb <= pc + 2 & RAMW;
                 state <= FETCH_REQ;
                 fetch_stage <= FETCH_OPCODE;
               end
@@ -410,7 +413,7 @@ module cpu (
                   flg_z = (rx == 0 ? 1 : 0);
                   flg_n = (rx[7] == 1 ? 1 : 0);
                   pc <= pc + 2 & RAMW;
-                  adb <= adb + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -426,7 +429,7 @@ module cpu (
                   flg_z = (rx == 0 ? 1 : 0);
                   flg_n = (rx[7] == 1 ? 1 : 0);
                   pc <= pc + 2 & RAMW;
-                  adb <= adb + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -442,7 +445,7 @@ module cpu (
                   flg_z = (rx == 0 ? 1 : 0);
                   flg_n = (rx[7] == 1 ? 1 : 0);
                   pc <= pc + 3 & RAMW;
-                  adb <= adb + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -458,7 +461,7 @@ module cpu (
                   flg_z = (rx == 0 ? 1 : 0);
                   flg_n = (rx[7] == 1 ? 1 : 0);
                   pc <= pc + 3 & RAMW;
-                  adb <= adb + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -469,7 +472,7 @@ module cpu (
                 flg_z = (ra == 0 ? 1 : 0);
                 flg_n = (ra[7] == 1 ? 1 : 0);
                 pc <= pc + 2 & RAMW;
-                adb <= adb + 2 & RAMW;
+                adb <= pc + 2 & RAMW;
                 state <= FETCH_REQ;
                 fetch_stage <= FETCH_OPCODE;
               end
@@ -484,7 +487,7 @@ module cpu (
                   flg_z = (ry == 0 ? 1 : 0);
                   flg_n = (ry[7] == 1 ? 1 : 0);
                   pc <= pc + 2 & RAMW;
-                  adb <= adb + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -500,7 +503,7 @@ module cpu (
                   flg_z = (ry == 0 ? 1 : 0);
                   flg_n = (ry[7] == 1 ? 1 : 0);
                   pc <= pc + 2 & RAMW;
-                  adb <= adb + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -516,7 +519,7 @@ module cpu (
                   flg_z = (ry == 0 ? 1 : 0);
                   flg_n = (ry[7] == 1 ? 1 : 0);
                   pc <= pc + 3 & RAMW;
-                  adb <= adb + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
@@ -532,10 +535,81 @@ module cpu (
                   flg_z = (ry == 0 ? 1 : 0);
                   flg_n = (ry[7] == 1 ? 1 : 0);
                   pc <= pc + 3 & RAMW;
-                  adb <= adb + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end
+              end
+              // STA zero page
+              8'h85: begin
+                // always RAM (zero page)
+                ada <= operands[7:0];
+                din <= ra;
+                cea <= 1;
+                pc <= pc + 2 & RAMW;
+                adb <= pc + 2 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // STA zero page, X
+              8'h95: begin
+                // always RAM (zero page)
+                ada <= operands[7:0] + rx & 8'hFF;
+                din <= ra;
+                cea <= 1;
+                pc <= pc + 2 & RAMW;
+                adb <= pc + 2 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // STA absolute
+              8'h8D: begin
+                // check if it's RAM or VRAM
+                automatic logic[15:0] addr = operands[15:0] & RAMW;
+                if (addr >= VRAM_START) begin
+                  v_ada <= addr - VRAM_START;
+                  v_din <= ra;
+                  v_cea <= 1;
+                end else begin
+                  ada <= addr;
+                  din <= ra;
+                  cea <= 1;
+                end
+                pc <= pc + 3 & RAMW;
+                adb <= pc + 3 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // STA absolute, X
+              8'h9D: begin
+                // check if it's RAM or VRAM
+                automatic logic[15:0] addr = operands[15:0] + rx & RAMW;
+                if (addr >= VRAM_START) begin
+                  v_ada <= addr - VRAM_START;
+                  v_din <= ra;
+                  v_cea <= 1;
+                end else begin
+                  ada <= addr;
+                  din <= ra;
+                  cea <= 1;
+                end
+                pc <= pc + 3 & RAMW;
+                adb <= pc + 3 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // STA absolute, Y
+              8'h99: begin
+                // check if it's RAM or VRAM
+                automatic logic[15:0] addr = operands[15:0] + ry & RAMW;
+                if (addr >= VRAM_START) begin
+                  v_ada <= addr - VRAM_START;
+                  v_din <= ra;
+                  v_cea <= 1;
+                end else begin
+                  ada <= addr;
+                  din <= ra;
+                  cea <= 1;
+                end
+                pc <= pc + 3 & RAMW;
+                adb <= pc + 3 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
               end
 
               // TODO: support more instructions

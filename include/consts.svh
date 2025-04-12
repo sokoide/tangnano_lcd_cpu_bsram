@@ -6,6 +6,7 @@
 // RAM
 localparam int RAMW = 13'b1_1111_1111_1111;
 localparam int VRAMW = 10'b11_1111_1111;
+localparam int VRAM_START = 16'hE000;
 
 // LCD
 localparam int COLUMNS = 60;
