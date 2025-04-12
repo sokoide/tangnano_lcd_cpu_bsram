@@ -38,18 +38,16 @@ module cpu (
   logic [7:0] char_code;
   logic [31:0] counter;
   logic [7:0] boot_idx;
-  logic [7:0] boot_program[16];
   logic boot_write;
   localparam int unsigned BootProgramLength = $bits(boot_program) / $bits(boot_program[0]);
 
-  typedef enum logic [3:0] {
+  typedef enum logic [2:0] {
     INIT,
     INIT_VRAM,
     INIT_RAM,
     WAIT_64K_CLKS,
     HALT,
     FETCH_REQ,
-    WAIT1,
     FETCH_RECV,
     DECODE_EXECUTE
   } state_t;
@@ -68,6 +66,8 @@ module cpu (
   fetch_stage_t fetch_stage;
 
   // program to load at startup
+  logic [7:0] boot_program[16];
+
   initial begin
     // Simple 3)
     // copy 0x00-0x7F to 0xE000-0xE07F (VRAM)
@@ -203,16 +203,11 @@ module cpu (
           end
 
           FETCH_REQ: begin
-            state <= WAIT1;
-          end
-
-          WAIT1: begin
             state <= FETCH_RECV;
             if (fetch_stage == FETCH_DATA) begin
               data_available <= 1;
               state <= DECODE_EXECUTE;
             end
-
           end
 
           FETCH_RECV: begin
@@ -288,7 +283,7 @@ module cpu (
                     state <= FETCH_REQ;
                   end
                   // LDX zero page, Y
-                  8'hAA: begin
+                  8'hB6: begin
                     adb <= pc + 1 & RAMW;
                     fetch_stage <= FETCH_OPERAND1;
                     state <= FETCH_REQ;
@@ -432,7 +427,7 @@ module cpu (
                     state <= FETCH_REQ;
                   end
                   // INC absolute, X
-                  8'hE6: begin
+                  8'hF6: begin
                     adb <= pc + 1 & RAMW;
                     fetch_stage <= FETCH_OPERAND1OF2;
                     state <= FETCH_REQ;
@@ -757,7 +752,7 @@ module cpu (
                 end
               end
               // LDX zero page, Y
-              8'hAA: begin
+              8'hB6: begin
                 if (data_available == 0) begin
                   adb <= (operands[7:0] + ry) & 8'hFF;
                   state <= FETCH_REQ;
@@ -956,7 +951,7 @@ module cpu (
               8'h81: begin
               end
               // TODO: STA (indirext), Y
-              8'h81: begin
+              8'h91: begin
               end
               // TODO: STX zero page
               8'h86: begin
@@ -1313,7 +1308,7 @@ module cpu (
                 fetch_stage <= FETCH_OPCODE;
               end
               // CLC
-              8'hEA: begin
+              8'h18: begin
                 flg_c = 1'b0;
                 pc <= pc + 1 & RAMW;
                 adb <= pc + 1 & RAMW;
