@@ -105,6 +105,7 @@ module top (
       .din  (din),
       .ada  (ada),
       .cea (cea),
+      .ceb (ceb),
       .adb  (adb),
       .v_ada(v_ada),
       .v_cea(v_cea),
@@ -115,7 +116,6 @@ module top (
     if (!rst_n) begin
       reseta <= 0;
       resetb <= 0;
-      ceb <= 1;  // enable read
       oce <= 0;  // dout is not reflected
       v_reseta <= 0;
       v_resetb <= 0;
