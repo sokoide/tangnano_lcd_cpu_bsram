@@ -101,34 +101,30 @@ module top (
 
   cpu cpu1 (
       .rst_n(rst_n),
-      .clk(MEMORY_CLK),
-      .dout(dout),
-      .din(din),
-      .ada(ada),
-      .adb(adb),
+      .clk  (MEMORY_CLK),
+      .dout (dout),
+      .din  (din),
+      .ada  (ada),
+      .adb  (adb),
       .v_ada(v_ada),
       .v_cea(v_cea),
       .v_din(v_din)
   );
 
-  // Initial VRAM patterns
-  logic       boot_mode;  // 1 during boot, 0 after boot is done
-  logic       boot_write;  // Internal signal to control when to write
-  logic [7:0] boot_data;
-  parameter int unsigned MAX_BOOT_DATA = 1024;
-
   always_ff @(posedge MEMORY_CLK or negedge rst_n) begin
     if (!rst_n) begin
+      reseta <= 0;
+      resetb <= 0;
+      cea <= 0;  // enable write
+      ceb <= 0;  // enable read
+      oce <= 0;  // dout is not reflected
       v_reseta <= 0;
       v_resetb <= 0;
       v_ceb = 1;  // enable read
-      v_oce = 1;  // enable output
+      v_oce = 0;  // v_dout is not reflected
       f_ce = 1;  // enable font read
       f_oce = 1;  // enable font output
       f_reset = 0;
-      boot_mode  <= 1;
-      boot_write <= 1;
-      boot_data = 8'h0;
     end
   end
 

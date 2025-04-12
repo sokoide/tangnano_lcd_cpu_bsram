@@ -40,16 +40,25 @@ module lcd (
                    (V_PixelCount < V_PixelValid + V_BackPorch)) ? 1'b1 : 1'b0;
 
   logic [7:0] char;
-  logic [7:0] fontline; // font bitmap for the current line (8 pixels)
+  logic [7:0] fontline;  // font bitmap for the current line (8 pixels)
+  logic signed [15:0] x, y;
+  logic active_area;
+
+  always_comb begin
+    automatic logic signed [31:0] x_full, y_full;
+    x_full = H_PixelCount - H_BackPorch + 16'd8;
+    y_full = V_PixelCount - V_BackPorch;
+    x = x_full[15:0];
+    y = y_full[15:0];
+    active_area = (0 <= x && x < H_PixelValid + 8 && 0 <= y && y < V_PixelValid);
+
+  end
 
   always_ff @(posedge PixelClk or negedge nRST) begin
     // x could be minus (underflow) when H_PixelCount is smaller than H_BackPorch
     // so we need to use signed logic to avoid the underflow
     // then use +8 to calcurate the vram address
-    automatic logic signed [15:0] x = H_PixelCount - H_BackPorch + 8;
-    automatic logic signed [15:0] y = V_PixelCount - V_BackPorch;
-    automatic logic active_area = (0 <= x && x < H_PixelValid + 8 && 0 <= y && y < V_PixelValid);
-
+    // automatic logic active_area = (0 <= x && x < H_PixelValid + 8 && 0 <= y && y < V_PixelValid);
     if (!nRST) begin
       LCD_R <= 5'b00000;
       LCD_G <= 6'b000000;
@@ -57,7 +66,7 @@ module lcd (
     end else if (active_area) begin
       // get char code
       if (-4 <= x && x < H_PixelValid -4 + 8 && 0 <= y && y < V_PixelValid && (x+4) % 8 == 0) begin
-        v_adb <= (x + 2) / 8 + (y / 16) * 60;
+        v_adb <= ((x + 2) / 8 + (y / 16) * 60 ) & 10'b11_1111_1111;
       end else if (-3 <= x && x < H_PixelValid -3 + 8 && 0 <= y && y < V_PixelValid && (x+3) % 8 == 0) begin
         char <= v_dout;
       end else if (-2 <= x && x < H_PixelValid -2 + 8 && 0 <= y && y < V_PixelValid && (x+2) % 8 == 0) begin

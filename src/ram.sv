@@ -23,7 +23,6 @@ module ram (
 );
 
   // RAM 8KB, address 8192, data width 8
-  logic [7:0] dout;
 
   Gowin_SDPB ram_inst (
       .dout(dout),  //output [7:0] dout, read data
@@ -40,7 +39,6 @@ module ram (
   );
 
   // Text VRAM, address 1024, data width 8
-  logic [7:0] v_dout;
 
   Gowin_SDPB_vram vram_inst (
       .dout(v_dout),  //output [7:0] dout, read data

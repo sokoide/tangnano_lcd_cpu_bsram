@@ -4,7 +4,6 @@ module cpu (
 `ifdef DEBUG_MODE
 `endif
     input  logic        rst_n,
-    input  logic        boot_mode,
     input  logic        clk,
     input  logic [ 7:0] dout,       // RAM data which was read
     output logic [ 7:0] din,        // RAM data to write
