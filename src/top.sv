@@ -98,7 +98,6 @@ module top (
   );
 
   // CPU instance
-
   cpu cpu1 (
       .rst_n(rst_n),
       .clk  (MEMORY_CLK),

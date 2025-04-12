@@ -22,6 +22,9 @@ source_files:
     path: src/lcd.sv
     options: +define+DEBUG_MODE -incdir ./include
   - language: verilog
+    path: src/ram.sv
+    options: +define+DEBUG_MODE -incdir ./include
+  - language: verilog
     path: src/tb_lcd.sv
     options: +define+DEBUG_MODE -incdir ./include
   - language: verilog
@@ -34,5 +37,7 @@ source_files:
     path: src/uart_master/tb/prim_sim.v
   - language: verilog
     path: src/gowin_sdpb/gowin_sdpb.v
+  - language: verilog
+    path: src/gowin_sdpb/gowin_sdpb_vram.v
 library_search_paths:
   - $STD_LIBS/ieee93

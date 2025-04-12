@@ -1,45 +1,77 @@
 module tb_cpu;
-  cpu dut ();
-
   logic clk;
   logic rst_n;
+
+  // RAM
+  logic cea, ceb, oce;
+  logic reseta, resetb;
+  logic [12:0] ada, adb;
+  logic [7:0] din;
+  logic [7:0] dout;
+  logic v_cea, v_ceb, v_oce;
+  logic v_reseta, v_resetb;
+  logic [9:0] v_ada, v_adb;
+  logic [7:0] v_din;
+  logic [7:0] v_dout;
+
+
+  cpu dut (
+      .rst_n(rst_n),
+      .clk  (clk),
+      .dout (dout),
+      .din  (din),
+      .ada  (ada),
+      .cea  (cea),
+      .ceb  (ceb),
+      .adb  (adb),
+      .v_ada(v_ada),
+      .v_cea(v_cea),
+      .v_din(v_din)
+  );
 
   // 20ns clock (#10 means 10ns) == 50MHz
   always #10 clk = ~clk;
 
-  // initial begin
-  //   // initial setup
-  //   cea    = 0;
-  //   reseta = 1;
-  //   ada    = 13'h0;
-  //   din    = 8'h0;
-
-  //   // input reset
-  //   #5 reseta = 0;
-
-  //   // setup for write, write 0x06 at 0x200
-  //   ada = 13'h0200;
-  //   din = 8'h06;
-  //   cea = 1;
-
-  //   // write 1 cycle
-  //   #5 clk = 1;
-  //   #5 clk = 0;
-
-  //   // write disable
-  //   cea = 0;
-  // end
+  ram ram_inst (
+      // common
+      .MEMORY_CLK(clk),
+      // regular RAM
+      .dout(dout),
+      .cea(cea),
+      .ceb(ceb),
+      .oce(oce),
+      .reseta(reseta),
+      .resetb(resetb),
+      .ada(ada),
+      .adb(adb),
+      .din(din),
+      // VRAM
+      .v_dout(v_dout),
+      .v_cea(v_cea),
+      .v_ceb(v_ceb),
+      .v_oce(v_oce),
+      .v_reseta(v_reseta),
+      .v_resetb(v_resetb),
+      .v_ada(v_ada),
+      .v_adb(v_adb),
+      .v_din(v_din)
+  );
 
   initial begin
     $display("=== Test Started ===");
     clk   = 0;
 
+    reseta <= 0;
+    resetb <= 0;
+    v_reseta <= 0;
+    v_resetb <= 0;
+
     rst_n = 0;  // active
     @(posedge clk);  // wait for 1 clock cycle
     rst_n = 1;  // release
 
-    // repeat(10) @(posedge clk); is same as #200;
-    #100;
+    // repeat(1) @(posedge clk); is same as #2; because 1 clock on->off is 2 cycles
+    repeat(1100) @(posedge clk);
 
     $display("=== Test End ===");
     $finish;

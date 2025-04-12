@@ -7,6 +7,9 @@
 localparam int RAMW = 13'b1_1111_1111_1111;
 localparam int VRAMW = 10'b11_1111_1111;
 localparam int VRAM_START = 16'hE000;
+localparam int STACK = 16'h0100; // stack: 0x100-0x1FF, referenced by STACK+sp
+localparam int PROGRAM_START = 16'h0200;
+
 
 // LCD
 localparam int COLUMNS = 60;
