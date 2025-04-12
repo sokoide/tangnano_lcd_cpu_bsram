@@ -98,13 +98,10 @@ module top (
   );
 
   // CPU instance
-  logic [15:0] ad;  // read address
-  logic [23:0] counter;
 
   cpu cpu1 (
       .rst_n(rst_n),
-      .clk(counter[14]),
-      .counter(counter),
+      .clk(MEMORY_CLK),
       .dout(dout),
       .din(din),
       .ada(ada),
@@ -113,15 +110,6 @@ module top (
       .v_cea(v_cea),
       .v_din(v_din)
   );
-
-  // Update counter (for CPU timing)
-  always_ff @(posedge XTAL_IN or negedge rst_n) begin
-    if (!rst_n) begin
-      counter <= 24'd0;
-    end else begin
-      counter <= counter + 1;
-    end
-  end
 
   // Initial VRAM patterns
   logic       boot_mode;  // 1 during boot, 0 after boot is done

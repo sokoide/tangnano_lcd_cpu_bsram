@@ -6,7 +6,6 @@ module cpu (
     input  logic        rst_n,
     input  logic        boot_mode,
     input  logic        clk,
-    input  logic [23:0] counter,
     input  logic [ 7:0] dout,       // RAM data which was read
     output logic [ 7:0] din,        // RAM data to write
     output logic [12:0] ada,        // write RAM
@@ -35,9 +34,11 @@ module cpu (
   logic [15:0] operands;
   logic data_available;
   logic [7:0] char_code;
+  logic [31:0] counter;
 
   typedef enum logic [2:0] {
     INIT,
+    WAIT_64K_CLKS,
     HALT,
     FETCH_REQ,
     WAIT1,
@@ -78,8 +79,11 @@ module cpu (
       opcode                                            <= 8'd0;
       state                                             <= INIT;
       char_code                                         <= 8'h20;  // ' '
+      counter                                           <= 32'h0;
     end else begin
       begin
+        counter <= (counter +1 ) & 32'hFFFFFFFF;
+
         // --- case(state) ---
         case (state)
           INIT: begin
@@ -93,6 +97,13 @@ module cpu (
             v_cea <= 1;
             v_din <= char_code;
             char_code <= (char_code < 8'h7F) ? char_code + 1 : 8'h20;
+            state <= WAIT_64K_CLKS;
+          end
+
+          WAIT_64K_CLKS: begin
+            if ((counter & 16'hFFFF) == 0) begin
+              state <= INIT;
+            end
           end
 
           HALT: begin
