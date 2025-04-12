@@ -464,6 +464,14 @@ module cpu (
                     fetch_stage <= FETCH_OPERAND1OF2;
                     state <= FETCH_REQ;
                   end
+                  // DEX
+                  8'hCA: begin
+                    state <= DECODE_EXECUTE;
+                  end
+                  // DEY
+                  8'h88: begin
+                    state <= DECODE_EXECUTE;
+                  end
                   // ADC immediate
                   8'h69: begin
                     adb <= pc + 1 & RAMW;
@@ -1174,8 +1182,8 @@ module cpu (
               // INX
               8'hE8: begin
                 rx = rx + 1 & 8'hFF;
-                flg_z = rx == 0 ? 1 : 0;
-                flg_n = rx[7] == 1 ? 1 : 0;
+                flg_n = rx[7];
+                flg_z = (rx == 8'h00) ? 1 : 0;
                 pc <= pc + 1 & RAMW;
                 adb <= pc + 1 & RAMW;
                 fetch_stage <= FETCH_OPCODE;
@@ -1183,8 +1191,8 @@ module cpu (
               // INY
               8'hC8: begin
                 ry = ry + 1 & 8'hFF;
-                flg_z = ry == 0 ? 1 : 0;
-                flg_n = ry[7] == 1 ? 1 : 0;
+                flg_n = ry[7];
+                flg_z = (ry == 8'h00) ? 1 : 0;
                 pc <= pc + 1 & RAMW;
                 adb <= pc + 1 & RAMW;
                 fetch_stage <= FETCH_OPCODE;
@@ -1200,8 +1208,8 @@ module cpu (
                   ada <= operands[7:0];
                   din <= result;
                   cea <= 1;
-                  flg_z = result == 0 ? 1 : 0;
-                  flg_n = result[7] == 1 ? 1 : 0;
+                  flg_n = result[7];
+                  flg_z = (result == 8'h00) ? 1 : 0;
                   pc <= pc + 2 & RAMW;
                   adb <= pc + 2 & RAMW;
                   fetch_stage <= FETCH_OPCODE;
@@ -1218,8 +1226,8 @@ module cpu (
                   ada <= (operands[7:0] + rx) & 8'hFF;
                   din <= result;
                   cea <= 1;
-                  flg_z = result == 0 ? 1 : 0;
-                  flg_n = result[7] == 1 ? 1 : 0;
+                  flg_n = result[7];
+                  flg_z = (result == 8'h00) ? 1 : 0;
                   pc <= pc + 2 & RAMW;
                   adb <= pc + 2 & RAMW;
                   fetch_stage <= FETCH_OPCODE;
@@ -1237,8 +1245,8 @@ module cpu (
                   ada <= {operands[7:0], operands[15:8]} & RAMW;
                   din <= result;
                   cea <= 1;
-                  flg_z = result == 0 ? 1 : 0;
-                  flg_n = result[7] == 1 ? 1 : 0;
+                  flg_n = result[7];
+                  flg_z = (result == 8'h00) ? 1 : 0;
                   pc <= pc + 3 & RAMW;
                   adb <= pc + 3 & RAMW;
                   fetch_stage <= FETCH_OPCODE;
@@ -1256,12 +1264,30 @@ module cpu (
                   ada <= ({operands[7:0], operands[15:8]} + rx) & RAMW;
                   din <= result;
                   cea <= 1;
-                  flg_z = result == 0 ? 1 : 0;
-                  flg_n = result[7] == 1 ? 1 : 0;
+                  flg_n = result[7];
+                  flg_z = (result == 8'h00) ? 1 : 0;
                   pc <= pc + 3 & RAMW;
                   adb <= pc + 3 & RAMW;
                   fetch_stage <= FETCH_OPCODE;
                 end
+              end
+              // DEX
+              8'hCA: begin
+                rx = rx - 1 & 8'hFF;
+                flg_n = rx[7];
+                flg_z = (rx == 8'h00) ? 1 : 0;
+                pc <= pc + 1 & RAMW;
+                adb <= pc + 1 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // DEY
+              8'h88: begin
+                ry = ry - 1 & 8'hFF;
+                flg_n = ry[7];
+                flg_z = (ry == 8'h00) ? 1 : 0;
+                pc <= pc + 1 & RAMW;
+                adb <= pc + 1 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
               end
               // ADC immediate
               8'h69: begin

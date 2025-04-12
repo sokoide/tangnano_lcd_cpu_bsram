@@ -96,7 +96,7 @@
 |     | +   |     |     |     |     | +   |     |     |     | +   |     |     |     | +   |     |     |
 | 0x8 |     | STA |     |     | STY | STA | STX |     | DEY |     | TXA |     | STY | STA | STX |     |
 |     |     | idx |     |     | zp  | zp  | zp  |     | impl|     | impl|     | abs | abs | abs |     |
-|     |     |     |     |     |     | +   |     |     |     |     | +   |     |     | +   |     |     |
+|     |     |     |     |     |     | +   |     |     | +   |     | +   |     |     | +   |     |     |
 | 0x9 | BCC | STA |     |     | STY | STA | STX |     | TYA | STA | TXS |     |     | STA |     |     |
 |     | rel | idy |     |     | zpx | zpx | zpy |     | impl| aby | impl|     |     | abx |     |     |
 |     | +   |     |     |     |     | +   |     |     | +   | +   |     |     |     | +   |     |     |
@@ -108,7 +108,7 @@
 |     | +   |     |     |     | +   | +   | +   |     |     | +   |     |     | +   | +   | +   |     |
 | 0xC | CPY | CMP |     |     | CPY | CMP | DEC |     | INY | CMP | DEX |     | CPY | CMP | DEC |     |
 |     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs |     |
-|     | +   |     |     |     | +   | +   | +   |     | +   | +   |     |     | +   | +   | +   |     |
+|     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
 | 0xD | BNE | CMP |     |     |     | CMP | DEC |     | CLD | CMP |     |     |     | CMP | DEC |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
 |     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   |     |
