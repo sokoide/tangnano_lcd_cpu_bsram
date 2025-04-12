@@ -694,6 +694,24 @@ module cpu (
                     fetch_stage <= FETCH_OPERAND1;
                     state <= FETCH_REQ;
                   end
+                  // BPL
+                  8'h10: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // BVC
+                  8'h50: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // BVS
+                  8'h70: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
                   // BCC
                   8'h90: begin
                     adb <= pc + 1 & RAMW;
@@ -1788,6 +1806,51 @@ module cpu (
                 end
                 fetch_stage <= FETCH_OPCODE;
               end
+              // BPL
+              8'h10: begin
+                if (flg_n == 0) begin
+                  // sign extend
+                  s_imm8 = operands[7:0];
+                  s_offset = s_imm8;
+                  addr = (pc + 16'd2 + s_offset) & RAMW;
+                  pc  <= addr;
+                  adb <= addr;
+                end else begin
+                  pc  <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                end
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // BVC
+                8'h50: begin
+                if (flg_v == 0) begin
+                  // sign extend
+                  s_imm8 = operands[7:0];
+                  s_offset = s_imm8;
+                  addr = (pc + 16'd2 + s_offset) & RAMW;
+                  pc  <= addr;
+                  adb <= addr;
+                end else begin
+                  pc  <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                end
+                fetch_stage <= FETCH_OPCODE;
+                end
+                // BVS
+                8'h70: begin
+                if (flg_v == 1) begin
+                  // sign extend
+                  s_imm8 = operands[7:0];
+                  s_offset = s_imm8;
+                  addr = (pc + 16'd2 + s_offset) & RAMW;
+                  pc  <= addr;
+                  adb <= addr;
+                end else begin
+                  pc  <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                end
+                fetch_stage <= FETCH_OPCODE;
+                end
               // BCC
               8'h90: begin
                 if (flg_c == 0) begin
