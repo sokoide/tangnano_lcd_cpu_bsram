@@ -81,7 +81,7 @@
 |     |     | +   |     |     | +   | +   |     |     |     | +   |     |     | +   | +   |     |     |
 | 0x3 | BMI | AND |     |     |     | AND | ROL |     | SEC | AND |     |     |     | AND | ROL |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
-|     |     |     |     |     |     | +   |     |     |     | +   |     |     |     | +   |     |     |
+|     | +   |     |     |     |     | +   |     |     |     | +   |     |     |     | +   |     |     |
 | 0x4 | RTI | EOR |     |     |     | EOR | LSR |     | PHA | EOR | LSR |     | JMP | EOR | LSR |     |
 |     | impl| idx |     |     |     | zp  | zp  |     | impl| imm | acc |     | abs | abs | abs |     |
 |     | -   |     |     |     |     |     |     |     |     |     |     |     | +   |     |     |     |

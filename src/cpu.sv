@@ -682,6 +682,12 @@ module cpu (
                     fetch_stage <= FETCH_OPERAND1;
                     state <= FETCH_REQ;
                   end
+                  // BMI
+                  8'h30: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
                   // BNE
                   8'hD0: begin
                     adb <= pc + 1 & RAMW;
@@ -1740,6 +1746,21 @@ module cpu (
               // BEQ
               8'hF0: begin
                 if (flg_z == 1) begin
+                  // sign extend
+                  s_imm8 = operands[7:0];
+                  s_offset = s_imm8;
+                  addr = (pc + 16'd2 + s_offset) & RAMW;
+                  pc  <= addr;
+                  adb <= addr;
+                end else begin
+                  pc  <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                end
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // BMI
+              8'h30: begin
+                if (flg_n == 1) begin
                   // sign extend
                   s_imm8 = operands[7:0];
                   s_offset = s_imm8;
