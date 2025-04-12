@@ -12,6 +12,7 @@
         <File path="src/gowin_sdpb/gowin_sdpb.v" type="file.verilog" enable="1"/>
         <File path="src/gowin_sdpb/gowin_sdpb_vram.v" type="file.verilog" enable="1"/>
         <File path="src/lcd.sv" type="file.verilog" enable="1"/>
+        <File path="src/ram.sv" type="file.verilog" enable="1"/>
         <File path="src/tb_cpu.sv" type="file.verilog" enable="1"/>
         <File path="src/tb_lcd.sv" type="file.verilog" enable="1"/>
         <File path="src/top.sv" type="file.verilog" enable="1"/>

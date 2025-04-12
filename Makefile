@@ -1,6 +1,8 @@
 SRCS= \
 	src/top.sv \
 	src/lcd.sv \
+	src/ram.sv \
+	src/cpu.sv \
 	src/gowin_rpll/gowin_rpll9.v \
 	src/gowin_rpll/gowin_rpll54.v \
 	src/gowin_sdpb/gowin_sdpb.v \

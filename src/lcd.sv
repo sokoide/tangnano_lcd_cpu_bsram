@@ -48,7 +48,7 @@ module lcd (
     // then use +8 to calcurate the vram address
     automatic logic signed [15:0] x = H_PixelCount - H_BackPorch + 8;
     automatic logic signed [15:0] y = V_PixelCount - V_BackPorch;
-    logic active_area = (0 <= x && x < H_PixelValid + 8 && 0 <= y && y < V_PixelValid);
+    automatic logic active_area = (0 <= x && x < H_PixelValid + 8 && 0 <= y && y < V_PixelValid);
 
     if (!nRST) begin
       LCD_R <= 5'b00000;

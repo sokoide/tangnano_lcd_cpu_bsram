@@ -1,21 +1,27 @@
 module tb_lcd;
   logic clk;
   logic rst_n;
-  logic [7:0] char;
-  // logic LCD_DEN;
-  // logic [4:0] LCD_B;
-  // logic [5:0] LCD_G;
-  // logic [4:0] LCD_R;
+  logic [7:0] v_dout;
+  logic [7:0] f_dout;
+  logic LCD_DEN;
+  logic [4:0] LCD_B;
+  logic [5:0] LCD_G;
+  logic [4:0] LCD_R;
+  logic [9:0] v_adb;
+  logic [11:0] f_ad;
 
   lcd dut (
       .PixelClk (clk),
       .nRST     (rst_n),
-      .Character(char),
+      .v_dout (v_dout),
+      .f_dout (f_dout),
 
       .LCD_DE(LCD_DEN),
       .LCD_B (LCD_B),
       .LCD_G (LCD_G),
-      .LCD_R (LCD_R)
+      .LCD_R (LCD_R),
+      .v_adb(v_adb),
+      .f_ad(f_ad)
   );
 
   // 20ns clock (#10 means 10ns)
@@ -24,7 +30,6 @@ module tb_lcd;
   initial begin
     $display("=== Test Started ===");
     clk  = 0;
-    char = 8'd7;
 
     rst_n = 0;  // active
     @(posedge clk);  // wait for 1 clock cycle
