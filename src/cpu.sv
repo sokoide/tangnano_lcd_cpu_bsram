@@ -35,7 +35,7 @@ module cpu (
   logic [7:0] char_code;
   logic [31:0] counter;
   logic [7:0] boot_idx;
-  logic [7:0] boot_program[9];
+  logic [7:0] boot_program[16];
   logic boot_write;
   localparam int unsigned BootProgramLength = $bits(boot_program) / $bits(boot_program[0]);
 
@@ -65,20 +65,42 @@ module cpu (
 
   // program to load at startup
   initial begin
-    // 0x0200 -0x0201
-    boot_program[0] = 8'hA9;  // LDA 0x41 ; ra register <= 'A'
-    boot_program[1] = 8'h41;
-    // 0x0202 - 0x0204
-    boot_program[2] = 8'h8D;  // STA $E000 ; store 'A' at top-left of VRAM
+    // Simple 2)
+    // address 00 <- 0x00
+    // address 01 <- 0xE0
+    boot_program[0] = 8'hA9;  // LDA #$00
+    boot_program[1] = 8'h00;
+    boot_program[2] = 8'h85;  // STA $00
     boot_program[3] = 8'h00;
-    boot_program[4] = 8'hE0;
-    // 0x0205-0x0207
-    boot_program[5] = 8'h4C;  // JMP $0205 (infinite loop)
-    boot_program[6] = 8'h05;
-    boot_program[7] = 8'h02;
-    // 0x0208 .. never reaches here
-    boot_program[8] = 8'hEA;  // NOP
+    boot_program[4] = 8'hA9;  // LDA #$E0
+    boot_program[5] = 8'hE0;
+    boot_program[6] = 8'h85;  // STA $01
+    boot_program[7] = 8'h01;
+    boot_program[8] = 8'hA9; // LDA 0x42; A register <- 'B'
+    boot_program[9] = 8'h42;
+    boot_program[10] = 8'h8D;  // STA $E000 ; store 'B' at top-left of VRAM
+    boot_program[11] = 8'h00;
+    boot_program[12] = 8'hE0;
+    boot_program[13] = 8'h4C;  // JMP $020D (infinite loop)
+    boot_program[14] = 8'h0D;
+    boot_program[15] = 8'h02;
 
+
+
+    // Simple 1)
+    // // 0x0200 -0x0201
+    // boot_program[0] = 8'hA9;  // LDA 0x41 ; ra register <= 'A'
+    // boot_program[1] = 8'h41;
+    // // 0x0202 - 0x0204
+    // boot_program[2] = 8'h8D;  // STA $E000 ; store 'A' at top-left of VRAM
+    // boot_program[3] = 8'h00;
+    // boot_program[4] = 8'hE0;
+    // // 0x0205-0x0207
+    // boot_program[5] = 8'h4C;  // JMP $0205 (infinite loop)
+    // boot_program[6] = 8'h05;
+    // boot_program[7] = 8'h02;
+    // // 0x0208 .. never reaches here
+    // boot_program[8] = 8'hEA;  // NOP
   end
 
   // Sequential logic: use an asynchronous active-low rst_n.
@@ -173,6 +195,13 @@ module cpu (
                 data_available <= 0;
                 cea <= 0;  // disable write
                 case (dout)
+                  // NOP
+                  8'hEA: begin
+                    pc <= pc + 1 & RAMW;
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPCODE;
+                    state <= FETCH_REQ;
+                  end
                   // JMP immediate
                   8'h4C: begin
                     adb <= pc + 1 & RAMW;
