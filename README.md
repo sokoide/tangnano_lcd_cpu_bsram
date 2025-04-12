@@ -108,16 +108,16 @@
 |     | +   |     |     |     | +   | +   | +   |     |     | +   |     |     | +   | +   | +   |     |
 | 0xC | CPY | CMP |     |     | CPY | CMP | DEC |     | INY | CMP | DEX |     | CPY | CMP | DEC |     |
 |     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs |     |
-|     | +   |     |     |     | +   | +   |     |     | +   | +   |     |     | +   | +   |     |     |
+|     | +   |     |     |     | +   | +   | +   |     | +   | +   |     |     | +   | +   | +   |     |
 | 0xD | BNE | CMP |     |     |     | CMP | DEC |     | CLD | CMP |     |     |     | CMP | DEC |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
-|     | +   |     |     |     |     | +   |     |     |     | +   |     |     |     | +   |     |     |
+|     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   |     |
 | 0xE | CPX | SBC |     |     | CPX | SBC | INC |     | INX | SBC | NOP |     | CPX | SBC | INC |     |
 |     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs |     |
 |     | +   |     |     |     | +   |     |     |     | +   |     |+    |     | +   |     |     |     |
 | 0xF | BEQ | SBC |     |     |     | SBC | INC |     | SED | SBC |     |     |     | SBC | INC |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
-|     | +   |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |
+|     | +   |     |     |     |     |     |     |     | -   |     |     |     |     |     |     |     |
 
 ## 6502 Addressing Modes - Legend
 
