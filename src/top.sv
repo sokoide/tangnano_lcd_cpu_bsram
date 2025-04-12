@@ -31,45 +31,41 @@ module top (
       .clkin(XTAL_IN)       //  27MHz
   );
 
-  // RAM 8KB, address 8192, data width 8
+  // RAM
   logic cea, ceb, oce;
   logic reseta, resetb;
   logic [12:0] ada, adb;
   logic [7:0] din;
   logic [7:0] dout;
-
-  Gowin_SDPB ram_inst (
-      .dout(dout),  //output [7:0] dout, read data
-      .clka(MEMORY_CLK),  //input clka
-      .cea(cea),  //input cea, write enable
-      .reseta(reseta),  //input reseta
-      .clkb(MEMORY_CLK),  //input clkb
-      .ceb(ceb),  //input ceb, read enable
-      .resetb(resetb),  //input resetb
-      .oce(oce),  //input oce, timing when the read value is reflected on dout
-      .ada(ada),  //input [12:0] ada, for write
-      .din(din),  //input [7:0] din, written data
-      .adb(adb)  //input [12:0] adb, for read
-  );
-
-  // Text VRAM, address 1024, data width 8
   logic v_cea, v_ceb, v_oce;
   logic v_reseta, v_resetb;
   logic [9:0] v_ada, v_adb;
   logic [7:0] v_din;
   logic [7:0] v_dout;
-  Gowin_SDPB_vram vram_inst (
-      .dout(v_dout),  //output [7:0] dout, read data
-      .clka(MEMORY_CLK),  //input clka
-      .cea(v_cea),  //input cea, write enable
-      .reseta(v_reseta),  //input reseta
-      .clkb(MEMORY_CLK),  //input clkb
-      .ceb(v_ceb),  //input ceb, read enable
-      .resetb(v_resetb),  //input resetb
-      .oce(v_oce),  //input oce, timing when the read value is reflected on dout
-      .ada(v_ada),  //input [9:0] ada, for write
-      .din(v_din),  //input [7:0] din, wirtten data
-      .adb(v_adb)  //input [9:0] adb, for read
+
+  ram ram_inst(
+    // common
+    .MEMORY_CLK(MEMORY_CLK),
+    // regular RAM
+    .dout(dout),
+    .cea(cea),
+    .ceb(ceb),
+    .oce(oce),
+    .reseta(reseta),
+    .resetb(resetb),
+    .ada(ada),
+    .adb(adb),
+    .din(din),
+    // VRAM
+    .v_dout(v_dout),
+    .v_cea(v_cea),
+    .v_ceb(v_ceb),
+    .v_oce(v_oce),
+    .v_reseta(v_reseta),
+    .v_resetb(v_resetb),
+    .v_ada(v_ada),
+    .v_adb(v_adb),
+    .v_din(v_din)
   );
 
   // pROM for font
@@ -122,7 +118,7 @@ module top (
     end
   end
 
-  //   VRAM Bootloader signals
+  // Initial VRAM patterns
   logic       boot_mode;  // 1 during boot, 0 after boot is done
   logic       boot_write;  // Internal signal to control when to write
   logic [7:0] boot_data;
