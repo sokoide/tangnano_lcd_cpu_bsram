@@ -72,10 +72,10 @@
 |-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
 | 0x0 | BRK | ORA |     |     |     | ORA | ASL |     | PHP | ORA | ASL |     |     | ORA | ASL |     |
 |     | impl| idx |     |     |     | zp  | zp  |     | impl| imm | acc |     |     | abs | abs |     |
-|     | -   |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |
+|     | -   |     |     |     |     |     | +   |     |     |     | +   |     |     |     | +   |     |
 | 0x1 | BPL | ORA |     |     |     | ORA | ASL |     | CLC | ORA |     |     |     | ORA | ASL |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
-|     |     |     |     |     |     |     |     |     | +   |     |     |     |     |     |     |     |
+|     |     |     |     |     |     |     | +   |     | +   |     |     |     |     |     | +   |     |
 | 0x2 | JSR | AND |     |     | BIT | AND | ROL |     | PLP | AND | ROL |     | BIT | AND | ROL |     |
 |     | abs | idx |     |     | zp  | zp  | zp  |     | impl| imm | acc |     | abs | abs | abs |     |
 |     |     | +   |     |     |     | +   |     |     |     | +   |     |     |     | +   |     |     |

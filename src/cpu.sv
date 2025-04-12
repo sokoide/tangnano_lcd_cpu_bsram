@@ -536,6 +536,34 @@ module cpu (
                     fetch_stage <= FETCH_OPERAND1;
                     state <= FETCH_REQ;
                   end
+                  // ASL accumulator
+                  8'h0A: begin
+                    state <= DECODE_EXECUTE;
+                  end
+                  // ASL zero page
+                  8'h06: begin
+                    adb <= operands[7:0];
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // ASL zero page, X
+                  8'h16: begin
+                    adb <= (operands[7:0] + rx) & 8'hFF;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // ASL absolute
+                  8'h0E: begin
+                    adb <= {operands[7:0], operands[15:8]} & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // ASL absolute, X
+                  8'h1E: begin
+                    adb <= ({operands[7:0], operands[15:8]} + rx) & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
                   // CMP immediate
                   8'hC9: begin
                     adb <= pc + 1 & RAMW;
@@ -1261,8 +1289,8 @@ module cpu (
                 adb <= pc + 2 & RAMW;
                 fetch_stage <= FETCH_OPCODE;
               end
-                // AND zero page
-                8'h25: begin
+              // AND zero page
+              8'h25: begin
                 if (data_available == 0) begin
                   adb <= operands[7:0];
                   state <= FETCH_REQ;
@@ -1275,9 +1303,9 @@ module cpu (
                   adb <= pc + 2 & RAMW;
                   fetch_stage <= FETCH_OPCODE;
                 end
-                end
-                // AND zero page, X
-                8'h35: begin
+              end
+              // AND zero page, X
+              8'h35: begin
                 if (data_available == 0) begin
                   adb <= (operands[7:0] + rx) & 8'hFF;
                   state <= FETCH_REQ;
@@ -1290,9 +1318,9 @@ module cpu (
                   adb <= pc + 2 & RAMW;
                   fetch_stage <= FETCH_OPCODE;
                 end
-                end
-                // AND absolute
-                8'h2D: begin
+              end
+              // AND absolute
+              8'h2D: begin
                 if (data_available == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
                   adb <= addr & RAMW;
@@ -1306,9 +1334,9 @@ module cpu (
                   adb <= pc + 3 & RAMW;
                   fetch_stage <= FETCH_OPCODE;
                 end
-                end
-                // AND absolute, X
-                8'h3D: begin
+              end
+              // AND absolute, X
+              8'h3D: begin
                 if (data_available == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + rx & 16'hFFFF;
                   adb <= addr & RAMW;
@@ -1322,9 +1350,9 @@ module cpu (
                   adb <= pc + 3 & RAMW;
                   fetch_stage <= FETCH_OPCODE;
                 end
-                end
-                // AND absolute, Y
-                8'h39: begin
+              end
+              // AND absolute, Y
+              8'h39: begin
                 if (data_available == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + ry & 16'hFFFF;
                   adb <= addr & RAMW;
@@ -1338,9 +1366,9 @@ module cpu (
                   adb <= pc + 3 & RAMW;
                   fetch_stage <= FETCH_OPCODE;
                 end
-                end
-                // AND (indirect, X)
-                8'h21: begin
+              end
+              // AND (indirect, X)
+              8'h21: begin
                 if (data_available == 0) begin
                   adb <= operands[7:0] + rx & 8'hFF;
                   state <= FETCH_REQ;
@@ -1353,10 +1381,86 @@ module cpu (
                   adb <= pc + 2 & RAMW;
                   fetch_stage <= FETCH_OPCODE;
                 end
+              end
+              // TODO: AND (indirect), Y
+              8'h31: begin
+              end
+              // ASL accumulator
+              8'h0A: begin
+                flg_c = ra[7];  // Capture the carry bit before shifting
+                ra = ra << 1;
+                flg_z = (ra == 8'h00);
+                flg_n = ra[7];
+                pc <= pc + 1 & RAMW;
+                adb <= pc + 1 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // ASL zero pabe
+              8'h06: begin
+                if (data_available == 0) begin
+                  adb <= operands[7:0];
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  flg_c = dout[7];  // Capture the carry bit before shifting
+                  ra = dout << 1;
+                  flg_z = (ra == 8'h00);
+                  flg_n = ra[7];
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
                 end
-                // TODO: AND (indirect), Y
-                8'h31: begin
+              end
+              // ASL zero page, X
+              8'h16: begin
+                if (data_available == 0) begin
+                  adb <= (operands[7:0] + rx) & 8'hFF;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  flg_c = dout[7];  // Capture the carry bit before shifting
+                  ra = dout << 1;
+                  flg_z = (ra == 8'h00);
+                  flg_n = ra[7];
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
                 end
+              end
+              // ASL absolute
+              8'h0E: begin
+                if (data_available == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  flg_c = dout[7];  // Capture the carry bit before shifting
+                  ra = dout << 1;
+                  flg_z = (ra == 8'h00);
+                  flg_n = ra[7];
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ASL absolute, X
+              8'h1E: begin
+                if (data_available == 0) begin
+                  automatic logic [15:0] addr = ({operands[7:0], operands[15:8]} + rx) & 16'hFFFF;
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  flg_c = dout[7];  // Capture the carry bit before shifting
+                  ra = dout << 1;
+                  flg_z = (ra == 8'h00);
+                  flg_n = ra[7];
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
               // CMP immediate
               8'hC9: begin
                 automatic logic [7:0] result = ra - operands[7:0];
