@@ -564,6 +564,18 @@ module cpu (
                     fetch_stage <= FETCH_OPERAND1OF2;
                     state <= FETCH_REQ;
                   end
+                  // BIT zero page
+                  8'h24: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // BIT bsolute
+                  8'h2C: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
                   // CMP immediate
                   8'hC9: begin
                     adb <= pc + 1 & RAMW;
@@ -1470,6 +1482,37 @@ module cpu (
                 pc <= pc + 2 & RAMW;
                 adb <= pc + 2 & RAMW;
                 fetch_stage <= FETCH_OPCODE;
+              end
+              // BIT zero apge
+              8'h24: begin
+                if (data_available == 0) begin
+                  adb <= operands[7:0];
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  flg_z = (ra & dout) == 0 ? 1 : 0;
+                  flg_n = dout[7];
+                  flg_v = dout[6];
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // BIT absolute
+              8'h2C: begin
+                if (data_available == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  flg_z = (ra & dout) == 0 ? 1 : 0;
+                  flg_n = dout[7];
+                  flg_v = dout[6];
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
               end
               // CMP zero page
               8'hC5: begin
