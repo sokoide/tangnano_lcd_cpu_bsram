@@ -70,11 +70,12 @@ module cpu (
   // program to load at startup
   initial begin
     // Simple 3)
+    // copy 0x00-0x7F to 0xE000-0xE07F (VRAM)
     boot_program[0]  = 8'hA0;  // LDY #$00
     boot_program[1]  = 8'h00;
     boot_program[2]  = 8'hA2;  // LDX #$00
     boot_program[3]  = 8'h00;
-    boot_program[4]  = 8'h8A;  // TXA (A=ZX)
+    boot_program[4]  = 8'h8A;  // TXA (A=X)
     boot_program[5]  = 8'h99;  // STA $E000, Y
     boot_program[6]  = 8'h00;
     boot_program[7]  = 8'hE0;
