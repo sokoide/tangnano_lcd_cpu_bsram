@@ -488,6 +488,54 @@ module cpu (
                     fetch_stage <= FETCH_OPERAND1;
                     state <= FETCH_REQ;
                   end
+                  // AND immediate
+                  8'h29: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // AND zero page
+                  8'h25: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // AND zero page, X
+                  8'h35: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // AND absolute
+                  8'h2D: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // AND absolute, X
+                  8'h3D: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // AND absolute, Y
+                  8'h39: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // AND (indirect, X)
+                  8'h21: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // AND (indirect), Y
+                  8'h31: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
                   // CMP immediate
                   8'hC9: begin
                     adb <= pc + 1 & RAMW;
@@ -1128,8 +1176,8 @@ module cpu (
                   flg_n = ra[7];
                   flg_z = (ra == 8'h00) ? 1 : 0;
 
-                  pc <= pc + 2 & RAMW;
-                  adb <= pc + 2 & RAMW;
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
                   fetch_stage <= FETCH_OPCODE;
                 end
               end
@@ -1151,8 +1199,8 @@ module cpu (
                   flg_n = ra[7];
                   flg_z = (ra == 8'h00) ? 1 : 0;
 
-                  pc <= pc + 2 & RAMW;
-                  adb <= pc + 2 & RAMW;
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
                   fetch_stage <= FETCH_OPCODE;
                 end
               end
@@ -1174,8 +1222,8 @@ module cpu (
                   flg_n = ra[7];
                   flg_z = (ra == 8'h00) ? 1 : 0;
 
-                  pc <= pc + 2 & RAMW;
-                  adb <= pc + 2 & RAMW;
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
                   fetch_stage <= FETCH_OPCODE;
                 end
               end
@@ -1204,7 +1252,111 @@ module cpu (
               // TODO: ADC (indirect), Y
               8'h71: begin
               end
-
+              // AND immediate
+              8'h29: begin
+                ra = ra & operands[7:0] & 8'hFF;
+                flg_z = ra == 0 ? 1 : 0;
+                flg_n = ra[7] == 1 ? 1 : 0;
+                pc <= pc + 2 & RAMW;
+                adb <= pc + 2 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
+              end
+                // AND zero page
+                8'h25: begin
+                if (data_available == 0) begin
+                  adb <= operands[7:0];
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  ra = ra & dout & 8'hFF;
+                  flg_z = ra == 0 ? 1 : 0;
+                  flg_n = ra[7] == 1 ? 1 : 0;
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+                end
+                // AND zero page, X
+                8'h35: begin
+                if (data_available == 0) begin
+                  adb <= (operands[7:0] + rx) & 8'hFF;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  ra = ra & dout & 8'hFF;
+                  flg_z = ra == 0 ? 1 : 0;
+                  flg_n = ra[7] == 1 ? 1 : 0;
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+                end
+                // AND absolute
+                8'h2D: begin
+                if (data_available == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  ra = ra & dout & 8'hFF;
+                  flg_z = ra == 0 ? 1 : 0;
+                  flg_n = ra[7] == 1 ? 1 : 0;
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+                end
+                // AND absolute, X
+                8'h3D: begin
+                if (data_available == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + rx & 16'hFFFF;
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  ra = ra & dout & 8'hFF;
+                  flg_z = ra == 0 ? 1 : 0;
+                  flg_n = ra[7] == 1 ? 1 : 0;
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+                end
+                // AND absolute, Y
+                8'h39: begin
+                if (data_available == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + ry & 16'hFFFF;
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  ra = ra & dout & 8'hFF;
+                  flg_z = ra == 0 ? 1 : 0;
+                  flg_n = ra[7] == 1 ? 1 : 0;
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+                end
+                // AND (indirect, X)
+                8'h21: begin
+                if (data_available == 0) begin
+                  adb <= operands[7:0] + rx & 8'hFF;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  ra = ra & dout & 8'hFF;
+                  flg_z = ra == 0 ? 1 : 0;
+                  flg_n = ra[7] == 1 ? 1 : 0;
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+                end
+                // TODO: AND (indirect), Y
+                8'h31: begin
+                end
               // CMP immediate
               8'hC9: begin
                 automatic logic [7:0] result = ra - operands[7:0];
