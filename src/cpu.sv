@@ -73,7 +73,7 @@ module cpu (
 
   initial begin
     // JSR
-    boot_program[0]  = 8'hEA;  // NOP
+    boot_program[0]  = 8'hBA;  // TSX
     boot_program[1]  = 8'h20;  // JSR foo ($0209)
     boot_program[2]  = 8'h09;
     boot_program[3]  = 8'h02;
@@ -169,7 +169,7 @@ module cpu (
       {ra, rx, ry}                                      <= 8'd0;
       {flg_c, flg_z, flg_i, flg_d, flg_b, flg_v, flg_n} <= 1'b0;
       pc                                                <= 16'h0200;
-      sp                                                <= 8'h00;
+      sp                                                <= 8'hFF;
       ada                                               <= 13'h0000;
       ceb                                               <= 1'b1;
       din                                               <= 8'h0;
@@ -1013,6 +1013,14 @@ module cpu (
                   8'h98: begin
                     state <= DECODE_EXECUTE;
                   end
+                  // TSX
+                  8'hBA: begin
+                    state <= DECODE_EXECUTE;
+                  end
+                  // TXS
+                  8'h9A: begin
+                    state <= DECODE_EXECUTE;
+                  end
                   // BEQ
                   8'hF0: begin
                     adb <= pc + 1 & RAMW;
@@ -1151,8 +1159,8 @@ module cpu (
                   0: begin
                     // always RAM (stack)
                     // push high byte of PC+2
+                    ada <= STACK + sp;
                     sp = sp - 1'd1;
-                    ada   <= STACK + sp;
                     din   <= (pc + 2 & RAMW) >> 8 & 8'hFF;
                     cea   <= 1;
                     state <= WRITE_REQ;
@@ -1160,8 +1168,8 @@ module cpu (
                   1: begin
                     // always RAM (stack)
                     // push high byte of PC+2
+                    ada <= STACK + sp;
                     sp = sp - 1'd1;
-                    ada   <= STACK + sp;
                     din   <= pc + 2 & 8'hFF;
                     cea   <= 1;
                     state <= WRITE_REQ;
@@ -1184,16 +1192,16 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch low byte of PC-1
-                    adb <= STACK + sp;
                     sp = sp + 1'd1;
+                    adb <= STACK + sp;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                   end
                   1: begin
                     // fetch high byte of PC-1
                     fetched_data[7:0] = dout;
-                    adb <= STACK + sp;
                     sp = sp + 1'd1;
+                    adb <= STACK + sp;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                   end
@@ -1209,8 +1217,8 @@ module cpu (
               end
               // PHA; push accumulator
               8'h48: begin
-                sp = sp - 1'd1;
                 ada <= STACK + sp;
+                sp = sp - 1'd1;
                 din <= ra;
                 cea <= 1;
                 pc <= pc + 1 & RAMW;
@@ -1221,8 +1229,8 @@ module cpu (
               // PLA; pull accumulator
               8'h68: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= STACK + sp;
                   sp = sp + 1'd1;
+                  adb <= STACK + sp;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
                 end else begin
@@ -1237,8 +1245,8 @@ module cpu (
               end
               // PHP; push processor status
               8'h08: begin
-                sp = sp - 1'd1;
                 ada <= STACK + sp;
+                sp = sp - 1'd1;
                 din <= {flg_n, flg_v, 1'b1, flg_b, flg_d, flg_i, flg_z, flg_c};
                 cea <= 1;
                 pc <= pc + 1 & RAMW;
@@ -1249,8 +1257,8 @@ module cpu (
               // PLP; pull processor status
               8'h28: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= STACK + sp;
                   sp = sp + 1'd1;
+                  adb <= STACK + sp;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
                 end else begin
@@ -2551,95 +2559,6 @@ module cpu (
                   fetch_stage <= FETCH_OPCODE;
                 end
               end
-              // LSR accumulator
-              8'h4A: begin
-                flg_c = ra[0];  // Capture the carry bit before shifting
-                ra = ra >> 1;
-                flg_z = (ra == 8'h00);
-                flg_n = 1'b0;  // LSR always clears the negative flag
-                pc <= pc + 1 & RAMW;
-                adb <= pc + 1 & RAMW;
-                state <= FETCH_REQ;
-                fetch_stage <= FETCH_OPCODE;
-              end
-              // LSR zero page
-              8'h46: begin
-                if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                end else begin
-                  flg_c = dout[0];  // Capture the carry bit before shifting
-                  din   = dout >> 1;
-                  ada <= operands[7:0];
-                  cea <= 1;
-                  flg_z = (din == 8'h00);
-                  flg_n = 1'b0;  // LSR always clears the negative flag
-                  pc <= pc + 2 & RAMW;
-                  adb <= pc + 2 & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_OPCODE;
-                end
-              end
-              // LSR zero page, X
-              8'h56: begin
-                if (fetched_data_bytes == 0) begin
-                  adb <= (operands[7:0] + rx) & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                end else begin
-                  flg_c = dout[0];  // Capture the carry bit before shifting
-                  din   = dout >> 1;
-                  ada <= (operands[7:0] + rx) & 8'hFF;
-                  cea <= 1;
-                  flg_z = (din == 8'h00);
-                  flg_n = 1'b0;  // LSR always clears the negative flag
-                  pc <= pc + 2 & RAMW;
-                  adb <= pc + 2 & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_OPCODE;
-                end
-              end
-              // LSR absolute
-              8'h4E: begin
-                if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                end else begin
-                  flg_c = dout[0];  // Capture the carry bit before shifting
-                  din   = dout >> 1;
-                  ada <= {operands[7:0], operands[15:8]} & RAMW;
-                  cea <= 1;
-                  flg_z = (din == 8'h00);
-                  flg_n = 1'b0;  // LSR always clears the negative flag
-                  pc <= pc + 3 & RAMW;
-                  adb <= pc + 3 & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_OPCODE;
-                end
-              end
-              // LSR absolute, X
-              8'h5E: begin
-                if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = ({operands[7:0], operands[15:8]} + rx) & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                end else begin
-                  flg_c = dout[0];  // Capture the carry bit before shifting
-                  din   = dout >> 1;
-                  ada <= ({operands[7:0], operands[15:8]} + rx) & RAMW;
-                  cea <= 1;
-                  flg_z = (din == 8'h00);
-                  flg_n = 1'b0;  // LSR always clears the negative flag
-                  pc <= pc + 3 & RAMW;
-                  adb <= pc + 3 & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_OPCODE;
-                end
-              end
               // ROL accumulator
               8'h2A: begin
                 automatic logic carry_in = flg_c;
@@ -3100,6 +3019,25 @@ module cpu (
                 state <= FETCH_REQ;
                 fetch_stage <= FETCH_OPCODE;
               end
+              // TSX
+              8'hBA: begin
+                rx = sp;
+                flg_z = (rx == 8'h00);
+                flg_n = rx[7];
+                pc <= pc + 1 & RAMW;
+                adb <= pc + 1 & RAMW;
+                state <= FETCH_REQ;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // TXS
+              8'h9A: begin
+                sp = rx;
+                pc <= pc + 1 & RAMW;
+                adb <= pc + 1 & RAMW;
+                state <= FETCH_REQ;
+                fetch_stage <= FETCH_OPCODE;
+              end
+
               // BEQ
               8'hF0: begin
                 if (flg_z == 1) begin

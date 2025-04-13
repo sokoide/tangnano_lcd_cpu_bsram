@@ -63,10 +63,9 @@
 
 ## Implemented Instructions
 
-* '+': implemented
-* ' ': todo
-* '-': not going to be implemented
-* '*': special instruction not available in 6502
+* **+**: implemented
+* **-**: not going to be implemented
+* ' ' (blank) : not implemented yet
 
 |     | 0x0 | 0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 | 0x8 | 0x9 | 0xA | 0xB | 0xC | 0xD | 0xE | 0xF |
 |-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
@@ -99,13 +98,13 @@
 |     |     |     |     |     | +   | +   | +   |     | +   |     | +   |     | +   | +   | +   |     |
 | 0x9 | BCC | STA |     |     | STY | STA | STX |     | TYA | STA | TXS |     |     | STA |     |     |
 |     | rel | idy |     |     | zpx | zpx | zpy |     | impl| aby | impl|     |     | abx |     |     |
-|     | +   |     |     |     | +   | +   | +   |     | +   | +   |     |     |     | +   |     |     |
+|     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     |     | +   |     |     |
 | 0xA | LDY | LDA | LDX |     | LDY | LDA | LDX |     | TAY | LDA | TAX |     | LDY | LDA | LDX |     |
 |     | imm | idx | imm |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs |     |
 |     | +   |     | +   |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
 | 0xB | BCS | LDA |     |     | LDY | LDA | LDX |     | CLV | LDA | TSX |     | LDY | LDA | LDX |     |
 |     | rel | idy |     |     | zpx | zpx | zpy |     | impl| aby | impl|     | abx | abx | aby |     |
-|     | +   |     |     |     | +   | +   | +   |     | +   | +   |     |     | +   | +   | +   |     |
+|     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
 | 0xC | CPY | CMP |     |     | CPY | CMP | DEC |     | INY | CMP | DEX |     | CPY | CMP | DEC |     |
 |     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs |     |
 |     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
@@ -114,7 +113,7 @@
 |     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   |     |
 | 0xE | CPX | SBC |     |     | CPX | SBC | INC |     | INX | SBC | NOP |     | CPX | SBC | INC |     |
 |     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs |     |
-|     | +   |     |     |     | +   | +   | +   |     | +   | +   |+    |     | +   | +   | +   |     |
+|     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
 | 0xF | BEQ | SBC |     |     |     | SBC | INC |     | SED | SBC |     |     |     | SBC | INC |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
 |     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   |     |
