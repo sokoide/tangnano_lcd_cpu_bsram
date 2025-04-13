@@ -1191,29 +1191,81 @@ module cpu (
                 adb <= pc + 3 & RAMW;
                 fetch_stage <= FETCH_OPCODE;
               end
-              // TODO: STA (indirext, X)
+              // TODO: STA (indirect, X)
               8'h81: begin
               end
-              // TODO: STA (indirext), Y
+              // TODO: STA (indirect), Y
               8'h91: begin
               end
-              // TODO: STX zero page
+              // STX zero page
               8'h86: begin
+                ada <= operands[7:0];
+                din <= rx;
+                cea <= 1;
+                pc <= pc + 2 & RAMW;
+                adb <= pc + 2 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
               end
-              // TODO: STX zero page, Y
+              // STX zero page, Y
               8'h96: begin
+                ada <= operands[7:0] + ry & 8'hFF;
+                din <= rx;
+                cea <= 1;
+                pc <= pc + 2 & RAMW;
+                adb <= pc + 2 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
               end
-              // TODO: STX absolute
+              // STX absolute
               8'h8E: begin
+                // check if it's RAM or VRAM
+                automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
+                if (addr >= VRAM_START) begin
+                  v_ada <= addr - VRAM_START & VRAMW;
+                  v_din <= rx;
+                  v_cea <= 1;
+                end else begin
+                  ada <= addr & RAMW;
+                  din <= rx;
+                  cea <= 1;
+                end
+                pc <= pc + 3 & RAMW;
+                adb <= pc + 3 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
               end
-              //  TODO:STY zero page
+              //  STY zero page
               8'h84: begin
+                ada <= operands[7:0];
+                din <= ry;
+                cea <= 1;
+                pc <= pc + 2 & RAMW;
+                adb <= pc + 2 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
               end
-              //  TODO:STY zero page, X
+              //  STY zero page, X
               8'h94: begin
+                ada <= operands[7:0] + rx & 8'hFF;
+                din <= ry;
+                cea <= 1;
+                pc <= pc + 2 & RAMW;
+                adb <= pc + 2 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
               end
-              // TODO: STY absolute
+              // STY absolute
               8'h8C: begin
+                // check if it's RAM or VRAM
+                automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
+                if (addr >= VRAM_START) begin
+                  v_ada <= addr - VRAM_START & VRAMW;
+                  v_din <= ry;
+                  v_cea <= 1;
+                end else begin
+                  ada <= addr & RAMW;
+                  din <= ry;
+                  cea <= 1;
+                end
+                pc <= pc + 3 & RAMW;
+                adb <= pc + 3 & RAMW;
+                fetch_stage <= FETCH_OPCODE;
               end
               // TODO: INC zero page
               8'hE6: begin
