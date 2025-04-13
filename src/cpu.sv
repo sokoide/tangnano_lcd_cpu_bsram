@@ -788,6 +788,7 @@ module cpu (
                     state <= FETCH_REQ;
                   end
                   // ASL accumulator; Arithmetic Shift Left
+                  // Arithmetic == keep the sign flag
                   8'h0A: begin
                     state <= DECODE_EXECUTE;
                   end
@@ -811,6 +812,35 @@ module cpu (
                   end
                   // ASL absolute, X
                   8'h1E: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // LSR accumulator; Logical Shift Right
+                  // Logical == simple shift (don't keep the sign flag)
+                  8'h4A: begin
+                    state <= DECODE_EXECUTE;
+                  end
+                  // LSR zero page
+                  8'h46: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // LSR zero page, X
+                  8'h56: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // LSR absolute
+                  8'h4E: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // LSR absolute, X
+                  8'h5E: begin
                     adb <= pc + 1 & RAMW;
                     fetch_stage <= FETCH_OPERAND1OF2;
                     state <= FETCH_REQ;
@@ -2440,6 +2470,176 @@ module cpu (
               8'h11: begin
                 // TODO: Implement ORA (indirect), Y
               end
+              // ASL accumulator
+              8'h0A: begin
+                flg_c = ra[7];  // Capture the carry bit before shifting
+                ra = ra << 1;
+                flg_z = (ra == 8'h00);
+                flg_n = ra[7];
+                pc <= pc + 1 & RAMW;
+                adb <= pc + 1 & RAMW;
+                state <= FETCH_REQ;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // ASL zero pabe
+              8'h06: begin
+                if (fetched_data_bytes == 0) begin
+                  adb <= operands[7:0];
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  flg_c = dout[7];  // Capture the carry bit before shifting
+                  ra = dout << 1;
+                  flg_z = (ra == 8'h00);
+                  flg_n = ra[7];
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ASL zero page, X
+              8'h16: begin
+                if (fetched_data_bytes == 0) begin
+                  adb <= (operands[7:0] + rx) & 8'hFF;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  flg_c = dout[7];  // Capture the carry bit before shifting
+                  ra = dout << 1;
+                  flg_z = (ra == 8'h00);
+                  flg_n = ra[7];
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ASL absolute
+              8'h0E: begin
+                if (fetched_data_bytes == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  flg_c = dout[7];  // Capture the carry bit before shifting
+                  ra = dout << 1;
+                  flg_z = (ra == 8'h00);
+                  flg_n = ra[7];
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ASL absolute, X
+              8'h1E: begin
+                if (fetched_data_bytes == 0) begin
+                  automatic logic [15:0] addr = ({operands[7:0], operands[15:8]} + rx) & 16'hFFFF;
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  flg_c = dout[7];  // Capture the carry bit before shifting
+                  ra = dout << 1;
+                  flg_z = (ra == 8'h00);
+                  flg_n = ra[7];
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // LSR accumulator
+              8'h4A: begin
+                flg_c = ra[0];  // Capture the carry bit before shifting
+                ra = ra >> 1;
+                flg_z = (ra == 8'h00);
+                flg_n = 1'b0;  // LSR always clears the negative flag
+                pc <= pc + 1 & RAMW;
+                adb <= pc + 1 & RAMW;
+                state <= FETCH_REQ;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // LSR zero page
+              8'h46: begin
+                if (fetched_data_bytes == 0) begin
+                  adb <= operands[7:0];
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  flg_c = dout[0];  // Capture the carry bit before shifting
+                  din   = dout >> 1;
+                  ada <= operands[7:0];
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = 1'b0;  // LSR always clears the negative flag
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // LSR zero page, X
+              8'h56: begin
+                if (fetched_data_bytes == 0) begin
+                  adb <= (operands[7:0] + rx) & 8'hFF;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  flg_c = dout[0];  // Capture the carry bit before shifting
+                  din   = dout >> 1;
+                  ada <= (operands[7:0] + rx) & 8'hFF;
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = 1'b0;  // LSR always clears the negative flag
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // LSR absolute
+              8'h4E: begin
+                if (fetched_data_bytes == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  flg_c = dout[0];  // Capture the carry bit before shifting
+                  din   = dout >> 1;
+                  ada <= {operands[7:0], operands[15:8]} & RAMW;
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = 1'b0;  // LSR always clears the negative flag
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // LSR absolute, X
+              8'h5E: begin
+                if (fetched_data_bytes == 0) begin
+                  automatic logic [15:0] addr = ({operands[7:0], operands[15:8]} + rx) & 16'hFFFF;
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  flg_c = dout[0];  // Capture the carry bit before shifting
+                  din   = dout >> 1;
+                  ada <= ({operands[7:0], operands[15:8]} + rx) & RAMW;
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = 1'b0;  // LSR always clears the negative flag
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
               // ROL accumulator
               8'h2A: begin
                 automatic logic carry_in = flg_c;
@@ -2622,87 +2822,6 @@ module cpu (
                   cea <= 1;
                   flg_z = (din == 8'h00);
                   flg_n = din[7];
-                  pc <= pc + 3 & RAMW;
-                  adb <= pc + 3 & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_OPCODE;
-                end
-              end
-              // ASL accumulator
-              8'h0A: begin
-                flg_c = ra[7];  // Capture the carry bit before shifting
-                ra = ra << 1;
-                flg_z = (ra == 8'h00);
-                flg_n = ra[7];
-                pc <= pc + 1 & RAMW;
-                adb <= pc + 1 & RAMW;
-                state <= FETCH_REQ;
-                fetch_stage <= FETCH_OPCODE;
-              end
-              // ASL zero pabe
-              8'h06: begin
-                if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                end else begin
-                  flg_c = dout[7];  // Capture the carry bit before shifting
-                  ra = dout << 1;
-                  flg_z = (ra == 8'h00);
-                  flg_n = ra[7];
-                  pc <= pc + 2 & RAMW;
-                  adb <= pc + 2 & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_OPCODE;
-                end
-              end
-              // ASL zero page, X
-              8'h16: begin
-                if (fetched_data_bytes == 0) begin
-                  adb <= (operands[7:0] + rx) & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                end else begin
-                  flg_c = dout[7];  // Capture the carry bit before shifting
-                  ra = dout << 1;
-                  flg_z = (ra == 8'h00);
-                  flg_n = ra[7];
-                  pc <= pc + 2 & RAMW;
-                  adb <= pc + 2 & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_OPCODE;
-                end
-              end
-              // ASL absolute
-              8'h0E: begin
-                if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                end else begin
-                  flg_c = dout[7];  // Capture the carry bit before shifting
-                  ra = dout << 1;
-                  flg_z = (ra == 8'h00);
-                  flg_n = ra[7];
-                  pc <= pc + 3 & RAMW;
-                  adb <= pc + 3 & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_OPCODE;
-                end
-              end
-              // ASL absolute, X
-              8'h1E: begin
-                if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = ({operands[7:0], operands[15:8]} + rx) & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                end else begin
-                  flg_c = dout[7];  // Capture the carry bit before shifting
-                  ra = dout << 1;
-                  flg_z = (ra == 8'h00);
-                  flg_n = ra[7];
                   pc <= pc + 3 & RAMW;
                   adb <= pc + 3 & RAMW;
                   state <= FETCH_REQ;

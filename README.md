@@ -84,16 +84,16 @@
 |     | +   |     |     |     |     | +   | +   |     | +   | +   |     |     |     | +   | +   |     |
 | 0x4 | RTI | EOR |     |     |     | EOR | LSR |     | PHA | EOR | LSR |     | JMP | EOR | LSR |     |
 |     | impl| idx |     |     |     | zp  | zp  |     | impl| imm | acc |     | abs | abs | abs |     |
-|     | -   |     |     |     |     | +   |     |     | +   | +   |     |     | +   | +   |     |     |
+|     | -   |     |     |     |     | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
 | 0x5 | BVC | EOR |     |     |     | EOR | LSR |     | CLI | EOR |     |     |     | EOR | LSR |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
-|     | +   |     |     |     |     | +   |     |     | -   | +   |     |     |     | +   |     |     |
+|     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   |     |
 | 0x6 | RTS | ADC |     |     |     | ADC | ROR |     | PLA | ADC | ROR |     | JMP | ADC | ROR |     |
 |     | impl| idx |     |     |     | zp  | zp  |     | impl| imm | acc |     | ind | abs | abs |     |
 |     | +   |     |     |     |     | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
 | 0x7 | BVS | ADC |     |     |     | ADC | ROR |     | SEI | ADC |     |     |     | ADC | ROR |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
-|     | +   |     |     |     |     | +   | +   |     |     | +   |     |     |     | +   | +   |     |
+|     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   |     |
 | 0x8 |     | STA |     |     | STY | STA | STX |     | DEY |     | TXA |     | STY | STA | STX |     |
 |     |     | idx |     |     | zp  | zp  | zp  |     | impl|     | impl|     | abs | abs | abs |     |
 |     |     |     |     |     | +   | +   | +   |     | +   |     | +   |     | +   | +   | +   |     |
@@ -102,10 +102,10 @@
 |     | +   |     |     |     | +   | +   | +   |     | +   | +   |     |     |     | +   |     |     |
 | 0xA | LDY | LDA | LDX |     | LDY | LDA | LDX |     | TAY | LDA | TAX |     | LDY | LDA | LDX |     |
 |     | imm | idx | imm |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs |     |
-|     | +   | +   |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
+|     | +   |     | +   |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
 | 0xB | BCS | LDA |     |     | LDY | LDA | LDX |     | CLV | LDA | TSX |     | LDY | LDA | LDX |     |
 |     | rel | idy |     |     | zpx | zpx | zpy |     | impl| aby | impl|     | abx | abx | aby |     |
-|     | +   |     |     |     | +   | +   | +   |     |     | +   |     |     | +   | +   | +   |     |
+|     | +   |     |     |     | +   | +   | +   |     | +   | +   |     |     | +   | +   | +   |     |
 | 0xC | CPY | CMP |     |     | CPY | CMP | DEC |     | INY | CMP | DEX |     | CPY | CMP | DEC |     |
 |     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs |     |
 |     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
