@@ -73,16 +73,16 @@ module cpu (
 
   initial begin
     // JSR
-    boot_program[0] = 8'hEA;  // NOP
-    boot_program[1] = 8'h20;  // JSR foo ($0209)
-    boot_program[2] = 8'h09;
-    boot_program[3] = 8'h02;
-    boot_program[4] = 8'hA9;  // LDA #$02
-    boot_program[5] = 8'h02;
-    boot_program[6] = 8'h18;  // CLC
-    boot_program[7] = 8'h90;  // BCC -2; PC+2-2=loop here
-    boot_program[8] = 8'hFE;
-    boot_program[9] = 8'hA9;  // foo function, lda $2A
+    boot_program[0]  = 8'hEA;  // NOP
+    boot_program[1]  = 8'h20;  // JSR foo ($0209)
+    boot_program[2]  = 8'h09;
+    boot_program[3]  = 8'h02;
+    boot_program[4]  = 8'hA9;  // LDA #$02
+    boot_program[5]  = 8'h02;
+    boot_program[6]  = 8'h18;  // CLC
+    boot_program[7]  = 8'h90;  // BCC -2; PC+2-2=loop here
+    boot_program[8]  = 8'hFE;
+    boot_program[9]  = 8'hA9;  // foo function, lda $2A
     boot_program[10] = 8'h2A;
     boot_program[11] = 8'h60;  // RTS
 
@@ -579,6 +579,54 @@ module cpu (
                     fetch_stage <= FETCH_OPERAND1;
                     state <= FETCH_REQ;
                   end
+                  // SBC immediate
+                  8'hE9: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // SBC zero page
+                  8'hE5: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // SBC zero page, X
+                  8'hF5: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // SBC absolute
+                  8'hED: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // SBC absolute, X
+                  8'hFD: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // SBC absolute, Y
+                  8'hF9: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // SBC (indirect, X)
+                  8'hE1: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // SBC (indirect), Y
+                  8'hF1: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
                   // AND immediate
                   8'h29: begin
                     adb <= pc + 1 & RAMW;
@@ -950,18 +998,18 @@ module cpu (
                     // always RAM (stack)
                     // push high byte of PC+2
                     sp = sp - 1'd1;
-                    ada <= STACK + sp;
+                    ada   <= STACK + sp;
                     din   <= (pc + 2 & RAMW) >> 8 & 8'hFF;
-                    cea <= 1;
+                    cea   <= 1;
                     state <= WRITE_REQ;
                   end
                   1: begin
                     // always RAM (stack)
                     // push high byte of PC+2
                     sp = sp - 1'd1;
-                    ada <= STACK + sp;
+                    ada   <= STACK + sp;
                     din   <= pc + 2 & 8'hFF;
-                    cea <= 1;
+                    cea   <= 1;
                     state <= WRITE_REQ;
                   end
                   2: begin
@@ -1626,9 +1674,9 @@ module cpu (
               // ADC immediate
               8'h69: begin
                 automatic logic [8:0] temp;  // make it 9bit to include carry
+                // in ADC, +1 if flg_c is 1
                 temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
-
-                flg_c = temp > 8'hFF ? 1 : 0;
+                flg_c = temp[8];
                 flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                 ra = temp[7:0];
@@ -1650,7 +1698,7 @@ module cpu (
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
                   temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
-                  flg_c = temp > 8'hFF ? 1 : 0;
+                  flg_c = temp[8];
                   flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                   ra = temp[7:0];
@@ -1673,7 +1721,7 @@ module cpu (
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
                   temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
-                  flg_c = temp > 8'hFF ? 1 : 0;
+                  flg_c = temp[8];
                   flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                   ra = temp[7:0];
@@ -1697,7 +1745,7 @@ module cpu (
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
                   temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
-                  flg_c = temp > 8'hFF ? 1 : 0;
+                  flg_c = temp[8];
                   flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                   ra = temp[7:0];
@@ -1721,7 +1769,7 @@ module cpu (
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
                   temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
-                  flg_c = temp > 8'hFF ? 1 : 0;
+                  flg_c = temp[8];
                   flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                   ra = temp[7:0];
@@ -1745,7 +1793,7 @@ module cpu (
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
                   temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
-                  flg_c = temp > 8'hFF ? 1 : 0;
+                  flg_c = temp[8];
                   flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                   ra = temp[7:0];
@@ -1764,6 +1812,156 @@ module cpu (
               end
               // TODO: ADC (indirect), Y
               8'h71: begin
+              end
+              // SBC immediate
+              8'hE9: begin
+                automatic logic [8:0] temp;  // make it 9bit to include borrow
+                // in SBC, -1 if flg_c is 0 (clear)
+                temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+
+                flg_c = ~temp[8]; // Borrow flag (inverted carry)
+                flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                ra = temp[7:0];
+
+                flg_n = ra[7];
+                flg_z = (ra == 8'h00);
+
+                pc <= pc + 2 & RAMW;
+                adb <= pc + 2 & RAMW;
+                state <= FETCH_REQ;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // SBC zero page
+              8'hE5: begin
+                if (fetched_data_bytes == 0) begin
+                  adb <= operands[7:0];
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic [8:0] temp;  // make it 9bit to include borrow
+                  temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+
+                  flg_c = ~temp[8]; // Borrow flag (inverted carry)
+                  flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                  ra = temp[7:0];
+
+                  flg_n = ra[7];
+                  flg_z = (ra == 8'h00);
+
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // SBC zero page, X
+              8'hF5: begin
+                if (fetched_data_bytes == 0) begin
+                  adb <= operands[7:0] + rx & 8'hFF;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic [8:0] temp;  // make it 9bit to include borrow
+                  temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+
+                  flg_c = ~temp[8]; // Borrow flag (inverted carry)
+                  flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                  ra = temp[7:0];
+
+                  flg_n = ra[7];
+                  flg_z = (ra == 8'h00);
+
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // SBC absolute
+              8'hED: begin
+                if (fetched_data_bytes == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & RAMW;
+                  adb <= addr;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic [8:0] temp;  // make it 9bit to include borrow
+                  temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+
+                  flg_c = ~temp[8]; // Borrow flag (inverted carry)
+                  flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                  ra = temp[7:0];
+
+                  flg_n = ra[7];
+                  flg_z = (ra == 8'h00);
+
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // SBC absolute, X
+              8'hFD: begin
+                if (fetched_data_bytes == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + rx & RAMW;
+                  adb <= addr;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic [8:0] temp;  // make it 9bit to include borrow
+                  temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+
+                  flg_c = ~temp[8]; // Borrow flag (inverted carry)
+                  flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                  ra = temp[7:0];
+
+                  flg_n = ra[7];
+                  flg_z = (ra == 8'h00);
+
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // SBC absolute, Y
+              8'hF9: begin
+                if (fetched_data_bytes == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + ry & RAMW;
+                  adb <= addr;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic [8:0] temp;  // make it 9bit to include borrow
+                  temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+
+                  flg_c = ~temp[8]; // Borrow flag (inverted carry)
+                  flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                  ra = temp[7:0];
+
+                  flg_n = ra[7];
+                  flg_z = (ra == 8'h00);
+
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // SBC (indirect, X)
+              8'hE1: begin
+                // TODO: Implement SBC (indirect, X)
+              end
+              // SBC (indirect), Y
+              8'hF1: begin
+                // TODO: Implement SBC (indirect), Y
               end
               // AND immediate
               8'h29: begin
