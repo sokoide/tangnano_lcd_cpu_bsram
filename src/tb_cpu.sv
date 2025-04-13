@@ -14,7 +14,6 @@ module tb_cpu;
   logic [7:0] v_din;
   logic [7:0] v_dout;
 
-
   cpu dut (
       .rst_n(rst_n),
       .clk  (clk),
@@ -59,10 +58,10 @@ module tb_cpu;
 
   initial begin
     $display("=== Test Started ===");
-    clk   = 0;
+    clk = 0;
 
-    reseta <= 0;
-    resetb <= 0;
+    reseta   <= 0;
+    resetb   <= 0;
     v_reseta <= 0;
     v_resetb <= 0;
 
@@ -71,7 +70,7 @@ module tb_cpu;
     rst_n = 1;  // release
 
     // repeat(1) @(posedge clk); is same as #2; because 1 clock on->off is 2 cycles
-    repeat(1200) @(posedge clk);
+    repeat (1200) @(posedge clk);
 
     $display("=== Test End ===");
     $finish;

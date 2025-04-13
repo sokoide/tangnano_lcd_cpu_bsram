@@ -34,12 +34,12 @@ module cpu (
   // Internal states
   logic [7:0] opcode;
   logic [15:0] operands;
-  logic data_available;
+  logic [2:0] retrieved_data_bytes;
+  logic [15:0] retrieved_data;
   logic [7:0] char_code;
   logic [31:0] counter;
   logic [7:0] boot_idx;
   logic boot_write;
-  localparam int unsigned BootProgramLength = $bits(boot_program) / $bits(boot_program[0]);
 
   typedef enum logic [2:0] {
     INIT,
@@ -66,31 +66,48 @@ module cpu (
   fetch_stage_t fetch_stage;
 
   // program to load at startup
-  logic [7:0] boot_program[16];
+  // make sure to set the size boot_progarm[X]
+  logic [7:0] boot_program[13];
 
   initial begin
-    // Simple 3)
-    // copy 0x00-0x7F to 0xE000-0xE07F (VRAM)
-    boot_program[0]  = 8'hA0;  // LDY #$00
-    boot_program[1]  = 8'h00;
-    boot_program[2]  = 8'hA2;  // LDX #$00
+    // JMP Indirect)
+    boot_program[0]  = 8'hA9;  // LDA #$05
+    boot_program[1]  = 8'h05;
+    boot_program[2]  = 8'h8D;  // STA $0300; 0x0300 <- 05
     boot_program[3]  = 8'h00;
-    boot_program[4]  = 8'h8A;  // TXA (A=X)
-    boot_program[5]  = 8'h99;  // STA $E000, Y
-    boot_program[6]  = 8'h00;
-    boot_program[7]  = 8'hE0;
-    boot_program[8]  = 8'hE8;  // INX
-    boot_program[9]  = 8'hC8;  // INY
-    boot_program[10] = 8'hC0;  // CPY #$7F
-    boot_program[11] = 8'h7F;  //
-    boot_program[12] = 8'hD0;  // BNE -10;  PC+2-10=4 (F6=-10)
-    boot_program[13] = 8'hF6;
-    boot_program[14] = 8'h18;  // CLC
-    boot_program[15] = 8'hFE;  // BCC -2; PC+2-2=here
+    boot_program[4]  = 8'h03;
+    boot_program[5]  = 8'hA9;  // LDA #$02
+    boot_program[6]  = 8'h02;
+    boot_program[7]  = 8'h8D;  // STA $0301; 0x0301 <- 02
+    boot_program[8]  = 8'h01;
+    boot_program[9]  = 8'h03;
+    boot_program[10] = 8'h6C;  // JMP ($0300); jump to 0205
+    boot_program[11] = 8'h00;
+    boot_program[12] = 8'h03;
+
+
+    // Simple 3)
+    // // copy 0x00-0x7F to 0xE000-0xE07F (VRAM)
+    // boot_program[0]  = 8'hA0;  // LDY #$00
+    // boot_program[1]  = 8'h00;
+    // boot_program[2]  = 8'hA2;  // LDX #$00
+    // boot_program[3]  = 8'h00;
+    // boot_program[4]  = 8'h8A;  // TXA (A=X)
+    // boot_program[5]  = 8'h99;  // STA $E000, Y
+    // boot_program[6]  = 8'h00;
+    // boot_program[7]  = 8'hE0;
+    // boot_program[8]  = 8'hE8;  // INX
+    // boot_program[9]  = 8'hC8;  // INY
+    // boot_program[10] = 8'hC0;  // CPY #$7F
+    // boot_program[11] = 8'h7F;  //
+    // boot_program[12] = 8'hD0;  // BNE -10;  PC+2-10=4 (F6=-10)
+    // boot_program[13] = 8'hF6;
+    // boot_program[14] = 8'h18;  // CLC
+    // boot_program[15] = 8'hFE;  // BCC -2; PC+2-2=here
 
     // Simple 2) draw 'B' on top-left using zero page
-    // address 00 <- 0x00
-    // address 01 <- 0xE0
+    // // address 00 <- 0x00
+    // // address 01 <- 0xE0
     // boot_program[0]  = 8'hA9;  // LDA #$00
     // boot_program[1]  = 8'h00;
     // boot_program[2]  = 8'h85;  // STA $00
@@ -109,6 +126,7 @@ module cpu (
     // boot_program[15] = 8'h02;
 
     // Simple 1) draw 'A' on top-left
+    // // Program loaded and starts at 0x0200
     // // 0x0200 -0x0201
     // boot_program[0] = 8'hA9;  // LDA 0x41 ; ra register <= 'A'
     // boot_program[1] = 8'h41;
@@ -123,6 +141,8 @@ module cpu (
     // // 0x0208 .. never reaches here
     // boot_program[8] = 8'hEA;  // NOP
   end
+
+  localparam int unsigned BootProgramLength = $bits(boot_program) / $bits(boot_program[0]);
 
   // Sequential logic: use an asynchronous active-low rst_n.
   always_ff @(posedge clk or negedge rst_n) begin
@@ -140,6 +160,9 @@ module cpu (
       v_cea                                             <= 0;
       v_din                                             <= 8'h0;
       opcode                                            <= 8'h0;
+      operands                                          <= 16'h0000;
+      retrieved_data_bytes                              <= 0;
+      retrieved_data                                    <= 16'h0000;
       state                                             <= INIT;
       prev_state                                        <= INIT;
       char_code                                         <= 8'h20;  // ' '
@@ -205,7 +228,7 @@ module cpu (
           FETCH_REQ: begin
             state <= FETCH_RECV;
             if (fetch_stage == FETCH_DATA) begin
-              data_available <= 1;
+              retrieved_data_bytes <= retrieved_data_bytes + 1;
               state <= DECODE_EXECUTE;
             end
           end
@@ -215,7 +238,7 @@ module cpu (
             case (fetch_stage)
               FETCH_OPCODE: begin
                 opcode <= dout;
-                data_available <= 0;
+                retrieved_data_bytes <= 0;
                 cea <= 0;  // disable write
                 case (dout)
                   // NOP
@@ -224,6 +247,12 @@ module cpu (
                   end
                   // JMP immediate
                   8'h4C: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // JMP indirect
+                  8'h6C: begin
                     adb <= pc + 1 & RAMW;
                     fetch_stage <= FETCH_OPERAND1OF2;
                     state <= FETCH_REQ;
@@ -809,7 +838,7 @@ module cpu (
                     state <= DECODE_EXECUTE;
                   end
                   // CLV
-                  8'h8: begin
+                  8'hB8: begin
                     state <= DECODE_EXECUTE;
                   end
 
@@ -849,7 +878,6 @@ module cpu (
                 fetch_stage <= FETCH_OPCODE;
                 state <= FETCH_REQ;
               end
-
               // JMP absolute
               8'h4C: begin
                 automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & RAMW;
@@ -857,6 +885,31 @@ module cpu (
                 adb <= addr;
                 state <= FETCH_REQ;
                 fetch_stage <= FETCH_OPCODE;
+              end
+              // JMP indirect
+              8'h6C: begin
+                case (retrieved_data_bytes)
+                  0: begin
+                    adb <= {operands[7:0], operands[15:8]} & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                  end
+                  1: begin
+                    retrieved_data[7:0] = dout;
+                    adb <= ({operands[7:0], operands[15:8]} + 1) & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                  end
+                  2: begin
+                    // relative data is already in little endian.
+                    automatic logic [15:0] addr = {dout, retrieved_data[7:0]} & RAMW;
+                    retrieved_data[15:8] = dout;
+                    pc <= addr;
+                    adb <= addr;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
               // LDA immediate
               8'hA9: begin
@@ -871,7 +924,7 @@ module cpu (
               // LDA zero page
               8'hA5: begin
                 // fetch operand[7:0]'s value from memory and store it to ra.
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[7:0];
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -889,7 +942,7 @@ module cpu (
               // LDA zero page, X
               8'hB5: begin
                 // fetch operand[7:0] + rx's value from memory and store it to ra.
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= (operands[7:0] + rx) & 8'hFF;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -906,7 +959,7 @@ module cpu (
               // LDA absolute
               8'hAD: begin
                 // fetch operand[15:0]'s value from memory and store it to ra.
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -924,7 +977,7 @@ module cpu (
               // LDA absolute, X
               8'hBD: begin
                 // fetch operand[15:0] + rx's value from memory and store it to ra.
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + rx & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -942,7 +995,7 @@ module cpu (
               // LDA absolute, Y
               8'hB9: begin
                 // fetch operand[15:0] + ry's value from memory and store it to ra.
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + ry & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -981,7 +1034,7 @@ module cpu (
               end
               // LDX zero page
               8'hA6: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[7:0];
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -997,7 +1050,7 @@ module cpu (
               end
               // LDX zero page, Y
               8'hB6: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= (operands[7:0] + ry) & 8'hFF;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1013,7 +1066,7 @@ module cpu (
               end
               // LDX absolute
               8'hAE: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1030,7 +1083,7 @@ module cpu (
               end
               // LDX absolute, Y
               8'hBE: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + ry & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1057,7 +1110,7 @@ module cpu (
               end
               // LDY zero page
               8'hA4: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[7:0];
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1073,7 +1126,7 @@ module cpu (
               end
               // LDY zero page, X
               8'hB4: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= (operands[7:0] + rx) & 8'hFF;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1089,7 +1142,7 @@ module cpu (
               end
               // LDY absolute
               8'hAC: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1106,7 +1159,7 @@ module cpu (
               end
               // LDY abosolute, X
               8'hBC: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb = operands[15:0] + rx & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1269,7 +1322,7 @@ module cpu (
               end
               // INC zero page
               8'hE6: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[7:0];
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1287,7 +1340,7 @@ module cpu (
               end
               // INC zero page, X
               8'hF6: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[7:0] + rx & 8'hFF;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1305,7 +1358,7 @@ module cpu (
               end
               // INC absolute
               8'hEE: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
                   // VRAM is write only. INC for VRAM is not supported.
                   adb <= addr & RAMW;
@@ -1325,7 +1378,7 @@ module cpu (
               end
               // INC absolute, X
               8'hFE: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + rx & 16'hFFFF;
                   // VRAM is write only. INC for VRAM is not supported.
                   adb <= addr & RAMW;
@@ -1363,7 +1416,7 @@ module cpu (
               end
               // DEC zero page
               8'hC6: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[7:0];
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1381,7 +1434,7 @@ module cpu (
               end
               // DEC zero page, X
               8'hD6: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= (operands[7:0] + rx) & 8'hFF;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1399,7 +1452,7 @@ module cpu (
               end
               // DEC absolute
               8'hCE: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1418,7 +1471,7 @@ module cpu (
               end
               // DEC absolute, X
               8'hDE: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = ({operands[7:0], operands[15:8]} + rx) & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1472,7 +1525,7 @@ module cpu (
               end
               // ADC zero page
               8'h65: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[7:0];
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1494,7 +1547,7 @@ module cpu (
               end
               // ADC zero page, X
               8'h75: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[7:0] + rx & 8'hFF;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1516,7 +1569,7 @@ module cpu (
               end
               // ADC absolute
               8'h6D: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & RAMW;
                   adb <= addr;
                   state <= FETCH_REQ;
@@ -1539,7 +1592,7 @@ module cpu (
               end
               // ADC absolute, X
               8'h7D: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + rx & RAMW;
                   adb <= addr;
                   state <= FETCH_REQ;
@@ -1562,7 +1615,7 @@ module cpu (
               end
               // ADC absolute, Y
               8'h79: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + ry & RAMW;
                   adb <= addr;
                   state <= FETCH_REQ;
@@ -1600,7 +1653,7 @@ module cpu (
               end
               // AND zero page
               8'h25: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[7:0];
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1615,7 +1668,7 @@ module cpu (
               end
               // AND zero page, X
               8'h35: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= (operands[7:0] + rx) & 8'hFF;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1630,7 +1683,7 @@ module cpu (
               end
               // AND absolute
               8'h2D: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1646,7 +1699,7 @@ module cpu (
               end
               // AND absolute, X
               8'h3D: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + rx & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1662,7 +1715,7 @@ module cpu (
               end
               // AND absolute, Y
               8'h39: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + ry & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1693,7 +1746,7 @@ module cpu (
               end
               // EOR zero page
               8'h45: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[7:0];
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1708,7 +1761,7 @@ module cpu (
               end
               // EOR zero page, X
               8'h55: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= (operands[7:0] + rx) & 8'hFF;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1723,7 +1776,7 @@ module cpu (
               end
               // EOR absolute
               8'h4D: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1739,7 +1792,7 @@ module cpu (
               end
               // EOR absolute, X
               8'h5D: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + rx & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1755,7 +1808,7 @@ module cpu (
               end
               // EOR absolute, Y
               8'h59: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + ry & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1787,7 +1840,7 @@ module cpu (
               end
               // ASL zero pabe
               8'h06: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[7:0];
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1803,7 +1856,7 @@ module cpu (
               end
               // ASL zero page, X
               8'h16: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= (operands[7:0] + rx) & 8'hFF;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1819,7 +1872,7 @@ module cpu (
               end
               // ASL absolute
               8'h0E: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1836,7 +1889,7 @@ module cpu (
               end
               // ASL absolute, X
               8'h1E: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = ({operands[7:0], operands[15:8]} + rx) & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1863,7 +1916,7 @@ module cpu (
               end
               // BIT zero apge
               8'h24: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[7:0];
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1878,7 +1931,7 @@ module cpu (
               end
               // BIT absolute
               8'h2C: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1894,7 +1947,7 @@ module cpu (
               end
               // CMP zero page
               8'hC5: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[7:0];
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1910,7 +1963,7 @@ module cpu (
               end
               // CMP zero page, X
               8'hD5: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= (operands[7:0] + rx) & 8'hFF;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1926,7 +1979,7 @@ module cpu (
               end
               // CMP absolute
               8'hCD: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1943,7 +1996,7 @@ module cpu (
               end
               // CMP absolute, X
               8'hDD: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + rx & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -1960,7 +2013,7 @@ module cpu (
               end
               // CMP absolute, Y
               8'hD9: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[15:0] + ry & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -1992,7 +2045,7 @@ module cpu (
               end
               // CPX zero page
               8'hE4: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[7:0];
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -2008,7 +2061,7 @@ module cpu (
               end
               // CPX absolute
               8'hEC: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -2035,7 +2088,7 @@ module cpu (
               end
               // CPY zero page
               8'hC4: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   adb <= operands[7:0];
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -2051,7 +2104,7 @@ module cpu (
               end
               // CPY absolute
               8'hCC: begin
-                if (data_available == 0) begin
+                if (retrieved_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
                   adb <= addr & RAMW;
                   state <= FETCH_REQ;
@@ -2231,7 +2284,7 @@ module cpu (
                 state <= FETCH_REQ;
               end
               // CLV
-              8'h18: begin
+              8'hB8: begin
                 flg_v = 1'b0;
                 pc <= pc + 1 & RAMW;
                 adb <= pc + 1 & RAMW;
