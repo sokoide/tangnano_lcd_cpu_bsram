@@ -1,10 +1,9 @@
-# Tang Nano LCD + 8bit CPU + BSRAM example
+# Tang Nano LCD + 8bit 6502 CPU + BSRAM example
 
 ## About
 
 * Tang Nano 9K or 20K + 043026-N6(ML) 4.3 inch 480x272 LCD module example
 * Change Makefile, Select Device and update the `.cst` file for 20K
-* The CPU is like 6502
 
 ## 043026-N6(ML) LCD spec
 
@@ -64,8 +63,12 @@
 ## Implemented Instructions
 
 * **+**: implemented
+  * All 6502 instructions except for the followings
 * **-**: not going to be implemented
+  * break, interrupt related oned
 * ' ' (blank) : not implemented yet
+  * (Indirect X)
+  * (Indirect), Y
 
 |     | 0x0 | 0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 | 0x8 | 0x9 | 0xA | 0xB | 0xC | 0xD | 0xE | 0xF |
 |-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
@@ -151,9 +154,12 @@ Total 1KB VRAM (SDPB):
 
 ## Font ROM
 
+* Used [Sweet16Font](https://github.com/kmar/Sweet16Font) licensed under boost software license, meaning you don't have to give credit/embed license
+
 ```text
 Total 4KB Font ROM (pROM):
-0xF000-0xFFFF: Font ROM (4KB)
+Not mapped, can't access from CPU. Only 128 chars are embeded so far. Code 128-255 may be used for games, etc.
+pROM address: 0x0000-0x0FFF: Font ROM (4KB)
   16x8 ‎ = 128bits = 16bytes / char
   16 bytes x 256 chars ‎ =  4KB
 ```
