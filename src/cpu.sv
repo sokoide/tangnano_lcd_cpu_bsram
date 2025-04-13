@@ -415,19 +415,19 @@ module cpu (
                     state <= FETCH_REQ;
                   end
                   // INC zero page, X
-                  8'hE6: begin
+                  8'hF6: begin
                     adb <= pc + 1 & RAMW;
                     fetch_stage <= FETCH_OPERAND1;
                     state <= FETCH_REQ;
                   end
                   // INC absolute
-                  8'hE6: begin
+                  8'hEE: begin
                     adb <= pc + 1 & RAMW;
                     fetch_stage <= FETCH_OPERAND1OF2;
                     state <= FETCH_REQ;
                   end
                   // INC absolute, X
-                  8'hF6: begin
+                  8'hFE: begin
                     adb <= pc + 1 & RAMW;
                     fetch_stage <= FETCH_OPERAND1OF2;
                     state <= FETCH_REQ;
@@ -1267,17 +1267,81 @@ module cpu (
                 adb <= pc + 3 & RAMW;
                 fetch_stage <= FETCH_OPCODE;
               end
-              // TODO: INC zero page
+              // INC zero page
               8'hE6: begin
+                if (data_available == 0) begin
+                  adb <= operands[7:0];
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic [7:0] result = dout + 8'd1;
+                  ada <= operands[7:0];
+                  din <= result;
+                  cea <= 1;
+                  flg_n = result[7];
+                  flg_z = (result == 8'h00);
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
               end
-              // TODO: INC zero page, X
-              8'hE6: begin
+              // INC zero page, X
+              8'hF6: begin
+                if (data_available == 0) begin
+                  adb <= operands[7:0] + rx & 8'hFF;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic [7:0] result = dout + 8'd1;
+                  ada <= operands[7:0];
+                  din <= result;
+                  cea <= 1;
+                  flg_n = result[7];
+                  flg_z = (result == 8'h00);
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
               end
-              // TODO: INC absolute
-              8'hE6: begin
+              // INC absolute
+              8'hEE: begin
+                if (data_available == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
+                  // VRAM is write only. INC for VRAM is not supported.
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic [7:0] result = dout + 8'd1;
+                  ada <= {operands[7:0], operands[15:8]} & RAMW;
+                  din <= result;
+                  cea <= 1;
+                  flg_n = result[7];
+                  flg_z = (result == 8'h00);
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
               end
-              // TODO: INC absolute, X
-              8'hE6: begin
+              // INC absolute, X
+              8'hFE: begin
+                if (data_available == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + rx & 16'hFFFF;
+                  // VRAM is write only. INC for VRAM is not supported.
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic [7:0] result = dout + 8'd1;
+                  ada <= {operands[7:0], operands[15:8]} & RAMW;
+                  din <= result;
+                  cea <= 1;
+                  flg_n = result[7];
+                  flg_z = (result == 8'h00);
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  fetch_stage <= FETCH_OPCODE;
+                end
               end
               // INX
               8'hE8: begin
