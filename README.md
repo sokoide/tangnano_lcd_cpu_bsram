@@ -78,10 +78,10 @@
 |     | +   |     |     |     |     | +   | +   |     | +   | +   |     |     |     | +   | +   |     |
 | 0x2 | JSR | AND |     |     | BIT | AND | ROL |     | PLP | AND | ROL |     | BIT | AND | ROL |     |
 |     | abs | idx |     |     | zp  | zp  | zp  |     | impl| imm | acc |     | abs | abs | abs |     |
-|     | +   |     |     |     | +   | +   |     |     | +   | +   |     |     | +   | +   |     |     |
+|     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
 | 0x3 | BMI | AND |     |     |     | AND | ROL |     | SEC | AND |     |     |     | AND | ROL |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
-|     | +   |     |     |     |     | +   |     |     | +   | +   |     |     |     | +   |     |     |
+|     | +   |     |     |     |     | +   | +   |     | +   | +   |     |     |     | +   | +   |     |
 | 0x4 | RTI | EOR |     |     |     | EOR | LSR |     | PHA | EOR | LSR |     | JMP | EOR | LSR |     |
 |     | impl| idx |     |     |     | zp  | zp  |     | impl| imm | acc |     | abs | abs | abs |     |
 |     | -   |     |     |     |     | +   |     |     | +   | +   |     |     | +   | +   |     |     |
@@ -90,10 +90,10 @@
 |     | +   |     |     |     |     | +   |     |     | -   | +   |     |     |     | +   |     |     |
 | 0x6 | RTS | ADC |     |     |     | ADC | ROR |     | PLA | ADC | ROR |     | JMP | ADC | ROR |     |
 |     | impl| idx |     |     |     | zp  | zp  |     | impl| imm | acc |     | ind | abs | abs |     |
-|     | +   |     |     |     |     | +   |     |     | +   | +   |     |     | +   | +   |     |     |
+|     | +   |     |     |     |     | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
 | 0x7 | BVS | ADC |     |     |     | ADC | ROR |     | SEI | ADC |     |     |     | ADC | ROR |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
-|     | +   |     |     |     |     | +   |     |     |     | +   |     |     |     | +   |     |     |
+|     | +   |     |     |     |     | +   | +   |     |     | +   |     |     |     | +   | +   |     |
 | 0x8 |     | STA |     |     | STY | STA | STX |     | DEY |     | TXA |     | STY | STA | STX |     |
 |     |     | idx |     |     | zp  | zp  | zp  |     | impl|     | impl|     | abs | abs | abs |     |
 |     |     |     |     |     | +   | +   | +   |     | +   |     | +   |     | +   | +   | +   |     |

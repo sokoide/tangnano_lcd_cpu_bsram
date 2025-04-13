@@ -793,29 +793,85 @@ module cpu (
                   end
                   // ASL zero page
                   8'h06: begin
-                    adb <= operands[7:0];
+                    adb <= pc + 1 & RAMW;
                     fetch_stage <= FETCH_OPERAND1;
                     state <= FETCH_REQ;
                   end
                   // ASL zero page, X
                   8'h16: begin
-                    adb <= (operands[7:0] + rx) & 8'hFF;
+                    adb <= pc + 1 & RAMW;
                     fetch_stage <= FETCH_OPERAND1;
                     state <= FETCH_REQ;
                   end
                   // ASL absolute
                   8'h0E: begin
-                    adb <= {operands[7:0], operands[15:8]} & RAMW;
+                    adb <= pc + 1 & RAMW;
                     fetch_stage <= FETCH_OPERAND1OF2;
                     state <= FETCH_REQ;
                   end
                   // ASL absolute, X
                   8'h1E: begin
-                    adb <= ({operands[7:0], operands[15:8]} + rx) & RAMW;
+                    adb <= pc + 1 & RAMW;
                     fetch_stage <= FETCH_OPERAND1OF2;
                     state <= FETCH_REQ;
                   end
-                  // BIT zero page
+                  // ROL accumulator; Rotate Left
+                  8'h2A: begin
+                    state <= DECODE_EXECUTE;
+                  end
+                  // ROL zero page
+                  8'h26: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // ROL zero page, X
+                  8'h36: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // ROL absolute
+                  8'h2E: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // ROL absolute, X
+                  8'h3E: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // ROR accumulator; Rotate Right
+                  8'h6A: begin
+                    state <= DECODE_EXECUTE;
+                  end
+                  // ROR zero page
+                  8'h66: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // ROR zero page, X
+                  8'h76: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1;
+                    state <= FETCH_REQ;
+                  end
+                  // ROR absolute
+                  8'h6E: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // ROR absolute, X
+                  8'h7E: begin
+                    adb <= pc + 1 & RAMW;
+                    fetch_stage <= FETCH_OPERAND1OF2;
+                    state <= FETCH_REQ;
+                  end
+                  // BIT zero page; bit test
                   8'h24: begin
                     adb <= pc + 1 & RAMW;
                     fetch_stage <= FETCH_OPERAND1;
@@ -2383,6 +2439,194 @@ module cpu (
               // ORA (indirect), Y
               8'h11: begin
                 // TODO: Implement ORA (indirect), Y
+              end
+              // ROL accumulator
+              8'h2A: begin
+                automatic logic carry_in = flg_c;
+                flg_c = ra[7];  // Capture the carry bit before shifting
+                ra = (ra << 1) | carry_in;
+                flg_z = (ra == 8'h00);
+                flg_n = ra[7];
+                pc <= pc + 1 & RAMW;
+                adb <= pc + 1 & RAMW;
+                state <= FETCH_REQ;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // ROL zero page
+              8'h26: begin
+                if (fetched_data_bytes == 0) begin
+                  adb <= operands[7:0];
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic carry_in = flg_c;
+                  flg_c = dout[7];  // Capture the carry bit before shifting
+                  din   = (dout << 1) | carry_in;
+                  ada <= operands[7:0];
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = din[7];
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ROL zero page, X
+              8'h36: begin
+                if (fetched_data_bytes == 0) begin
+                  adb <= (operands[7:0] + rx) & 8'hFF;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic carry_in = flg_c;
+                  flg_c = dout[7];  // Capture the carry bit before shifting
+                  din   = (dout << 1) | carry_in;
+                  ada <= (operands[7:0] + rx) & 8'hFF;
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = din[7];
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ROL absolute
+              8'h2E: begin
+                if (fetched_data_bytes == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic carry_in = flg_c;
+                  flg_c = dout[7];  // Capture the carry bit before shifting
+                  din   = (dout << 1) | carry_in;
+                  ada <= {operands[7:0], operands[15:8]} & RAMW;
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = din[7];
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ROL absolute, X
+              8'h3E: begin
+                if (fetched_data_bytes == 0) begin
+                  automatic logic [15:0] addr = ({operands[7:0], operands[15:8]} + rx) & 16'hFFFF;
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic carry_in = flg_c;
+                  flg_c = dout[7];  // Capture the carry bit before shifting
+                  din   = (dout << 1) | carry_in;
+                  ada <= ({operands[7:0], operands[15:8]} + rx) & RAMW;
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = din[7];
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ROR accumulator
+              8'h6A: begin
+                automatic logic carry_in = flg_c;
+                flg_c = ra[0];  // Capture the carry bit before shifting
+                ra = (ra >> 1) | (carry_in << 7);
+                flg_z = (ra == 8'h00);
+                flg_n = ra[7];
+                pc <= pc + 1 & RAMW;
+                adb <= pc + 1 & RAMW;
+                state <= FETCH_REQ;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // ROR zero page
+              8'h66: begin
+                if (fetched_data_bytes == 0) begin
+                  adb <= operands[7:0];
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic carry_in = flg_c;
+                  flg_c = dout[0];  // Capture the carry bit before shifting
+                  din   = (dout >> 1) | (carry_in << 7);
+                  ada <= operands[7:0];
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = din[7];
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ROR zero page, X
+              8'h76: begin
+                if (fetched_data_bytes == 0) begin
+                  adb <= (operands[7:0] + rx) & 8'hFF;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic carry_in = flg_c;
+                  flg_c = dout[0];  // Capture the carry bit before shifting
+                  din   = (dout >> 1) | (carry_in << 7);
+                  ada <= (operands[7:0] + rx) & 8'hFF;
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = din[7];
+                  pc <= pc + 2 & RAMW;
+                  adb <= pc + 2 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ROR absolute
+              8'h6E: begin
+                if (fetched_data_bytes == 0) begin
+                  automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic carry_in = flg_c;
+                  flg_c = dout[0];  // Capture the carry bit before shifting
+                  din   = (dout >> 1) | (carry_in << 7);
+                  ada <= {operands[7:0], operands[15:8]} & RAMW;
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = din[7];
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // ROR absolute, X
+              8'h7E: begin
+                if (fetched_data_bytes == 0) begin
+                  automatic logic [15:0] addr = ({operands[7:0], operands[15:8]} + rx) & 16'hFFFF;
+                  adb <= addr & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic carry_in = flg_c;
+                  flg_c = dout[0];  // Capture the carry bit before shifting
+                  din   = (dout >> 1) | (carry_in << 7);
+                  ada <= ({operands[7:0], operands[15:8]} + rx) & RAMW;
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = din[7];
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
               end
               // ASL accumulator
               8'h0A: begin
