@@ -69,6 +69,8 @@
 * ' ' (blank) : not implemented yet
   * (Indirect X)
   * (Indirect), Y
+* **!**: custom instruction which is not available in 6502
+  * `0xFF` WVS: Wait For VSync ... wait until the next vsync timing of the LCD
 
 |     | 0x0 | 0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 | 0x8 | 0x9 | 0xA | 0xB | 0xC | 0xD | 0xE | 0xF |
 |-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
@@ -117,9 +119,9 @@
 | 0xE | CPX | SBC |     |     | CPX | SBC | INC |     | INX | SBC | NOP |     | CPX | SBC | INC |     |
 |     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs |     |
 |     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
-| 0xF | BEQ | SBC |     |     |     | SBC | INC |     | SED | SBC |     |     |     | SBC | INC |     |
-|     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
-|     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   |     |
+| 0xF | BEQ | SBC |     |     |     | SBC | INC |     | SED | SBC |     |     |     | SBC | INC | WVS |
+|     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx | impl|
+|     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   | !   |
 
 ## 6502 Addressing Modes - Legend
 

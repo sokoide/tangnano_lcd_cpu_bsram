@@ -9,6 +9,7 @@ module tb_lcd;
   logic [4:0] LCD_R;
   logic [9:0] v_adb;
   logic [11:0] f_ad;
+  logic vsync;
 
   lcd dut (
       .PixelClk (clk),
@@ -21,7 +22,8 @@ module tb_lcd;
       .LCD_G (LCD_G),
       .LCD_R (LCD_R),
       .v_adb(v_adb),
-      .f_ad(f_ad)
+      .f_ad(f_ad),
+      .vsync(vsync)
   );
 
   // 20ns clock (#10 means 10ns)

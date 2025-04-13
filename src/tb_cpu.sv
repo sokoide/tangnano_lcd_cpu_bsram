@@ -13,11 +13,13 @@ module tb_cpu;
   logic [9:0] v_ada, v_adb;
   logic [7:0] v_din;
   logic [7:0] v_dout;
+  logic vsync;
 
   cpu dut (
       .rst_n(rst_n),
       .clk  (clk),
       .dout (dout),
+      .vsync(vsync),
       .din  (din),
       .ada  (ada),
       .cea  (cea),

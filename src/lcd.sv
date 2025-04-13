@@ -10,7 +10,8 @@ module lcd (
     output logic [ 5:0] LCD_G,
     output logic [ 4:0] LCD_R,
     output logic [ 9:0] v_adb,
-    output logic [11:0] f_ad
+    output logic [11:0] f_ad,
+    output logic        vsync
 );
 
   // Horizontal and Vertical pixel counters
@@ -32,6 +33,10 @@ module lcd (
       H_PixelCount <= H_PixelCount + 1'b1;
     end
   end
+
+  // vsync
+  assign vsync = (V_PixelCount < V_BackPorch) ||
+               (V_PixelCount >= V_BackPorch + V_PixelValid);
 
   // SYNC-DE MODE
   assign LCD_DE = ((H_PixelCount >= H_BackPorch) &&
@@ -66,7 +71,7 @@ module lcd (
     end else if (active_area) begin
       // get char code
       if (-4 <= x && x < H_PixelValid -4 + 8 && 0 <= y && y < V_PixelValid && (x+4) % 8 == 0) begin
-        v_adb <= (x + 2) / 8 + (y / 16) * 60  & VRAMW;
+        v_adb <= (x + 2) / 8 + (y / 16) * 60 & VRAMW;
       end else if (-3 <= x && x < H_PixelValid -3 + 8 && 0 <= y && y < V_PixelValid && (x+3) % 8 == 0) begin
         char <= v_dout;
       end else if (-2 <= x && x < H_PixelValid -2 + 8 && 0 <= y && y < V_PixelValid && (x+2) % 8 == 0) begin

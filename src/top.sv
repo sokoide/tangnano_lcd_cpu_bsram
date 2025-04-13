@@ -83,6 +83,8 @@ module top (
   );
 
   // LCD
+  logic vsync;
+
   lcd lcd_inst (
       .PixelClk(LCD_CLK),
       .nRST    (rst_n),
@@ -94,7 +96,8 @@ module top (
       .LCD_G (LCD_G),
       .LCD_R (LCD_R),
       .v_adb (v_adb),
-      .f_ad  (f_ad)
+      .f_ad  (f_ad),
+      .vsync (vsync)
   );
 
   // CPU instance
@@ -102,10 +105,11 @@ module top (
       .rst_n(rst_n),
       .clk  (MEMORY_CLK),
       .dout (dout),
+      .vsync(vsync),
       .din  (din),
       .ada  (ada),
-      .cea (cea),
-      .ceb (ceb),
+      .cea  (cea),
+      .ceb  (ceb),
       .adb  (adb),
       .v_ada(v_ada),
       .v_cea(v_cea),
