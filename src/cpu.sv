@@ -287,6 +287,22 @@ module cpu (
                   8'h60: begin
                     state <= DECODE_EXECUTE;
                   end
+                  // PHA; push accumulator
+                  8'h48: begin
+                    state <= DECODE_EXECUTE;
+                  end
+                  // PLA; pull accumulator
+                  8'h68: begin
+                    state <= DECODE_EXECUTE;
+                  end
+                  // PHP; push processor status
+                  8'h08: begin
+                    state <= DECODE_EXECUTE;
+                  end
+                  // PLP; pull processor status
+                  8'h28: begin
+                    state <= DECODE_EXECUTE;
+                  end
                   // LDA immediate
                   8'hA9: begin
                     adb <= pc + 1 & RAMW;
@@ -1104,6 +1120,61 @@ module cpu (
                     fetch_stage <= FETCH_OPCODE;
                   end
                 endcase
+              end
+              // PHA; push accumulator
+              8'h48: begin
+                sp = sp - 1'd1;
+                ada <= STACK + sp;
+                din <= ra;
+                cea <= 1;
+                pc <= pc + 1 & RAMW;
+                adb <= pc + 1 & RAMW;
+                state <= FETCH_REQ;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // PLA; pull accumulator
+              8'h68: begin
+                if (fetched_data_bytes == 0) begin
+                  adb <= STACK + sp;
+                  sp = sp + 1'd1;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  ra = dout;
+                  flg_z = (ra == 8'h00);
+                  flg_n = ra[7];
+                  pc <= pc + 1 & RAMW;
+                  adb <= pc + 1 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
+              end
+              // PHP; push processor status
+              8'h08: begin
+                sp = sp - 1'd1;
+                ada <= STACK + sp;
+                din <= {flg_n, flg_v, 1'b1, flg_b, flg_d, flg_i, flg_z, flg_c};
+                cea <= 1;
+                pc <= pc + 1 & RAMW;
+                adb <= pc + 1 & RAMW;
+                state <= FETCH_REQ;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // PLP; pull processor status
+              8'h28: begin
+                if (fetched_data_bytes == 0) begin
+                  adb <= STACK + sp;
+                  sp = sp + 1'd1;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                end else begin
+                  automatic logic dummy;
+                  {flg_n, flg_v, dummy, flg_b, flg_d, flg_i, flg_z, flg_c} = dout;
+                  pc <= pc + 1 & RAMW;
+                  adb <= pc + 1 & RAMW;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_OPCODE;
+                end
               end
               // LDA immediate
               8'hA9: begin
