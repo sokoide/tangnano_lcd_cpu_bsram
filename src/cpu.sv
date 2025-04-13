@@ -919,6 +919,10 @@ module cpu (
                   8'hB8: begin
                     state <= DECODE_EXECUTE;
                   end
+                  // SEC
+                  8'h38: begin
+                    state <= DECODE_EXECUTE;
+                  end
 
 
                   // TODO: support more instructions
@@ -2653,6 +2657,14 @@ module cpu (
               // CLV
               8'hB8: begin
                 flg_v = 1'b0;
+                pc <= pc + 1 & RAMW;
+                adb <= pc + 1 & RAMW;
+                state <= FETCH_REQ;
+                fetch_stage <= FETCH_OPCODE;
+              end
+              // SEC
+              8'h38: begin
+                flg_c = 1'b1;
                 pc <= pc + 1 & RAMW;
                 adb <= pc + 1 & RAMW;
                 state <= FETCH_REQ;
