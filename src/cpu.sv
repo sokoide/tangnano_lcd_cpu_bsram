@@ -71,7 +71,6 @@ module cpu (
 
   // program to load at startup
   // make sure to set the size boot_progarm[X]
-  logic [7:0] boot_program[32];
 
   initial begin
     // Hello World
@@ -107,7 +106,6 @@ module cpu (
     boot_program[29] = 8'h64;
     boot_program[30] = 8'h21;
     boot_program[31] = 8'h00;  // 0 terminator
-
   end
 
   localparam int unsigned BootProgramLength = $bits(boot_program) / $bits(boot_program[0]);
@@ -522,7 +520,7 @@ module cpu (
               end
               // LDA zero page
               8'hA5: begin
-                // fetch operand[7:0]'s value from memory and store it to ra.
+                // fetch operands[7:0]'s value from memory and store it to ra.
                 if (fetched_data_bytes == 0) begin
                   adb <= operands[7:0];
                   state <= FETCH_REQ;
@@ -540,7 +538,7 @@ module cpu (
               end
               // LDA zero page, X
               8'hB5: begin
-                // fetch operand[7:0] + rx's value from memory and store it to ra.
+                // fetch operands[7:0] + rx's value from memory and store it to ra.
                 if (fetched_data_bytes == 0) begin
                   adb <= (operands[7:0] + rx) & 8'hFF;
                   state <= FETCH_REQ;
@@ -557,7 +555,7 @@ module cpu (
               end
               // LDA absolute
               8'hAD: begin
-                // fetch operand[15:0]'s value from memory and store it to ra.
+                // fetch operands[15:0]'s value from memory and store it to ra.
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} & 16'hFFFF;
                   adb <= addr & RAMW;
@@ -575,7 +573,7 @@ module cpu (
               end
               // LDA absolute, X
               8'hBD: begin
-                // fetch operand[15:0] + rx's value from memory and store it to ra.
+                // fetch operands[15:0] + rx's value from memory and store it to ra.
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + rx & 16'hFFFF;
                   adb <= addr & RAMW;
@@ -593,7 +591,7 @@ module cpu (
               end
               // LDA absolute, Y
               8'hB9: begin
-                // fetch operand[15:0] + ry's value from memory and store it to ra.
+                // fetch operands[15:0] + ry's value from memory and store it to ra.
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = {operands[7:0], operands[15:8]} + ry & 16'hFFFF;
                   adb <= addr & RAMW;
@@ -611,13 +609,13 @@ module cpu (
               end
               // TODO: LDA (indirect, X)
               8'hA1: begin
-                // fetch operand[7:0] + rx's and the next value from the zero page
+                // fetch operands[7:0] + rx's and the next value from the zero page
                 // (total 16bit) in little endian.
                 // then read an 8bit data pointed by the address.
               end
               // TODO: LDA (indirect), Y
               8'hB1: begin
-                // fetch operand[7:0] and the next value from the zero page
+                // fetch operands[7:0] and the next value from the zero page
                 // (total 16bit) in litte endian.
                 // then read an 8bit data pointed by the address+ry.
               end
@@ -847,9 +845,47 @@ module cpu (
               end
               // TODO: STA (indirect, X)
               8'h81: begin
+                // fetch operands[7:0] + rx and the next value from the zero page
+                // (total 16bit) in litte endian.
+                // then write an 8bit data pointed by the address.
               end
-              // TODO: STA (indirect), Y
+              // STA (indirect), Y
               8'h91: begin
+                // fetch operands[7:0] and the next value from the zero page
+                // (total 16bit) in litte endian.
+                // then write an 8bit data pointed by the address+ry.
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0];
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // check if it's RAM or VRAM
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    if (addr >= VRAM_START) begin
+                      v_ada <= addr - VRAM_START & VRAMW;
+                      v_din <= ra;
+                    end else begin
+                      ada <= {dout, fetched_data[7:0]};
+                      din <= ra;
+                      cea <= 1;
+                    end
+                    pc <= pc + 2 & RAMW;
+                    adb <= pc + 2 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
               // STX zero page
               8'h86: begin

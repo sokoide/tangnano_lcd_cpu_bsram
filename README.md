@@ -103,7 +103,7 @@
 |     |     |     |     |     | +   | +   | +   |     | +   |     | +   |     | +   | +   | +   |     |
 | 0x9 | BCC | STA |     |     | STY | STA | STX |     | TYA | STA | TXS |     |     | STA |     |     |
 |     | rel | idy |     |     | zpx | zpx | zpy |     | impl| aby | impl|     |     | abx |     |     |
-|     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     |     | +   |     |     |
+|     | +   | +   |     |     | +   | +   | +   |     | +   | +   | +   |     |     | +   |     |     |
 | 0xA | LDY | LDA | LDX |     | LDY | LDA | LDX |     | TAY | LDA | TAX |     | LDY | LDA | LDX |     |
 |     | imm | idx | imm |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs |     |
 |     | +   |     | +   |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
