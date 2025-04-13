@@ -71,6 +71,7 @@ module cpu (
 
   // program to load at startup
   // make sure to set the size boot_progarm[X]
+  logic [7:0] boot_program[32];
 
   initial begin
     // Hello World
