@@ -69,23 +69,22 @@ module cpu (
 
   // program to load at startup
   // make sure to set the size boot_progarm[X]
-  logic [7:0] boot_program[12];
+  logic [7:0] boot_program[17];
 
   initial begin
-    // JSR
-    boot_program[0]  = 8'hBA;  // TSX
-    boot_program[1]  = 8'h20;  // JSR foo ($0209)
-    boot_program[2]  = 8'h09;
-    boot_program[3]  = 8'h02;
-    boot_program[4]  = 8'hA9;  // LDA #$02
-    boot_program[5]  = 8'h02;
-    boot_program[6]  = 8'h18;  // CLC
-    boot_program[7]  = 8'h90;  // BCC -2; PC+2-2=loop here
-    boot_program[8]  = 8'hFE;
-    boot_program[9]  = 8'hA9;  // foo function, lda $2A
-    boot_program[10] = 8'h2A;
-    boot_program[11] = 8'h60;  // RTS
-
+    // // JSR
+    // boot_program[0]  = 8'hBA;  // TSX
+    // boot_program[1]  = 8'h20;  // JSR foo ($0209)
+    // boot_program[2]  = 8'h09;
+    // boot_program[3]  = 8'h02;
+    // boot_program[4]  = 8'hA9;  // LDA #$02
+    // boot_program[5]  = 8'h02;
+    // boot_program[6]  = 8'h18;  // CLC
+    // boot_program[7]  = 8'h90;  // BCC -2; PC+2-2=loop here
+    // boot_program[8]  = 8'hFE;
+    // boot_program[9]  = 8'hA9;  // foo function, lda $2A
+    // boot_program[10] = 8'h2A;
+    // boot_program[11] = 8'h60;  // RTS
 
     // // JMP Indirect)
     // boot_program[0]  = 8'hA9;  // LDA #$05
@@ -103,25 +102,24 @@ module cpu (
     // boot_program[12] = 8'h03;
 
     // Simple 3)
-    // // copy 0x00-0x7F to 0xE000-0xE07F (VRAM)
-    // boot_program[0]  = 8'hA0;  // LDY #$00
-    // boot_program[1]  = 8'h00;
-    // boot_program[2]  = 8'hA2;  // LDX #$00
-    // boot_program[3]  = 8'h00;
-    // boot_program[4]  = 8'h8A;  // TXA (A=X)
-    // boot_program[5]  = 8'h99;  // STA $E000, Y
-    // boot_program[6]  = 8'h00;
-    // boot_program[7]  = 8'hE0;
-    // boot_program[8]  = 8'hE8;  // INX
-    // boot_program[9]  = 8'hC8;  // INY
-    // boot_program[10] = 8'hC0;  // CPY #$7F
-    // boot_program[11] = 8'h7F;  //
-    // boot_program[12] = 8'hD0;  // BNE -10;  PC+2-10=4 (F6=-10)
-    // boot_program[13] = 8'hF6;
-    // boot_program[14] = 8'h18;  // CLC
-    // boot_program[15] = 8'h90;  // BCC -2; PC+2-2=here
-    // boot_program[16] = 8'hFE;  //
-
+    // copy 0x00-0x7F to 0xE000-0xE07F (VRAM)
+    boot_program[0]  = 8'hA0;  // LDY #$00
+    boot_program[1]  = 8'h00;
+    boot_program[2]  = 8'hA2;  // LDX #$00
+    boot_program[3]  = 8'h00;
+    boot_program[4]  = 8'h8A;  // TXA (A=X)
+    boot_program[5]  = 8'h99;  // STA $E000, Y
+    boot_program[6]  = 8'h00;
+    boot_program[7]  = 8'hE0;
+    boot_program[8]  = 8'hE8;  // INX
+    boot_program[9]  = 8'hC8;  // INY
+    boot_program[10] = 8'hC0;  // CPY #$7F
+    boot_program[11] = 8'h7F;  //
+    boot_program[12] = 8'hD0;  // BNE -10;  PC+2-10=4 (F6=-10)
+    boot_program[13] = 8'hF6;
+    boot_program[14] = 8'h18;  // CLC
+    boot_program[15] = 8'h90;  // BCC -2; PC+2-2=here
+    boot_program[16] = 8'hFE;  //
 
     // Simple 2) draw 'B' on top-left using zero page
     // // address 00 <- 0x00
@@ -209,6 +207,7 @@ module cpu (
               v_cea <= 0;  // VRAM write disable
               state <= HALT;
             end
+            // v_cea is always enabled
             v_cea <= 1;  // VRAM write enable
             v_din <= char_code;
             char_code <= (char_code < 8'h7F) ? (char_code + 1) & 8'hFF : 8'h20;
@@ -225,6 +224,7 @@ module cpu (
             end else begin
               cea <= 0;
               if (boot_idx == BootProgramLength) begin
+                v_cea <= 1;  // VRAM write enable
                 state <= FETCH_REQ;
                 fetch_stage <= FETCH_OPCODE;
               end else begin
@@ -1561,7 +1561,6 @@ module cpu (
                 if (addr >= VRAM_START) begin
                   v_ada <= addr - VRAM_START & VRAMW;
                   v_din <= ra;
-                  v_cea <= 1;
                 end else begin
                   ada <= addr & RAMW;
                   din <= ra;
@@ -1579,7 +1578,6 @@ module cpu (
                 if (addr >= VRAM_START) begin
                   v_ada <= addr - VRAM_START & VRAMW;
                   v_din <= ra;
-                  v_cea <= 1;
                 end else begin
                   ada <= addr & RAMW;
                   din <= ra;
@@ -1597,7 +1595,6 @@ module cpu (
                 if (addr >= VRAM_START) begin
                   v_ada <= addr - VRAM_START & VRAMW;
                   v_din <= ra;
-                  v_cea <= 1;
                 end else begin
                   ada <= addr & RAMW;
                   din <= ra;
@@ -1641,7 +1638,6 @@ module cpu (
                 if (addr >= VRAM_START) begin
                   v_ada <= addr - VRAM_START & VRAMW;
                   v_din <= rx;
-                  v_cea <= 1;
                 end else begin
                   ada <= addr & RAMW;
                   din <= rx;
@@ -1679,7 +1675,6 @@ module cpu (
                 if (addr >= VRAM_START) begin
                   v_ada <= addr - VRAM_START & VRAMW;
                   v_din <= ry;
-                  v_cea <= 1;
                 end else begin
                   ada <= addr & RAMW;
                   din <= ry;
@@ -2747,7 +2742,7 @@ module cpu (
                   fetch_stage <= FETCH_OPCODE;
                 end
               end
-              // CMP immediate
+              // CMP immediate; Compare
               8'hC9: begin
                 automatic logic [7:0] result = ra - operands[7:0];
                 flg_c = ra >= operands[7:0] ? 1 : 0;
@@ -2884,7 +2879,7 @@ module cpu (
               // TODO: CMP (indirect), Y
               8'hD1: begin
               end
-              // CPX immediate
+              // CPX immediate; Compare X
               8'hE0: begin
                 automatic logic [7:0] result = rx - operands[7:0];
                 flg_c = rx >= operands[7:0] ? 1 : 0;
@@ -2933,7 +2928,7 @@ module cpu (
                   fetch_stage <= FETCH_OPCODE;
                 end
               end
-              // CPY immediate
+              // CPY immediate; Compare Y
               8'hC0: begin
                 automatic logic [7:0] result = ry - operands[7:0];
                 flg_c = ry >= operands[7:0] ? 1 : 0;
