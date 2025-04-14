@@ -26,8 +26,12 @@ module top (
       .clkout(LCD_CLK),  //  9MHz
       .clkin (XTAL_IN)   //  27MHz
   );
-  Gowin_rPLL54 rpll54_inst (
-      .clkout(MEMORY_CLK),  //  54MHz
+//   Gowin_rPLL54 rpll54_inst (
+//       .clkout(MEMORY_CLK),  //  54MHz
+//       .clkin (XTAL_IN)      //  27MHz
+//   );
+  Gowin_rPLL40 rpll40_inst (
+      .clkout(MEMORY_CLK),  //  40.5MHz
       .clkin (XTAL_IN)      //  27MHz
   );
 

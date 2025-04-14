@@ -7,6 +7,7 @@
     <FileList>
         <File path="src/cpu.sv" type="file.verilog" enable="1"/>
         <File path="src/gowin_prom/gowin_prom_font.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_rpll/gowin_rpll40.v" type="file.verilog" enable="1"/>
         <File path="src/gowin_rpll/gowin_rpll54.v" type="file.verilog" enable="1"/>
         <File path="src/gowin_rpll/gowin_rpll9.v" type="file.verilog" enable="1"/>
         <File path="src/gowin_sdpb/gowin_sdpb.v" type="file.verilog" enable="1"/>
