@@ -1,3 +1,5 @@
+// Simple 1) draw 'A' on top-left
+// Program loaded and starts at 0x0200
 logic [7:0] boot_program[256];
 
 assign boot_program = '{
