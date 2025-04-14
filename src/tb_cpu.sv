@@ -15,11 +15,16 @@ module tb_cpu;
   logic [7:0] v_dout;
   logic vsync;
 
+  // Boot program instance
+  `include "boot_program.sv"
+
   cpu dut (
       .rst_n(rst_n),
       .clk  (clk),
       .dout (dout),
       .vsync(vsync),
+      .boot_program(boot_program),
+      .boot_program_length(boot_program_length),
       .din  (din),
       .ada  (ada),
       .cea  (cea),

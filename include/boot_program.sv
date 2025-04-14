@@ -1,14 +1,6 @@
 logic [7:0] boot_program[256];
 
 assign boot_program = '{
-        0: 8'hA0,
-        1: 8'h00,
-        2: 8'h8D,
-        3: 8'h00,
-        4: 8'hE0,
-        5: 8'h4C,
-        6: 8'h05,
-        7: 8'h02,
         0: 8'hA0,  // LDY #0
         1: 8'h00,
         2: 8'hA2,  // LDX #0
