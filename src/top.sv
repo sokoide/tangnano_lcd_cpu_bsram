@@ -26,10 +26,10 @@ module top (
       .clkout(LCD_CLK),  //  9MHz
       .clkin (XTAL_IN)   //  27MHz
   );
-//   Gowin_rPLL54 rpll54_inst (
-//       .clkout(MEMORY_CLK),  //  54MHz
-//       .clkin (XTAL_IN)      //  27MHz
-//   );
+  //   Gowin_rPLL54 rpll54_inst (
+  //       .clkout(MEMORY_CLK),  //  54MHz
+  //       .clkin (XTAL_IN)      //  27MHz
+  //   );
   Gowin_rPLL40 rpll40_inst (
       .clkout(MEMORY_CLK),  //  40.5MHz
       .clkin (XTAL_IN)      //  27MHz
@@ -104,17 +104,22 @@ module top (
       .vsync (vsync)
   );
 
+  // Boot program instance
+  `include "boot_program.sv"
+
   // CPU instance
-  cpu cpu1 (
+  cpu cpu_inst (
       .rst_n(rst_n),
-      .clk  (MEMORY_CLK),
-      .dout (dout),
+      .clk(MEMORY_CLK),
+      .dout(dout),
       .vsync(vsync),
-      .din  (din),
-      .ada  (ada),
-      .cea  (cea),
-      .ceb  (ceb),
-      .adb  (adb),
+      .boot_program(boot_program),
+      .boot_program_length(boot_program_length),
+      .din(din),
+      .ada(ada),
+      .cea(cea),
+      .ceb(ceb),
+      .adb(adb),
       .v_ada(v_ada),
       .v_cea(v_cea),
       .v_din(v_din)

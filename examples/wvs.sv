@@ -1,88 +1,88 @@
-// WVS (8'hFF); Wait For Vsync example
-logic [7:0] boot_program[82];
+logic [7:0] boot_program[256];
 
-initial begin
-  // 0xFF WVS example
-  boot_program[0]  = 8'hA9;
-  boot_program[1]  = 8'h00;
-  boot_program[2]  = 8'h8D;
-  boot_program[3]  = 8'h42;
-  boot_program[4]  = 8'h02;
-  boot_program[5]  = 8'hFF;
-  boot_program[6]  = 8'h04;
-  boot_program[7]  = 8'h20;
-  boot_program[8]  = 8'h1F;
-  boot_program[9]  = 8'h02;
-  boot_program[10] = 8'hEE;
-  boot_program[11] = 8'h42;
-  boot_program[12] = 8'h02;
-  boot_program[13] = 8'hAD;
-  boot_program[14] = 8'h42;
-  boot_program[15] = 8'h02;
-  boot_program[16] = 8'hC9;
-  boot_program[17] = 8'hE3;
-  boot_program[18] = 8'h90;
-  boot_program[19] = 8'h08;
-  boot_program[20] = 8'h20;
-  boot_program[21] = 8'h31;
-  boot_program[22] = 8'h02;
-  boot_program[23] = 8'hA9;
-  boot_program[24] = 8'h00;
-  boot_program[25] = 8'h8D;
-  boot_program[26] = 8'h42;
-  boot_program[27] = 8'h02;
-  boot_program[28] = 8'h4C;
-  boot_program[29] = 8'h05;
-  boot_program[30] = 8'h02;
-  boot_program[31] = 8'hA0;
-  boot_program[32] = 8'h00;
-  boot_program[33] = 8'hAE;
-  boot_program[34] = 8'h42;
-  boot_program[35] = 8'h02;
-  boot_program[36] = 8'hB9;
-  boot_program[37] = 8'h43;
-  boot_program[38] = 8'h02;
-  boot_program[39] = 8'hF0;
-  boot_program[40] = 8'h07;
-  boot_program[41] = 8'h9D;
-  boot_program[42] = 8'h00;
-  boot_program[43] = 8'hE0;
-  boot_program[44] = 8'hC8;
-  boot_program[45] = 8'hE8;
-  boot_program[46] = 8'hD0;
-  boot_program[47] = 8'hF4;
-  boot_program[48] = 8'h60;
-  boot_program[49] = 8'hFF;
-  boot_program[50] = 8'h3A;
-  boot_program[51] = 8'hA9;
-  boot_program[52] = 8'h20;
-  boot_program[53] = 8'hA2;
-  boot_program[54] = 8'h00;
-  boot_program[55] = 8'hFF;
-  boot_program[56] = 8'h04;
-  boot_program[57] = 8'h9D;
-  boot_program[58] = 8'hE3;
-  boot_program[59] = 8'hE0;
-  boot_program[60] = 8'hE8;
-  boot_program[61] = 8'hE0;
-  boot_program[62] = 8'h0D;
-  boot_program[63] = 8'hD0;
-  boot_program[64] = 8'hF6;
-  boot_program[65] = 8'h60;
-  boot_program[66] = 8'h00;
-  boot_program[67] = 8'h20;
-  boot_program[68] = 8'h48;
-  boot_program[69] = 8'h65;
-  boot_program[70] = 8'h6C;
-  boot_program[71] = 8'h6C;
-  boot_program[72] = 8'h6F;
-  boot_program[73] = 8'h2C;
-  boot_program[74] = 8'h20;
-  boot_program[75] = 8'h57;
-  boot_program[76] = 8'h6F;
-  boot_program[77] = 8'h72;
-  boot_program[78] = 8'h6C;
-  boot_program[79] = 8'h64;
-  boot_program[80] = 8'h21;
-  boot_program[81] = 8'h00;
-end
+assign boot_program = '{
+        0: 8'hA9,
+        1: 8'h00,
+        2: 8'h8D,
+        3: 8'h42,
+        4: 8'h02,
+        5: 8'hFF,
+        6: 8'h04,
+        7: 8'h20,
+        8: 8'h1F,
+        9: 8'h02,
+        10: 8'hEE,
+        11: 8'h42,
+        12: 8'h02,
+        13: 8'hAD,
+        14: 8'h42,
+        15: 8'h02,
+        16: 8'hC9,
+        17: 8'hE3,
+        18: 8'h90,
+        19: 8'h08,
+        20: 8'h20,
+        21: 8'h31,
+        22: 8'h02,
+        23: 8'hA9,
+        24: 8'h00,
+        25: 8'h8D,
+        26: 8'h42,
+        27: 8'h02,
+        28: 8'h4C,
+        29: 8'h05,
+        30: 8'h02,
+        31: 8'hA0,
+        32: 8'h00,
+        33: 8'hAE,
+        34: 8'h42,
+        35: 8'h02,
+        36: 8'hB9,
+        37: 8'h43,
+        38: 8'h02,
+        39: 8'hF0,
+        40: 8'h07,
+        41: 8'h9D,
+        42: 8'h00,
+        43: 8'hE0,
+        44: 8'hC8,
+        45: 8'hE8,
+        46: 8'hD0,
+        47: 8'hF4,
+        48: 8'h60,
+        49: 8'hFF,
+        50: 8'h3A,
+        51: 8'hA9,
+        52: 8'h20,
+        53: 8'hA2,
+        54: 8'h00,
+        55: 8'hFF,
+        56: 8'h04,
+        57: 8'h9D,
+        58: 8'hE3,
+        59: 8'hE0,
+        60: 8'hE8,
+        61: 8'hE0,
+        62: 8'h0D,
+        63: 8'hD0,
+        64: 8'hF6,
+        65: 8'h60,
+        66: 8'h00,
+        67: 8'h20,
+        68: 8'h48,
+        69: 8'h65,
+        70: 8'h6C,
+        71: 8'h6C,
+        72: 8'h6F,
+        73: 8'h2C,
+        74: 8'h20,
+        75: 8'h57,
+        76: 8'h6F,
+        77: 8'h72,
+        78: 8'h6C,
+        79: 8'h64,
+        80: 8'h21,
+        81: 8'h00,
+        default: 8'hEA
+    };
+parameter logic [7:0] boot_program_length = 82;
