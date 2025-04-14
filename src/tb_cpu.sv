@@ -33,6 +33,9 @@ module tb_cpu;
   // 20ns clock (#10 means 10ns) == 50MHz
   always #10 clk = ~clk;
 
+  // 100ns vsync
+  always #50 vsync = ~vsync;
+
   ram ram_inst (
       // common
       .MEMORY_CLK(clk),
@@ -61,6 +64,7 @@ module tb_cpu;
   initial begin
     $display("=== Test Started ===");
     clk = 0;
+    vsync = 0;
 
     reseta   <= 0;
     resetb   <= 0;

@@ -237,8 +237,7 @@ module cpu (
                   8'h9A,  // TXS
                   8'h18,  // CLC
                   8'hB8,  // CLV
-                  8'h38,  // SEC
-                  8'hFF:  // WVS custom instruction
+                  8'h38:  // SEC
                   state <= DECODE_EXECUTE;
 
                   // Instructions with 1-byte operand
@@ -313,7 +312,8 @@ module cpu (
                   8'h50,  // BVC
                   8'h70,  // BVS
                   8'h90,  // BCC
-                  8'hB0: // BCS
+                  8'hB0,  // BCS
+                  8'hFF:  // WVS custom instruction
           begin
                     adb <= pc + 1 & RAMW;
                     fetch_stage <= FETCH_OPERAND1;
@@ -2485,11 +2485,16 @@ module cpu (
                   2: begin
                     // wait until vsync becomes 1
                     if (vsync == 1'b1) begin
-                      vsync_stage <= 0;
-                      pc <= pc + 1 & RAMW;
-                      adb <= pc + 1 & RAMW;
-                      state <= FETCH_REQ;
-                      fetch_stage <= FETCH_OPCODE;
+                      if (operands[7:0] == 0) begin
+                        vsync_stage <= 0;
+                        pc <= pc + 2 & RAMW;
+                        adb <= pc + 2 & RAMW;
+                        state <= FETCH_REQ;
+                        fetch_stage <= FETCH_OPCODE;
+                      end else begin
+                        operands[7:0] <= operands[7:0] - 1'b1;
+                        vsync_stage   <= 1;
+                      end
                     end
                   end
                 endcase
