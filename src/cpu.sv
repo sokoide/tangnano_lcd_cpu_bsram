@@ -202,7 +202,8 @@ module cpu (
                   8'h9A,  // TXS
                   8'h18,  // CLC
                   8'hB8,  // CLV
-                  8'h38:  // SEC
+                  8'h38,  // SEC
+                  8'hFE:  // HLT
                   state <= DECODE_EXECUTE;
 
                   // Instructions with 1-byte operand
@@ -2429,6 +2430,10 @@ module cpu (
               end
 
               // custom instructions which is no available in 6502
+              // HLT
+              8'hFE: begin
+                state <= HALT;
+              end
               // WVS
               8'hFF: begin
                 case (vsync_stage)

@@ -70,10 +70,12 @@
   * (Indirect X)
   * (Indirect), Y
 * **!**: custom instruction which is not available in 6502
+  * `0xFE` HLT: Halt ... stop the CPU
+    * FE: (no operand) stop the CPU. LCD controller continues running
   * `0xFF` WVS: Wait For VSync ... wait until the next vsync timing of the LCD
-    * FF 00: ... wait for vsync once (~1/58 sec)
-    * FF 05: ... wait for vsync 6 times (~6/58 sec)
-    * FF 3A: ... wait for vsync 58 times (~1 sec)
+    * FF 00: wait for vsync once (~1/58 sec)
+    * FF 05: wait for vsync 6 times (~6/58 sec)
+    * FF 3A: wait for vsync 58 times (~1 sec)
 
 |     | 0x0 | 0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 | 0x8 | 0x9 | 0xA | 0xB | 0xC | 0xD | 0xE | 0xF |
 |-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
@@ -119,9 +121,9 @@
 | 0xD | BNE | CMP |     |     |     | CMP | DEC |     | CLD | CMP |     |     |     | CMP | DEC |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
 |     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   |     |
-| 0xE | CPX | SBC |     |     | CPX | SBC | INC |     | INX | SBC | NOP |     | CPX | SBC | INC |     |
-|     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs |     |
-|     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
+| 0xE | CPX | SBC |     |     | CPX | SBC | INC |     | INX | SBC | NOP |     | CPX | SBC | INC | HLT |
+|     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs | impl|
+|     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   | !   |
 | 0xF | BEQ | SBC |     |     |     | SBC | INC |     | SED | SBC |     |     |     | SBC | INC | WVS |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx | imm |
 |     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   | !   |
