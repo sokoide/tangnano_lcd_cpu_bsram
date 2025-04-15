@@ -14,6 +14,9 @@ module lcd (
     output logic        vsync
 );
 
+  logic vsync_reg;
+  assign vsync = vsync_reg;
+
   // Horizontal and Vertical pixel counters
   logic [15:0] H_PixelCount;
   logic [15:0] V_PixelCount;
@@ -21,22 +24,31 @@ module lcd (
   // Sequential logic for pixel counters
   always_ff @(posedge PixelClk or negedge nRST) begin
     if (!nRST) begin
+      vsync_reg <= 1'b0;
       V_PixelCount <= 16'd0;
       H_PixelCount <= 16'd0;
     end else if (H_PixelCount == PixelForHS) begin
       H_PixelCount <= 16'd0;
       V_PixelCount <= V_PixelCount + 1'b1;
+      vsync_reg <= (V_PixelCount < V_BackPorch) || (V_PixelCount >= V_BackPorch + V_PixelValid);
     end else if (V_PixelCount == PixelForVS) begin
       V_PixelCount <= 16'd0;
       H_PixelCount <= 16'd0;
+      vsync_reg <= 1'b1;
     end else begin
       H_PixelCount <= H_PixelCount + 1'b1;
     end
   end
 
-  // vsync
-  assign vsync = (V_PixelCount < V_BackPorch) ||
-               (V_PixelCount >= V_BackPorch + V_PixelValid);
+  // if you do this w/o using vsync_reg, the FPGA timing report may see
+  // it a timing voloation because
+  // これは combinational logic です。
+  // V_PixelCount は PixelClk ドメインで動いています。
+  // vsync は combinational なため、そのまま cpu に渡すと、タイミング解析では「PixelClk → vsync → CPUクロックのFF」 というパスが解析されます。
+  // 結果として、再びタイミング違反として報告される or 非同期パスにならないとツールに誤解される。
+  // Don't do this:
+  // assign vsync = (V_PixelCount < V_BackPorch) ||
+  //              (V_PixelCount >= V_BackPorch + V_PixelValid);
 
   // SYNC-DE MODE
   assign LCD_DE = ((H_PixelCount >= H_BackPorch) &&

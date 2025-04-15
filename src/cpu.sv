@@ -44,6 +44,7 @@ module cpu (
   logic [31:0] counter;
   logic [9:0] boot_idx;
   logic boot_write;
+  logic vsync_meta, vsync_sync;
   logic [1:0] vsync_stage;
 
   typedef enum logic [3:0] {
@@ -97,8 +98,12 @@ module cpu (
       counter                                           <= 32'h0;
       boot_idx                                          <= 0;
       boot_write                                        <= 0;
+      vsync_meta                                        <= 1'b0;
+      vsync_sync                                        <= 1'b0;
       vsync_stage                                       <= 0;
     end else begin
+      vsync_meta <= vsync;
+      vsync_sync <= vsync_meta;
       begin
         counter <= (counter + 1) & 32'hFFFFFFFF;
 
@@ -109,7 +114,7 @@ module cpu (
             boot_write <= 1;
             state <= INIT_RAM;
             // call INIT_VRAM for VRAM testing
-            // state <= INIT_VRAM;
+            // state <= INIT_VRAM
           end
 
           INIT_VRAM: begin
@@ -832,7 +837,7 @@ module cpu (
                   2: begin
                     // fetched_data[15:8] = dout;
                     // check if it's RAM or VRAM
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
                     if (addr >= VRAM_START) begin
                       v_ada <= addr - VRAM_START & VRAMW;
                       v_din <= ra;
@@ -2430,7 +2435,7 @@ module cpu (
                   0: begin
                     // if vsync is 1, move to stage 1
                     // otherwise stage 2
-                    if (vsync == 1'b1) begin
+                    if (vsync_sync == 1'b1) begin
                       vsync_stage <= 1;
                     end else begin
                       vsync_stage <= 2;
@@ -2438,13 +2443,13 @@ module cpu (
                   end
                   1: begin
                     // wait until vsync becomes 0
-                    if (vsync == 1'b0) begin
+                    if (vsync_sync == 1'b0) begin
                       vsync_stage <= 2;
                     end
                   end
                   2: begin
                     // wait until vsync becomes 1
-                    if (vsync == 1'b1) begin
+                    if (vsync_sync == 1'b1) begin
                       if (operands[7:0] == 0) begin
                         vsync_stage <= 0;
                         pc <= pc + 2 & RAMW;
