@@ -1,5 +1,4 @@
 `include "consts.svh"
-
 module cpu (
     input  logic        rst_n,
     input  logic        clk,
@@ -16,6 +15,9 @@ module cpu (
     output logic        v_cea,                     // VRAM write enable
     output logic [ 7:0] v_din                      // VRAM data to write
 );
+
+`include "cpu_ifo_task.sv"
+
 
   // Internal registers.
   logic [15:0] pc;  // Program Counter
@@ -48,7 +50,7 @@ module cpu (
   logic [ 1:0] vsync_stage;
   logic [31:0] show_info_counter;
 
-  typedef enum logic [3:0] {
+  typedef enum logic [5:0] {
     INIT,
     INIT_VRAM,
     INIT_RAM,
@@ -58,7 +60,15 @@ module cpu (
     FETCH_RECV,
     DECODE_EXECUTE,
     WRITE_REQ,
-    SHOW_INFO
+    SHOW_INFO,
+    SHOW_INFO_Z00,
+    SHOW_INFO_Z01,
+    SHOW_INFO_Z02,
+    SHOW_INFO_Z03,
+    SHOW_INFO_Z04,
+    SHOW_INFO_Z05,
+    SHOW_INFO_Z06,
+    SHOW_INFO_Z07
   } state_t;
 
   state_t state;
@@ -2583,7 +2593,7 @@ module cpu (
             state <= DECODE_EXECUTE;
           end
 
-          SHOW_INFO: begin
+          SHOW_INFO: begin: SHOW_INFO_BLOCK
             automatic
             logic [15:0]
             info_vram_addr[57] = '{
@@ -2725,19 +2735,99 @@ module cpu (
             end else if (show_info_counter == 27) begin
               v_ada <= 185;
               v_din <= ry[3:0] < 10 ? ry[3:0] + 8'h30 : ry[3:0] + 8'h41 - 8'd10;
-            // --- auto generated ---
-`include "ifo_auto_generated.sv"
-            // --- auto generated ---
-            end else if (show_info_counter == 1000) begin
-              state <= prev_state;
-              operands[7:0] = 8'hFF;
             end else if (show_info_counter < 57) begin
               v_ada <= info_vram_addr[show_info_counter] & VRAMW;
               v_din <= info_vram_data[show_info_counter];
+            end else if (show_info_counter == 240) begin
+              show_info_counter <= 360;
+              state <= SHOW_INFO_Z00;
+              disable SHOW_INFO_BLOCK; // break
             end
 
             show_info_counter <= show_info_counter + 1;
           end
+
+          SHOW_INFO_Z00: begin: SHOW_INFO_Z00_BLOCK
+            show_info_z00_block(show_info_counter);
+            if (show_info_counter == 420) begin
+              state <= SHOW_INFO_Z01;
+              show_info_counter <= 0;
+            end else begin
+              show_info_counter <= show_info_counter + 1;
+            end
+          end
+
+          SHOW_INFO_Z01: begin: SHOW_INFO_Z01_BLOCK
+            show_info_z01_block(show_info_counter);
+            if (show_info_counter == 480) begin
+              state <= SHOW_INFO_Z02;
+              disable SHOW_INFO_Z01_BLOCK; //break
+            end
+
+            show_info_counter <= show_info_counter + 1;
+          end
+
+          SHOW_INFO_Z02: begin: SHOW_INFO_Z02_BLOCK
+            show_info_z02_block(show_info_counter);
+            if (show_info_counter == 540) begin
+              state <= SHOW_INFO_Z03;
+              disable SHOW_INFO_Z02_BLOCK; //break
+            end
+
+            show_info_counter <= show_info_counter + 1;
+          end
+
+          SHOW_INFO_Z03: begin: SHOW_INFO_Z03_BLOCK
+            show_info_z03_block(show_info_counter);
+            if (show_info_counter == 600) begin
+              state <= SHOW_INFO_Z04;
+              disable SHOW_INFO_Z03_BLOCK; //break
+            end
+
+            show_info_counter <= show_info_counter + 1;
+          end
+
+          SHOW_INFO_Z04: begin: SHOW_INFO_Z04_BLOCK
+            show_info_z04_block(show_info_counter);
+            if (show_info_counter == 660) begin
+              state <= SHOW_INFO_Z05;
+              disable SHOW_INFO_Z04_BLOCK; //break
+            end
+
+            show_info_counter <= show_info_counter + 1;
+          end
+
+          SHOW_INFO_Z05: begin: SHOW_INFO_Z05_BLOCK
+            show_info_z05_block(show_info_counter);
+            if (show_info_counter == 720) begin
+              state <= SHOW_INFO_Z06;
+              disable SHOW_INFO_Z05_BLOCK; //break
+            end
+
+            show_info_counter <= show_info_counter + 1;
+          end
+
+          SHOW_INFO_Z06: begin: SHOW_INFO_Z06_BLOCK
+            show_info_z06_block(show_info_counter);
+            if (show_info_counter == 780) begin
+              state <= SHOW_INFO_Z07;
+              disable SHOW_INFO_Z06_BLOCK; //break
+            end
+
+            show_info_counter <= show_info_counter + 1;
+          end
+
+          SHOW_INFO_Z07: begin: SHOW_INFO_Z07_BLOCK
+            show_info_z07_block(show_info_counter);
+            if (show_info_counter == 840) begin
+              state <= prev_state;
+              operands[7:0] = 8'hFF;
+              disable SHOW_INFO_Z02_BLOCK; //break
+            end
+
+            show_info_counter <= show_info_counter + 1;
+          end
+
         endcase
       end
     end
