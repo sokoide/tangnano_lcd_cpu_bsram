@@ -70,8 +70,12 @@
   * (Indirect X)
   * (Indirect), Y
 * **!**: custom instruction which is not available in 6502
-  * `0xFE` HLT: Halt ... stop the CPU
-    * FE: (no operand) stop the CPU. LCD controller continues running
+  * `0xDF` IFO: Info ... show registers and memory
+    * DF 00: show registers and 0x00-0x7F
+    * TODO) DF 01: show registers and 0x80-0xFF
+    * TODO) DF 02: show 0x0-0xFF
+  * `0xEF` HLT: Halt ... stop the CPU
+    * EF: (no operand) stop the CPU. LCD controller continues running
   * `0xFF` WVS: Wait For VSync ... wait until the next vsync timing of the LCD
     * FF 00: wait for vsync once (~1/58 sec)
     * FF 05: wait for vsync 6 times (~6/58 sec)
@@ -118,9 +122,9 @@
 | 0xC | CPY | CMP |     |     | CPY | CMP | DEC |     | INY | CMP | DEX |     | CPY | CMP | DEC |     |
 |     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs |     |
 |     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
-| 0xD | BNE | CMP |     |     |     | CMP | DEC |     | CLD | CMP |     |     |     | CMP | DEC |     |
-|     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
-|     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   |     |
+| 0xD | BNE | CMP |     |     |     | CMP | DEC |     | CLD | CMP |     |     |     | CMP | DEC | IFO |
+|     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx | imm |
+|     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   | !    |
 | 0xE | CPX | SBC |     |     | CPX | SBC | INC |     | INX | SBC | NOP |     | CPX | SBC | INC | HLT |
 |     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs | impl|
 |     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   | !   |
