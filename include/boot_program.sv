@@ -31,7 +31,7 @@ assign boot_program = '{
         25: 8'h80,
         26: 8'h85,  // STA $FF
         27: 8'hFF,
-        28: 8'hDF,  // IFO $8000
+        28: 8'hDF,  // IFO $0080
         29: 8'h80,
         30: 8'h00,
         31: 8'hEF,  // HLT

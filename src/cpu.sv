@@ -50,7 +50,7 @@ module cpu (
   logic [ 1:0] vsync_stage;
   logic [31:0] show_info_counter;
 
-  typedef enum logic [5:0] {
+  typedef enum logic [3:0] {
     INIT,
     INIT_VRAM,
     INIT_RAM,
@@ -61,14 +61,7 @@ module cpu (
     DECODE_EXECUTE,
     WRITE_REQ,
     SHOW_INFO,
-    SHOW_INFO_Z00,
-    SHOW_INFO_Z01,
-    SHOW_INFO_Z02,
-    SHOW_INFO_Z03,
-    SHOW_INFO_Z04,
-    SHOW_INFO_Z05,
-    SHOW_INFO_Z06,
-    SHOW_INFO_Z07
+    SHOW_INFO_Z00
   } state_t;
 
   state_t state;
@@ -84,6 +77,13 @@ module cpu (
   } fetch_stage_t;
 
   fetch_stage_t fetch_stage;
+
+  typedef enum logic [1:0] {
+    SHOW_INFO_FETCH,
+    SHOW_INFO_EXECUTE
+  } show_info_stage_t;
+
+  show_info_stage_t show_info_stage;
 
   // Sequential logic: use an asynchronous active-low rst_n.
   always_ff @(posedge clk or negedge rst_n) begin
@@ -2525,6 +2525,7 @@ module cpu (
                   show_info_counter <= 0;
                   prev_state <= DECODE_EXECUTE;
                   state <= SHOW_INFO;
+                  show_info_stage <= SHOW_INFO_FETCH;
                 end else begin
                   show_info_counter <= 0;
                   pc <= pc + 2 & RAMW;
@@ -2672,50 +2673,50 @@ module cpu (
               v_ada <= 64;
               // v_din <= ra[7:4] < 10 ? ra[7:4] + 8'h30 : ra[7:4] + 8'h41 - 8'd10;
               v_din <= to_hexchar(ra[7:4]);
-            end else if (show_info_counter == 102) begin
-              // A low
-              v_ada <= 65;
-              // v_din <= ra[3:0] < 10 ? ra[3:0] + 8'h30 : ra[3:0] + 8'h41 - 8'd10;
-              v_din <= to_hexchar(ra[3:0]);
-            end else if (show_info_counter == 103) begin
-              // X high
-              v_ada <= 124;
-              // v_din <= rx[7:4] < 10 ? rx[7:4] + 8'h30 : rx[7:4] + 8'h41 - 8'd10;
-              v_din <= to_hexchar(rx[7:4]);
-            end else if (show_info_counter == 104) begin
-              // X low
-              v_ada <= 125;
-              // v_din <= rx[3:0] < 10 ? rx[3:0] + 8'h30 : rx[3:0] + 8'h41 - 8'd10;
-              v_din <= to_hexchar(rx[3:0]);
-            end else if (show_info_counter == 105) begin
-              // Y high
-              v_ada <= 184;
-              // v_din <= ry[7:4] < 10 ? ry[7:4] + 8'h30 : ry[7:4] + 8'h41 - 8'd10;
-              v_din <= to_hexchar(ry[7:4]);
-            end else if (show_info_counter == 106) begin
-              // Y low
-              v_ada <= 185;
-              // v_din <= ry[3:0] < 10 ? ry[3:0] + 8'h30 : ry[3:0] + 8'h41 - 8'd10;
-              v_din <= to_hexchar(ry[3:0]);
-            end else if (show_info_counter == 107) begin
-              // Address 1
-              v_ada <= 490;
-              v_din <= to_hexchar(operands[15:12]);
-            end else if (show_info_counter == 108) begin
-              // Address 2
-              v_ada <= 491;
-              v_din <= to_hexchar(operands[11:8]);
-            end else if (show_info_counter == 109) begin
-              // Address 3
-              v_ada <= 492;
-              v_din <= to_hexchar(operands[7:4]);
-            end else if (show_info_counter == 110) begin
-              // Address 4
-              v_ada <= 493;
-              v_din <= to_hexchar(operands[3:0]);
-            end else if (show_info_counter < 36) begin
-              v_ada <= info_vram_addr[show_info_counter] & VRAMW;
-              v_din <= info_vram_data[show_info_counter];
+              end else if (show_info_counter == 102) begin
+                // A low
+                v_ada <= 65;
+                // v_din <= ra[3:0] < 10 ? ra[3:0] + 8'h30 : ra[3:0] + 8'h41 - 8'd10;
+                v_din <= to_hexchar(ra[3:0]);
+              end else if (show_info_counter == 103) begin
+                // X high
+                v_ada <= 124;
+                // v_din <= rx[7:4] < 10 ? rx[7:4] + 8'h30 : rx[7:4] + 8'h41 - 8'd10;
+                v_din <= to_hexchar(rx[7:4]);
+              end else if (show_info_counter == 104) begin
+                // X low
+                v_ada <= 125;
+                // v_din <= rx[3:0] < 10 ? rx[3:0] + 8'h30 : rx[3:0] + 8'h41 - 8'd10;
+                v_din <= to_hexchar(rx[3:0]);
+              end else if (show_info_counter == 105) begin
+                // Y high
+                v_ada <= 184;
+                // v_din <= ry[7:4] < 10 ? ry[7:4] + 8'h30 : ry[7:4] + 8'h41 - 8'd10;
+                v_din <= to_hexchar(ry[7:4]);
+              end else if (show_info_counter == 106) begin
+                // Y low
+                v_ada <= 185;
+                // v_din <= ry[3:0] < 10 ? ry[3:0] + 8'h30 : ry[3:0] + 8'h41 - 8'd10;
+                v_din <= to_hexchar(ry[3:0]);
+              end else if (show_info_counter == 107) begin
+                // Address 1
+                v_ada <= 490;
+                v_din <= to_hexchar(operands[15:12]);
+              end else if (show_info_counter == 108) begin
+                // Address 2
+                v_ada <= 491;
+                v_din <= to_hexchar(operands[11:8]);
+              end else if (show_info_counter == 109) begin
+                // Address 3
+                v_ada <= 492;
+                v_din <= to_hexchar(operands[7:4]);
+              end else if (show_info_counter == 110) begin
+                // Address 4
+                v_ada <= 493;
+                v_din <= to_hexchar(operands[3:0]);
+              end else if (show_info_counter < 36) begin
+                v_ada <= info_vram_addr[show_info_counter] & VRAMW;
+                v_din <= info_vram_data[show_info_counter];
             end else if (show_info_counter == 200) begin
               show_info_counter <= 540;
               state <= SHOW_INFO_Z00;
@@ -2726,85 +2727,36 @@ module cpu (
           end
 
           SHOW_INFO_Z00: begin : SHOW_INFO_Z00_BLOCK
-            show_info_z00_block(show_info_counter);
-            if (show_info_counter == 600) begin
-              state <= SHOW_INFO_Z01;
-              show_info_counter <= 0;
-              disable SHOW_INFO_Z00_BLOCK;  //break
-            end
+            case (show_info_stage)
+              SHOW_INFO_FETCH: begin
+                show_info_cmd   <= show_info_rom[show_info_counter];
+                show_info_stage <= SHOW_INFO_EXECUTE;
+              end
 
-            show_info_counter <= show_info_counter + 1;
-          end
+              SHOW_INFO_EXECUTE: begin
+                if (show_info_cmd.vram_write) begin
+                  v_ada <= show_info_cmd.v_ada;
+                  v_din <= show_info_cmd.v_din_t ? to_hexchar(dout[3:0]) : to_hexchar(dout[7:4]);
+                end
+                if (show_info_cmd.mem_read) begin
+                  adb <= operands[15:0] + show_info_cmd.adb_diff;
+                  state <= FETCH_REQ;
+                  fetch_stage <= FETCH_DATA;
+                  next_state <= SHOW_INFO_Z00;
+                end
 
-          SHOW_INFO_Z01: begin : SHOW_INFO_Z01_BLOCK
-            show_info_z01_block(show_info_counter);
-            if (show_info_counter == 660) begin
-              state <= SHOW_INFO_Z02;
-              disable SHOW_INFO_Z01_BLOCK;  //break
-            end
+                show_info_counter <= show_info_counter + 1;
 
-            show_info_counter <= show_info_counter + 1;
-          end
-
-          SHOW_INFO_Z02: begin : SHOW_INFO_Z02_BLOCK
-            show_info_z02_block(show_info_counter);
-            if (show_info_counter == 720) begin
-              state <= SHOW_INFO_Z03;
-              disable SHOW_INFO_Z02_BLOCK;  //break
-            end
-
-            show_info_counter <= show_info_counter + 1;
-          end
-
-          SHOW_INFO_Z03: begin : SHOW_INFO_Z03_BLOCK
-            show_info_z03_block(show_info_counter);
-            if (show_info_counter == 780) begin
-              state <= SHOW_INFO_Z04;
-              disable SHOW_INFO_Z03_BLOCK;  //break
-            end
-
-            show_info_counter <= show_info_counter + 1;
-          end
-
-          SHOW_INFO_Z04: begin : SHOW_INFO_Z04_BLOCK
-            show_info_z04_block(show_info_counter);
-            if (show_info_counter == 840) begin
-              state <= SHOW_INFO_Z05;
-              disable SHOW_INFO_Z04_BLOCK;  //break
-            end
-
-            show_info_counter <= show_info_counter + 1;
-          end
-
-          SHOW_INFO_Z05: begin : SHOW_INFO_Z05_BLOCK
-            show_info_z05_block(show_info_counter);
-            if (show_info_counter == 900) begin
-              state <= SHOW_INFO_Z06;
-              disable SHOW_INFO_Z05_BLOCK;  //break
-            end
-
-            show_info_counter <= show_info_counter + 1;
-          end
-
-          SHOW_INFO_Z06: begin : SHOW_INFO_Z06_BLOCK
-            show_info_z06_block(show_info_counter);
-            if (show_info_counter == 960) begin
-              state <= SHOW_INFO_Z07;
-              disable SHOW_INFO_Z06_BLOCK;  //break
-            end
-
-            show_info_counter <= show_info_counter + 1;
-          end
-
-          SHOW_INFO_Z07: begin : SHOW_INFO_Z07_BLOCK
-            show_info_z07_block(show_info_counter);
-            if (show_info_counter == 840) begin
-              state <= prev_state;
-              operands[15:0] = 8'hFFFF;
-              disable SHOW_INFO_Z07_BLOCK;  //break
-            end
-
-            show_info_counter <= show_info_counter + 1;
+                if (show_info_counter == 1020) begin
+                  show_info_counter <= 0;
+                  state <= prev_state;
+                  operands[15:0] = 8'hFFFF;
+                  disable SHOW_INFO_Z00_BLOCK;  //break
+                end else begin
+                  show_info_stage <= SHOW_INFO_FETCH;
+                end
+              end
+            endcase
           end
 
         endcase
