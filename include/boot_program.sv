@@ -27,14 +27,15 @@ assign boot_program = '{
         21: 8'h01,
         22: 8'h85,  // STA $1F
         23: 8'h1F,
-        24: 8'h85,  // STA $26
-        25: 8'h26,
-        26: 8'h85,  // STA $2A
+        24: 8'h85,  // STA $80
+        25: 8'h80,
+        26: 8'h85,  // STA $FF
         27: 8'h2A,
-        28: 8'hDF,  // IFO
-        29: 8'h00,
-        30: 8'hEF,  // HLT
+        28: 8'hDF,  // IFO $8000
+        29: 8'h80,
+        30: 8'h00,
+        31: 8'hEF,  // HLT
         default: 8'hEA  // NOP
     };
 
-parameter logic [7:0] boot_program_length = 31;
+parameter logic [7:0] boot_program_length = 32;
