@@ -28,9 +28,9 @@ func gen() {
 	f, err = reopen(z)
 	chkerr(err)
 
-	for i := base + 360*mul; i < base+820*mul; i++ {
+	for i := base + 540*mul; i < base+1000*mul; i++ {
 		ada := (i - base) / mul
-		tmp := (i-base)/mul/60 - 6
+		tmp := (i-base)/mul/60 - 9
 		if z != tmp {
 			z = tmp
 			f.Close()
@@ -40,7 +40,7 @@ func gen() {
 		switch (i - base) % (60 * mul) {
 
 		case 2 * mul:
-			buf = fmt.Sprintf("%d: begin adb <= 8'h%02X; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z%02X; end\n",
+			buf = fmt.Sprintf("%d: begin adb <= operands[15:0] + 8'h%02X & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z%02X; end\n",
 				i, prefetch, z)
 			f.WriteString(buf)
 		case 4 * mul, 6 * mul, 8 * mul, 10 * mul, 13 * mul, 15 * mul, 17 * mul, 19 * mul, 23 * mul, 25 * mul, 27 * mul, 29 * mul, 32 * mul, 34 * mul, 36 * mul, 38 * mul:
@@ -52,7 +52,7 @@ func gen() {
 				i, ada)
 			f.WriteString(buf)
 			prefetch += 1
-			buf = fmt.Sprintf(" adb <= 8'h%02X; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z%02X; end\n",
+			buf = fmt.Sprintf(" adb <= operands[15:0] + 8'h%02X & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z%02X; end\n",
 				prefetch, z)
 			f.WriteString(buf)
 		case 39 * mul:

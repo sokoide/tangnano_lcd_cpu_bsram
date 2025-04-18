@@ -1,33 +1,33 @@
-422: begin adb <= 8'h10; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-424: begin v_ada <= 424; v_din <= to_hexchar(dout[7:4]); end
-425: begin v_ada <= 425; v_din <= to_hexchar(dout[3:0]);  adb <= 8'h11; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-426: begin v_ada <= 426; v_din <= to_hexchar(dout[7:4]); end
-427: begin v_ada <= 427; v_din <= to_hexchar(dout[3:0]);  adb <= 8'h12; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-428: begin v_ada <= 428; v_din <= to_hexchar(dout[7:4]); end
-429: begin v_ada <= 429; v_din <= to_hexchar(dout[3:0]);  adb <= 8'h13; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-430: begin v_ada <= 430; v_din <= to_hexchar(dout[7:4]); end
-431: begin v_ada <= 431; v_din <= to_hexchar(dout[3:0]);  adb <= 8'h14; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-433: begin v_ada <= 433; v_din <= to_hexchar(dout[7:4]); end
-434: begin v_ada <= 434; v_din <= to_hexchar(dout[3:0]);  adb <= 8'h15; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-435: begin v_ada <= 435; v_din <= to_hexchar(dout[7:4]); end
-436: begin v_ada <= 436; v_din <= to_hexchar(dout[3:0]);  adb <= 8'h16; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-437: begin v_ada <= 437; v_din <= to_hexchar(dout[7:4]); end
-438: begin v_ada <= 438; v_din <= to_hexchar(dout[3:0]);  adb <= 8'h17; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-439: begin v_ada <= 439; v_din <= to_hexchar(dout[7:4]); end
-440: begin v_ada <= 440; v_din <= to_hexchar(dout[3:0]);  adb <= 8'h18; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-443: begin v_ada <= 443; v_din <= to_hexchar(dout[7:4]); end
-444: begin v_ada <= 444; v_din <= to_hexchar(dout[3:0]);  adb <= 8'h19; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-445: begin v_ada <= 445; v_din <= to_hexchar(dout[7:4]); end
-446: begin v_ada <= 446; v_din <= to_hexchar(dout[3:0]);  adb <= 8'h1A; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-447: begin v_ada <= 447; v_din <= to_hexchar(dout[7:4]); end
-448: begin v_ada <= 448; v_din <= to_hexchar(dout[3:0]);  adb <= 8'h1B; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-449: begin v_ada <= 449; v_din <= to_hexchar(dout[7:4]); end
-450: begin v_ada <= 450; v_din <= to_hexchar(dout[3:0]);  adb <= 8'h1C; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-452: begin v_ada <= 452; v_din <= to_hexchar(dout[7:4]); end
-453: begin v_ada <= 453; v_din <= to_hexchar(dout[3:0]);  adb <= 8'h1D; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-454: begin v_ada <= 454; v_din <= to_hexchar(dout[7:4]); end
-455: begin v_ada <= 455; v_din <= to_hexchar(dout[3:0]);  adb <= 8'h1E; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-456: begin v_ada <= 456; v_din <= to_hexchar(dout[7:4]); end
-457: begin v_ada <= 457; v_din <= to_hexchar(dout[3:0]);  adb <= 8'h1F; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
-458: begin v_ada <= 458; v_din <= to_hexchar(dout[7:4]); end
-459: begin v_ada <= 459; v_din <= to_hexchar(dout[3:0]); end
+602: begin adb <= operands[15:0] + 8'h10 & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+604: begin v_ada <= 604; v_din <= to_hexchar(dout[7:4]); end
+605: begin v_ada <= 605; v_din <= to_hexchar(dout[3:0]);  adb <= operands[15:0] + 8'h11 & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+606: begin v_ada <= 606; v_din <= to_hexchar(dout[7:4]); end
+607: begin v_ada <= 607; v_din <= to_hexchar(dout[3:0]);  adb <= operands[15:0] + 8'h12 & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+608: begin v_ada <= 608; v_din <= to_hexchar(dout[7:4]); end
+609: begin v_ada <= 609; v_din <= to_hexchar(dout[3:0]);  adb <= operands[15:0] + 8'h13 & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+610: begin v_ada <= 610; v_din <= to_hexchar(dout[7:4]); end
+611: begin v_ada <= 611; v_din <= to_hexchar(dout[3:0]);  adb <= operands[15:0] + 8'h14 & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+613: begin v_ada <= 613; v_din <= to_hexchar(dout[7:4]); end
+614: begin v_ada <= 614; v_din <= to_hexchar(dout[3:0]);  adb <= operands[15:0] + 8'h15 & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+615: begin v_ada <= 615; v_din <= to_hexchar(dout[7:4]); end
+616: begin v_ada <= 616; v_din <= to_hexchar(dout[3:0]);  adb <= operands[15:0] + 8'h16 & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+617: begin v_ada <= 617; v_din <= to_hexchar(dout[7:4]); end
+618: begin v_ada <= 618; v_din <= to_hexchar(dout[3:0]);  adb <= operands[15:0] + 8'h17 & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+619: begin v_ada <= 619; v_din <= to_hexchar(dout[7:4]); end
+620: begin v_ada <= 620; v_din <= to_hexchar(dout[3:0]);  adb <= operands[15:0] + 8'h18 & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+623: begin v_ada <= 623; v_din <= to_hexchar(dout[7:4]); end
+624: begin v_ada <= 624; v_din <= to_hexchar(dout[3:0]);  adb <= operands[15:0] + 8'h19 & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+625: begin v_ada <= 625; v_din <= to_hexchar(dout[7:4]); end
+626: begin v_ada <= 626; v_din <= to_hexchar(dout[3:0]);  adb <= operands[15:0] + 8'h1A & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+627: begin v_ada <= 627; v_din <= to_hexchar(dout[7:4]); end
+628: begin v_ada <= 628; v_din <= to_hexchar(dout[3:0]);  adb <= operands[15:0] + 8'h1B & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+629: begin v_ada <= 629; v_din <= to_hexchar(dout[7:4]); end
+630: begin v_ada <= 630; v_din <= to_hexchar(dout[3:0]);  adb <= operands[15:0] + 8'h1C & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+632: begin v_ada <= 632; v_din <= to_hexchar(dout[7:4]); end
+633: begin v_ada <= 633; v_din <= to_hexchar(dout[3:0]);  adb <= operands[15:0] + 8'h1D & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+634: begin v_ada <= 634; v_din <= to_hexchar(dout[7:4]); end
+635: begin v_ada <= 635; v_din <= to_hexchar(dout[3:0]);  adb <= operands[15:0] + 8'h1E & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+636: begin v_ada <= 636; v_din <= to_hexchar(dout[7:4]); end
+637: begin v_ada <= 637; v_din <= to_hexchar(dout[3:0]);  adb <= operands[15:0] + 8'h1F & RAMW; state <= FETCH_REQ; fetch_stage <= FETCH_DATA; next_state <= SHOW_INFO_Z01; end
+638: begin v_ada <= 638; v_din <= to_hexchar(dout[7:4]); end
+639: begin v_ada <= 639; v_din <= to_hexchar(dout[3:0]); end

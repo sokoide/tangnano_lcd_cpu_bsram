@@ -312,6 +312,8 @@ module cpu (
               end
 
               FETCH_OPERAND1OF2: begin
+                // 2 byte operand will be stored as operands[15:0] in big endian
+                // which is easier to calculate
                 operands[7:0] <= dout;
                 adb <= pc + 2 & RAMW;
                 fetch_stage <= FETCH_OPERAND2;
@@ -394,7 +396,7 @@ module cpu (
                   end
                   2: begin
                     // you can do this step in 1, but followed 6502.
-                    // operands is in little endian.
+                    // operands is in big endian.
                     automatic logic [15:0] addr = operands[15:0] & RAMW;
                     pc <= addr;
                     adb <= addr;
@@ -2586,7 +2588,7 @@ module cpu (
           SHOW_INFO: begin : SHOW_INFO_BLOCK
             automatic
             logic [15:0]
-            info_vram_addr[59] = '{
+            info_vram_addr[36] = '{
                 0,
                 1,
                 2,
@@ -2601,55 +2603,32 @@ module cpu (
                 61,
                 62,
                 63,
-                64,
-                65,
                 120,
                 121,
                 122,
                 123,
-                124,
-                125,
                 180,
                 181,
                 182,
                 183,
-                184,
-                185,
-                300,
-                301,
-                302,
-                303,
-                305,
-                306,
-                307,
-                308,
-                310,
-                311,
-                312,
-                313,
-                314,
-                315,
-                316,
-                360,
-                361,
-                420,
-                421,
                 480,
                 481,
-                540,
-                541,
-                600,
-                601,
-                660,
-                661,
-                720,
-                721,
-                780,
-                781
+                482,
+                483,
+                484,
+                485,
+                486,
+                488,
+                489,
+                490,
+                491,
+                492,
+                493,
+                494
             };
             automatic
             logic [7:0]
-            info_vram_data[59] = '{
+            info_vram_data[36] = '{
                 8'h52,  // Registers)
                 8'h65,
                 8'h67,
@@ -2664,76 +2643,81 @@ module cpu (
                 8'h3a,
                 8'h30,
                 8'h78,
-                8'h20,  // idx 14
-                8'h20,  // idx 15
                 8'h58,  // X:0x
                 8'h3a,
                 8'h30,
                 8'h78,
-                8'h20,  // idx 20
-                8'h20,  // idx 21
                 8'h59,  // y:0x
                 8'h3a,
                 8'h30,
                 8'h78,
-                8'h20,  // idx 26
-                8'h20,  // idx 27
-                8'h5A,  // Zero
-                8'h65,
+                8'h41,  // Address
+                8'h64,
+                8'h64,
                 8'h72,
-                8'h6F,
-                8'h70,  // page
-                8'h61,
-                8'h67,
                 8'h65,
+                8'h73,
+                8'h73,
                 8'h30,  // 0
                 8'h78,  // x
                 8'h30,  // 0
                 8'h30,  // 0
-                8'h2D,  // -
-                8'h37,  // 7
-                8'h46,  // F
-                8'h30,  // 00
-                8'h30,
-                8'h31,  // 10
-                8'h30,
-                8'h32,  // 20
-                8'h30,
-                8'h33,  // 30
-                8'h30,
-                8'h34,  // ...
-                8'h30,
-                8'h35,
-                8'h30,
-                8'h36,
-                8'h30,
-                8'h37,  // 70
-                8'h30
+                8'h30,  // 0
+                8'h30,  // 0
+                8'h2D  // -
             };
 
-            if (show_info_counter == 14) begin
+            if (show_info_counter == 101) begin
+              // A high
               v_ada <= 64;
-              v_din <= ra[7:4] < 10 ? ra[7:4] + 8'h30 : ra[7:4] + 8'h41 - 8'd10;
-            end else if (show_info_counter == 15) begin
+              // v_din <= ra[7:4] < 10 ? ra[7:4] + 8'h30 : ra[7:4] + 8'h41 - 8'd10;
+              v_din <= to_hexchar(ra[7:4]);
+            end else if (show_info_counter == 102) begin
+              // A low
               v_ada <= 65;
-              v_din <= ra[3:0] < 10 ? ra[3:0] + 8'h30 : ra[3:0] + 8'h41 - 8'd10;
-            end else if (show_info_counter == 20) begin
+              // v_din <= ra[3:0] < 10 ? ra[3:0] + 8'h30 : ra[3:0] + 8'h41 - 8'd10;
+              v_din <= to_hexchar(ra[3:0]);
+            end else if (show_info_counter == 103) begin
+              // X high
               v_ada <= 124;
-              v_din <= rx[7:4] < 10 ? rx[7:4] + 8'h30 : rx[7:4] + 8'h41 - 8'd10;
-            end else if (show_info_counter == 21) begin
+              // v_din <= rx[7:4] < 10 ? rx[7:4] + 8'h30 : rx[7:4] + 8'h41 - 8'd10;
+              v_din <= to_hexchar(rx[7:4]);
+            end else if (show_info_counter == 104) begin
+              // X low
               v_ada <= 125;
-              v_din <= rx[3:0] < 10 ? rx[3:0] + 8'h30 : rx[3:0] + 8'h41 - 8'd10;
-            end else if (show_info_counter == 26) begin
+              // v_din <= rx[3:0] < 10 ? rx[3:0] + 8'h30 : rx[3:0] + 8'h41 - 8'd10;
+              v_din <= to_hexchar(rx[3:0]);
+            end else if (show_info_counter == 105) begin
+              // Y high
               v_ada <= 184;
-              v_din <= ry[7:4] < 10 ? ry[7:4] + 8'h30 : ry[7:4] + 8'h41 - 8'd10;
-            end else if (show_info_counter == 27) begin
+              // v_din <= ry[7:4] < 10 ? ry[7:4] + 8'h30 : ry[7:4] + 8'h41 - 8'd10;
+              v_din <= to_hexchar(ry[7:4]);
+            end else if (show_info_counter == 106) begin
+              // Y low
               v_ada <= 185;
-              v_din <= ry[3:0] < 10 ? ry[3:0] + 8'h30 : ry[3:0] + 8'h41 - 8'd10;
-            end else if (show_info_counter < 59) begin
+              // v_din <= ry[3:0] < 10 ? ry[3:0] + 8'h30 : ry[3:0] + 8'h41 - 8'd10;
+              v_din <= to_hexchar(ry[3:0]);
+            end else if (show_info_counter == 107) begin
+              // Address 1
+              v_ada <= 490;
+              v_din <= to_hexchar(operands[15:12]);
+            end else if (show_info_counter == 108) begin
+              // Address 2
+              v_ada <= 491;
+              v_din <= to_hexchar(operands[11:8]);
+            end else if (show_info_counter == 109) begin
+              // Address 3
+              v_ada <= 492;
+              v_din <= to_hexchar(operands[7:4]);
+            end else if (show_info_counter == 110) begin
+              // Address 4
+              v_ada <= 493;
+              v_din <= to_hexchar(operands[3:0]);
+            end else if (show_info_counter < 36) begin
               v_ada <= info_vram_addr[show_info_counter] & VRAMW;
               v_din <= info_vram_data[show_info_counter];
-            end else if (show_info_counter == 240) begin
-              show_info_counter <= 360;
+            end else if (show_info_counter == 200) begin
+              show_info_counter <= 540;
               state <= SHOW_INFO_Z00;
               disable SHOW_INFO_BLOCK;  // break
             end
@@ -2743,12 +2727,10 @@ module cpu (
 
           SHOW_INFO_Z00: begin : SHOW_INFO_Z00_BLOCK
             show_info_z00_block(show_info_counter);
-            if (show_info_counter == 420) begin
+            if (show_info_counter == 600) begin
               state <= SHOW_INFO_Z01;
               show_info_counter <= 0;
               disable SHOW_INFO_Z00_BLOCK;  //break
-              // end else begin
-              //   show_info_counter <= show_info_counter + 1;
             end
 
             show_info_counter <= show_info_counter + 1;
@@ -2756,7 +2738,7 @@ module cpu (
 
           SHOW_INFO_Z01: begin : SHOW_INFO_Z01_BLOCK
             show_info_z01_block(show_info_counter);
-            if (show_info_counter == 480) begin
+            if (show_info_counter == 660) begin
               state <= SHOW_INFO_Z02;
               disable SHOW_INFO_Z01_BLOCK;  //break
             end
@@ -2766,7 +2748,7 @@ module cpu (
 
           SHOW_INFO_Z02: begin : SHOW_INFO_Z02_BLOCK
             show_info_z02_block(show_info_counter);
-            if (show_info_counter == 540) begin
+            if (show_info_counter == 720) begin
               state <= SHOW_INFO_Z03;
               disable SHOW_INFO_Z02_BLOCK;  //break
             end
@@ -2776,7 +2758,7 @@ module cpu (
 
           SHOW_INFO_Z03: begin : SHOW_INFO_Z03_BLOCK
             show_info_z03_block(show_info_counter);
-            if (show_info_counter == 600) begin
+            if (show_info_counter == 780) begin
               state <= SHOW_INFO_Z04;
               disable SHOW_INFO_Z03_BLOCK;  //break
             end
@@ -2786,7 +2768,7 @@ module cpu (
 
           SHOW_INFO_Z04: begin : SHOW_INFO_Z04_BLOCK
             show_info_z04_block(show_info_counter);
-            if (show_info_counter == 660) begin
+            if (show_info_counter == 840) begin
               state <= SHOW_INFO_Z05;
               disable SHOW_INFO_Z04_BLOCK;  //break
             end
@@ -2796,7 +2778,7 @@ module cpu (
 
           SHOW_INFO_Z05: begin : SHOW_INFO_Z05_BLOCK
             show_info_z05_block(show_info_counter);
-            if (show_info_counter == 720) begin
+            if (show_info_counter == 900) begin
               state <= SHOW_INFO_Z06;
               disable SHOW_INFO_Z05_BLOCK;  //break
             end
@@ -2806,7 +2788,7 @@ module cpu (
 
           SHOW_INFO_Z06: begin : SHOW_INFO_Z06_BLOCK
             show_info_z06_block(show_info_counter);
-            if (show_info_counter == 780) begin
+            if (show_info_counter == 960) begin
               state <= SHOW_INFO_Z07;
               disable SHOW_INFO_Z06_BLOCK;  //break
             end
