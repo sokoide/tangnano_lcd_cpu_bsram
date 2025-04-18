@@ -2587,143 +2587,139 @@ module cpu (
           end
 
           SHOW_INFO: begin : SHOW_INFO_BLOCK
-            automatic
-            logic [15:0]
-            info_vram_addr[36] = '{
-                0,
-                1,
-                2,
-                3,
-                4,
-                5,
-                6,
-                7,
-                8,
-                9,
-                60,
-                61,
-                62,
-                63,
-                120,
-                121,
-                122,
-                123,
-                180,
-                181,
-                182,
-                183,
-                480,
-                481,
-                482,
-                483,
-                484,
-                485,
-                486,
-                488,
-                489,
-                490,
-                491,
-                492,
-                493,
-                494
-            };
-            automatic
-            logic [7:0]
-            info_vram_data[36] = '{
-                8'h52,  // Registers)
-                8'h65,
-                8'h67,
-                8'h69,
-                8'h73,
-                8'h74,
-                8'h65,
-                8'h72,
-                8'h73,
-                8'h29,
-                8'h41,  // A:0x
-                8'h3a,
-                8'h30,
-                8'h78,
-                8'h58,  // X:0x
-                8'h3a,
-                8'h30,
-                8'h78,
-                8'h59,  // y:0x
-                8'h3a,
-                8'h30,
-                8'h78,
-                8'h41,  // Address
-                8'h64,
-                8'h64,
-                8'h72,
-                8'h65,
-                8'h73,
-                8'h73,
-                8'h30,  // 0
-                8'h78,  // x
-                8'h30,  // 0
-                8'h30,  // 0
-                8'h30,  // 0
-                8'h30,  // 0
-                8'h2D  // -
-            };
+            show_info_counter <= 0;
+            state <= SHOW_INFO_Z00;
+            // automatic
+            // logic [15:0]
+            // info_vram_addr[36] = '{
+            //     0,
+            //     1,
+            //     2,
+            //     3,
+            //     4,
+            //     5,
+            //     6,
+            //     7,
+            //     8,
+            //     9,
+            //     60,
+            //     61,
+            //     62,
+            //     63,
+            //     120,
+            //     121,
+            //     122,
+            //     123,
+            //     180,
+            //     181,
+            //     182,
+            //     183,
+            //     480,
+            //     481,
+            //     482,
+            //     483,
+            //     484,
+            //     485,
+            //     486,
+            //     488,
+            //     489,
+            //     490,
+            //     491,
+            //     492,
+            //     493,
+            //     494
+            // };
+            // automatic
+            // logic [7:0]
+            // info_vram_data[36] = '{
+            //     8'h52,  // Registers)
+            //     8'h65,
+            //     8'h67,
+            //     8'h69,
+            //     8'h73,
+            //     8'h74,
+            //     8'h65,
+            //     8'h72,
+            //     8'h73,
+            //     8'h29,
+            //     8'h41,  // A:0x
+            //     8'h3a,
+            //     8'h30,
+            //     8'h78,
+            //     8'h58,  // X:0x
+            //     8'h3a,
+            //     8'h30,
+            //     8'h78,
+            //     8'h59,  // y:0x
+            //     8'h3a,
+            //     8'h30,
+            //     8'h78,
+            //     8'h41,  // Address
+            //     8'h64,
+            //     8'h64,
+            //     8'h72,
+            //     8'h65,
+            //     8'h73,
+            //     8'h73,
+            //     8'h30,  // 0
+            //     8'h78,  // x
+            //     8'h30,  // 0
+            //     8'h30,  // 0
+            //     8'h30,  // 0
+            //     8'h30,  // 0
+            //     8'h2D  // -
+            // };
 
-            if (show_info_counter == 101) begin
-              // A high
-              v_ada <= 64;
-              // v_din <= ra[7:4] < 10 ? ra[7:4] + 8'h30 : ra[7:4] + 8'h41 - 8'd10;
-              v_din <= to_hexchar(ra[7:4]);
-              end else if (show_info_counter == 102) begin
-                // A low
-                v_ada <= 65;
-                // v_din <= ra[3:0] < 10 ? ra[3:0] + 8'h30 : ra[3:0] + 8'h41 - 8'd10;
-                v_din <= to_hexchar(ra[3:0]);
-              end else if (show_info_counter == 103) begin
-                // X high
-                v_ada <= 124;
-                // v_din <= rx[7:4] < 10 ? rx[7:4] + 8'h30 : rx[7:4] + 8'h41 - 8'd10;
-                v_din <= to_hexchar(rx[7:4]);
-              end else if (show_info_counter == 104) begin
-                // X low
-                v_ada <= 125;
-                // v_din <= rx[3:0] < 10 ? rx[3:0] + 8'h30 : rx[3:0] + 8'h41 - 8'd10;
-                v_din <= to_hexchar(rx[3:0]);
-              end else if (show_info_counter == 105) begin
-                // Y high
-                v_ada <= 184;
-                // v_din <= ry[7:4] < 10 ? ry[7:4] + 8'h30 : ry[7:4] + 8'h41 - 8'd10;
-                v_din <= to_hexchar(ry[7:4]);
-              end else if (show_info_counter == 106) begin
-                // Y low
-                v_ada <= 185;
-                // v_din <= ry[3:0] < 10 ? ry[3:0] + 8'h30 : ry[3:0] + 8'h41 - 8'd10;
-                v_din <= to_hexchar(ry[3:0]);
-              end else if (show_info_counter == 107) begin
-                // Address 1
-                v_ada <= 490;
-                v_din <= to_hexchar(operands[15:12]);
-              end else if (show_info_counter == 108) begin
-                // Address 2
-                v_ada <= 491;
-                v_din <= to_hexchar(operands[11:8]);
-              end else if (show_info_counter == 109) begin
-                // Address 3
-                v_ada <= 492;
-                v_din <= to_hexchar(operands[7:4]);
-              end else if (show_info_counter == 110) begin
-                // Address 4
-                v_ada <= 493;
-                v_din <= to_hexchar(operands[3:0]);
-              end else if (show_info_counter < 36) begin
-                v_ada <= info_vram_addr[show_info_counter] & VRAMW;
-                v_din <= info_vram_data[show_info_counter];
-            end else if (show_info_counter == 200) begin
-              show_info_counter <= 540;
-              state <= SHOW_INFO_Z00;
-              disable SHOW_INFO_BLOCK;  // break
-            end
+            // if (show_info_counter == 101) begin
+            //   // A high
+            //   v_ada <= 64;
+            //   v_din <= to_hexchar(ra[7:4]);
+            //   end else if (show_info_counter == 102) begin
+            //     // A low
+            //     v_ada <= 65;
+            //     v_din <= to_hexchar(ra[3:0]);
+            //   end else if (show_info_counter == 103) begin
+            //     // X high
+            //     v_ada <= 124;
+            //     v_din <= to_hexchar(rx[7:4]);
+            //   end else if (show_info_counter == 104) begin
+            //     // X low
+            //     v_ada <= 125;
+            //     v_din <= to_hexchar(rx[3:0]);
+            //   end else if (show_info_counter == 105) begin
+            //     // Y high
+            //     v_ada <= 184;
+            //     v_din <= to_hexchar(ry[7:4]);
+            //   end else if (show_info_counter == 106) begin
+            //     // Y low
+            //     v_ada <= 185;
+            //     v_din <= to_hexchar(ry[3:0]);
+            //   end else if (show_info_counter == 107) begin
+            //     // Address 1
+            //     v_ada <= 490;
+            //     v_din <= to_hexchar(operands[15:12]);
+            //   end else if (show_info_counter == 108) begin
+            //     // Address 2
+            //     v_ada <= 491;
+            //     v_din <= to_hexchar(operands[11:8]);
+            //   end else if (show_info_counter == 109) begin
+            //     // Address 3
+            //     v_ada <= 492;
+            //     v_din <= to_hexchar(operands[7:4]);
+            //   end else if (show_info_counter == 110) begin
+            //     // Address 4
+            //     v_ada <= 493;
+            //     v_din <= to_hexchar(operands[3:0]);
+            //   end else if (show_info_counter < 36) begin
+            //     v_ada <= info_vram_addr[show_info_counter] & VRAMW;
+            //     v_din <= info_vram_data[show_info_counter];
+            // end else if (show_info_counter == 200) begin
+            //   show_info_counter <= 540;
+            //   state <= SHOW_INFO_Z00;
+            //   disable SHOW_INFO_BLOCK;  // break
+            // end
 
-            show_info_counter <= show_info_counter + 1;
+            // show_info_counter <= show_info_counter + 1;
           end
 
           SHOW_INFO_Z00: begin : SHOW_INFO_Z00_BLOCK
@@ -2736,7 +2732,18 @@ module cpu (
               SHOW_INFO_EXECUTE: begin
                 if (show_info_cmd.vram_write) begin
                   v_ada <= show_info_cmd.v_ada;
-                  v_din <= show_info_cmd.v_din_t ? to_hexchar(dout[3:0]) : to_hexchar(dout[7:4]);
+                  // v_din <= show_info_cmd.v_din_t ? to_hexchar(dout[3:0]) : to_hexchar(dout[7:4]);
+                  case (show_info_cmd.v_din_t)
+                    0: begin  // high nibble
+                      v_din <= to_hexchar(dout[7:4]);
+                    end
+                    1: begin  // low nibble
+                      v_din <= to_hexchar(dout[3:0]);
+                    end
+                    2: begin  // immediate
+                      v_din <= show_info_cmd.v_din;
+                    end
+                  endcase
                 end
                 if (show_info_cmd.mem_read) begin
                   adb <= operands[15:0] + show_info_cmd.adb_diff;
