@@ -66,13 +66,23 @@ func gen() {
 	write_string(f, &counter, 14, y, "-")
 
 	f.WriteString("// Memory dump\n")
-	dx := 6 // first position to write the data
+	dx := 9 // first position to write the data
 	for i := 540; i < 60*17; i++ {
 		ada := i
 		switch i % 60 {
 		case 0: // base address
-
-		case 5: // prefetch
+			write_string(f, &counter, 0, i/60, "0x:")
+		case 2:
+			write_show_info_rom(f, &counter, ada, 8, 0, 0x10*(i/60-9), 1, 0)
+		case 3:
+			write_show_info_rom(f, &counter, ada, 8, 1, 0x10*(i/60-9), 1, 0)
+		case 4:
+			write_show_info_rom(f, &counter, ada, 8, 2, 0x10*(i/60-9), 1, 0)
+		case 5:
+			write_show_info_rom(f, &counter, ada, 8, 3, 0x10*(i/60-9), 1, 0)
+		case 6:
+			write_string(f, &counter, 6, i/60, ":")
+		case 8: // prefetch
 			write_show_info_rom(f, &counter, 0, 0, 0, prefetch, 0, 1)
 		case dx, dx + 2, dx + 4, dx + 6, dx + 9, dx + 11, dx + 13, dx + 15, dx + 19, dx + 21, dx + 23, dx + 25, dx + 28, dx + 30, dx + 32, dx + 34: // write high nibble
 			write_show_info_rom(f, &counter, ada, 0, 0, 0, 1, 0)

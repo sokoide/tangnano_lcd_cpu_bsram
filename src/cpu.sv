@@ -2599,6 +2599,8 @@ module cpu (
               end
 
               SHOW_INFO_EXECUTE: begin
+                automatic logic [15:0] tmp_addr;
+                tmp_addr = operands + show_info_cmd.diff;
                 if (show_info_cmd.vram_write) begin
                   v_ada <= show_info_cmd.v_ada;
                   // v_din <= show_info_cmd.v_din_t ? to_hexchar(dout[3:0]) : to_hexchar(dout[7:4]);
@@ -2625,16 +2627,16 @@ module cpu (
                     8: begin  // operands (start memory address)
                       case (show_info_cmd.v_din)
                         0: begin  // 1st nibble
-                          v_din <= to_hexchar(operands[15:12]);
+                          v_din <= to_hexchar(tmp_addr[15:12]);
                         end
                         1: begin  // 2nd nibble
-                          v_din <= to_hexchar(operands[11:8]);
+                          v_din <= to_hexchar(tmp_addr[11:8]);
                         end
                         2: begin  // 3rd nibble
-                          v_din <= to_hexchar(operands[7:4]);
+                          v_din <= to_hexchar(tmp_addr[7:4]);
                         end
                         3: begin  // 4th nibble
-                          v_din <= to_hexchar(operands[3:0]);
+                          v_din <= to_hexchar(tmp_addr[3:0]);
                         end
                       endcase
                     end
