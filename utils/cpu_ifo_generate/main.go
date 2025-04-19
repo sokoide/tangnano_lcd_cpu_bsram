@@ -37,8 +37,6 @@ func gen() {
 	var f *os.File
 	var err error
 
-	base := 0
-	mul := 1
 	counter := 0
 	y := 0
 	var prefetch int = 0
@@ -68,19 +66,20 @@ func gen() {
 	write_string(f, &counter, 14, y, "-")
 
 	f.WriteString("// Memory dump\n")
-	for i := base + 540*mul; i < base+1000*mul; i++ {
-		ada := (i - base) / mul
-		switch (i - base) % (60 * mul) {
+	dx := 6 // first position to write the data
+	for i := 540; i < 60*17; i++ {
+		ada := i
+		switch i % 60 {
+		case 0: // base address
 
-		case 2 * mul:
+		case 5: // prefetch
 			write_show_info_rom(f, &counter, 0, 0, 0, prefetch, 0, 1)
-			counter++
-		case 4 * mul, 6 * mul, 8 * mul, 10 * mul, 13 * mul, 15 * mul, 17 * mul, 19 * mul, 23 * mul, 25 * mul, 27 * mul, 29 * mul, 32 * mul, 34 * mul, 36 * mul, 38 * mul:
+		case dx, dx + 2, dx + 4, dx + 6, dx + 9, dx + 11, dx + 13, dx + 15, dx + 19, dx + 21, dx + 23, dx + 25, dx + 28, dx + 30, dx + 32, dx + 34: // write high nibble
 			write_show_info_rom(f, &counter, ada, 0, 0, 0, 1, 0)
-		case 5 * mul, 7 * mul, 9 * mul, 11 * mul, 14 * mul, 16 * mul, 18 * mul, 20 * mul, 24 * mul, 26 * mul, 28 * mul, 30 * mul, 33 * mul, 35 * mul, 37 * mul:
+		case dx + 1, dx + 3, dx + 5, dx + 7, dx + 10, dx + 12, dx + 14, dx + 16, dx + 20, dx + 22, dx + 24, dx + 26, dx + 29, dx + 31, dx + 33: // write low nibble and prefetch
 			prefetch += 1
 			write_show_info_rom(f, &counter, ada, 1, 0, prefetch, 1, 1)
-		case 39 * mul:
+		case dx + 35: // write low nibble
 			write_show_info_rom(f, &counter, ada, 1, 0, 0, 1, 0)
 			prefetch += 1
 		}
