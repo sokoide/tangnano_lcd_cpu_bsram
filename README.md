@@ -14,6 +14,7 @@ cd examples
 # if not installed
 brew install srecord cc65
 # edit Makefile -> SRCS and change `simple.s` to any of the examples you want to use
+make clean
 make
 # include/boot_program.sv and examples/example.lst are generated
 # take a look at the files
