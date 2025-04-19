@@ -9,9 +9,9 @@ typedef struct packed {
   // 5: Y register
   // 6: SP
   // 7: PC
-  // 8: memory address
-  logic [1:0]  v_din_t;
-  // v_din_i: index of v_din
+  // 8: operands (start memory address)
+  logic [3:0]  v_din_t;
+  // v_din: value (if v_din_t is 2) or index of v_din
   // 0: 1st nibble (e.g. high nibble of register A)
   // 1: 2nd nibble (e.g. low nibble of register A)
   // 2: 3rd nibble

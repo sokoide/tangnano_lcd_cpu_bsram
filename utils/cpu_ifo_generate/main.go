@@ -58,6 +58,14 @@ func gen() {
 	y++
 	write_string(f, &counter, 0, y, "SP:0x")
 	y++
+	y++
+	y++
+	write_string(f, &counter, 0, y, "Address 0x")
+	write_show_info_rom(f, &counter, 60*y+10, 8, 0, 0, 1, 0)
+	write_show_info_rom(f, &counter, 60*y+11, 8, 1, 0, 1, 0)
+	write_show_info_rom(f, &counter, 60*y+12, 8, 2, 0, 1, 0)
+	write_show_info_rom(f, &counter, 60*y+13, 8, 3, 0, 1, 0)
+	write_string(f, &counter, 14, y, "-")
 
 	f.WriteString("// Memory dump\n")
 	for i := base + 540*mul; i < base+1000*mul; i++ {

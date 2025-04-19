@@ -2612,6 +2612,32 @@ module cpu (
                     2: begin  // immediate
                       v_din <= show_info_cmd.v_din;
                     end
+                    3: begin
+                    end
+                    4: begin
+                    end
+                    5: begin
+                    end
+                    6: begin
+                    end
+                    7: begin
+                    end
+                    8: begin  // operands (start memory address)
+                      case (show_info_cmd.v_din)
+                        0: begin  // 1st nibble
+                          v_din <= to_hexchar(operands[15:12]);
+                        end
+                        1: begin  // 2nd nibble
+                          v_din <= to_hexchar(operands[11:8]);
+                        end
+                        2: begin  // 3rd nibble
+                          v_din <= to_hexchar(operands[7:4]);
+                        end
+                        3: begin  // 4th nibble
+                          v_din <= to_hexchar(operands[3:0]);
+                        end
+                      endcase
+                    end
                   endcase
                 end
                 if (show_info_cmd.mem_read) begin
