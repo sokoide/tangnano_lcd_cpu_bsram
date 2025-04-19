@@ -3,13 +3,21 @@ logic [7:0] boot_program[256];
 assign boot_program = '{
         0: 8'hA9,
         1: 8'h41,
-        2: 8'h8D,
-        3: 8'h00,
-        4: 8'hE0,
-        5: 8'hDF,
-        6: 8'h00,
-        7: 8'h00,
-        8: 8'hEF,
+        2: 8'h85,
+        3: 8'h01,
+        4: 8'h8D,
+        5: 8'h00,
+        6: 8'hE0,
+        7: 8'hFF,
+        8: 8'hAE,
+        9: 8'hDF,
+        10: 8'h00,
+        11: 8'h00,
+        12: 8'hFF,
+        13: 8'hAE,
+        14: 8'h4C,
+        15: 8'h04,
+        16: 8'h02,
         default: 8'hEA
     };
-parameter logic[7:0] boot_program_length = 9;
+parameter logic[7:0] boot_program_length = 17;

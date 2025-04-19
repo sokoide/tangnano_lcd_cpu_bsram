@@ -2528,8 +2528,8 @@ module cpu (
                   show_info_stage <= SHOW_INFO_FETCH;
                 end else begin
                   show_info_counter <= 0;
-                  pc <= pc + 2 & RAMW;
-                  adb <= pc + 2 & RAMW;
+                  pc <= pc + 3 & RAMW;
+                  adb <= pc + 3 & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_OPCODE;
                 end

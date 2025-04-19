@@ -3,9 +3,13 @@
     .org $0200
 
 start:
-; load $41 ('A') into A register
+; load 'A'
     LDA #$41
-; store a value of A register at $E000 (top-left corner of VRAM)
+; displaoy 'A'
     STA $E000
+; load 'B'
+    LDA #$42
+; displaoy 'B'
+    STA $E001
 ; HLT: stop CPU
     .byte $EF

@@ -38,7 +38,7 @@ module tb_cpu;
   // 20ns clock (#10 means 10ns) == 50MHz
   always #10 clk = ~clk;
 
-  // 100ns vsync
+  // 10ns vsync
   always #50 vsync = ~vsync;
 
   ram ram_inst (
@@ -81,7 +81,7 @@ module tb_cpu;
     rst_n = 1;  // release
 
     // repeat(1) @(posedge clk); is same as #2; because 1 clock on->off is 2 cycles
-    repeat (2000) @(posedge clk);
+    repeat (4000) @(posedge clk);
 
     $display("=== Test End ===");
     $finish;
