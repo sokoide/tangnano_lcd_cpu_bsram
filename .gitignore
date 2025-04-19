@@ -11,6 +11,10 @@ tmp.*
 *.log
 *.html
 *.xml
+*.lst
+*.o
+*.hex
+*.bin
 temp
 
 # dsim
