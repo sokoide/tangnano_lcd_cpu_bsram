@@ -2615,10 +2615,13 @@ module cpu (
                       v_din <= show_info_cmd.v_din;
                     end
                     3: begin
+                      v_din <= show_info_cmd.v_din ? to_hexchar(ra[3:0]) : to_hexchar(ra[7:4]);
                     end
                     4: begin
+                      v_din <= show_info_cmd.v_din ? to_hexchar(rx[3:0]) : to_hexchar(rx[7:4]);
                     end
                     5: begin
+                      v_din <= show_info_cmd.v_din ? to_hexchar(ry[3:0]) : to_hexchar(ry[7:4]);
                     end
                     6: begin
                     end

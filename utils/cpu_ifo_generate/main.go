@@ -47,10 +47,16 @@ func gen() {
 	write_string(f, &counter, 0, y, "Registers)")
 	y++
 	write_string(f, &counter, 0, y, "A :0x")
+	write_show_info_rom(f, &counter, 65, 3, 0, 0, 1, 0)
+	write_show_info_rom(f, &counter, 66, 3, 1, 0, 1, 0)
 	y++
 	write_string(f, &counter, 0, y, "X :0x")
+	write_show_info_rom(f, &counter, 125, 4, 0, 0, 1, 0)
+	write_show_info_rom(f, &counter, 126, 4, 1, 0, 1, 0)
 	y++
 	write_string(f, &counter, 0, y, "Y :0x")
+	write_show_info_rom(f, &counter, 185, 5, 0, 0, 1, 0)
+	write_show_info_rom(f, &counter, 186, 5, 1, 0, 1, 0)
 	y++
 	write_string(f, &counter, 0, y, "PC:0x")
 	y++
