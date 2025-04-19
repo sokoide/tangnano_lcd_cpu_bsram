@@ -1,4 +1,6 @@
-# prereq: brew install srecord cc65
+# Prerequisites
+#  Mac) brew install srecord cc65 golang
+#  WSL / Linux) sudo apt install srecord cc65 golang
 
 SRCS = simple.s
 SV = ../include/boot_program.sv
@@ -33,7 +35,7 @@ sv: $(HEX) $(HEX_FPGA)
 	@echo "$(SV) file written"
 
 $(HEX_FPGA): $(HEX_FPGA_SRCS)
-	cd $(HEX_FPGA_DIR); go build
+	cd $(HEX_FPGA_DIR); go clean; go mod tidy; go build
 
 $(HEX): $(TARGET)
 	srec_cat $(TARGET) -binary -offset 0x0200 -o $(HEX) -Intel
