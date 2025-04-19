@@ -1,4 +1,4 @@
-; Simple Example) draw 'A' on top-left
+; ADC, CMP, BNE
 ; Program loaded and starts at 0x0200
     .org $0200
 

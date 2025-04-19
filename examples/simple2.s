@@ -1,4 +1,4 @@
-; Simple Example) draw 'A' on top-left
+; Simple Example) draw 'A' and 'B' on top-left
 ; Program loaded and starts at 0x0200
     .org $0200
 

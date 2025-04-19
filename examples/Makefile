@@ -1,6 +1,6 @@
 # prereq: brew install srecord cc65
 
-SRCS = simple4.s
+SRCS = simple.s
 SV = ../include/boot_program.sv
 
 HEX = example.hex

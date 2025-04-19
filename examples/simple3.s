@@ -1,3 +1,4 @@
+; JMP
 ; Program loaded and starts at 0x0200
     .org $0200
 
