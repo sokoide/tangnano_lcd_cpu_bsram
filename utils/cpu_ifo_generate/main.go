@@ -59,8 +59,14 @@ func gen() {
 	write_show_info_rom(f, &counter, 186, 5, 1, 0, 1, 0)
 	y++
 	write_string(f, &counter, 0, y, "PC:0x")
+	write_show_info_rom(f, &counter, 245, 7, 0, 0, 1, 0)
+	write_show_info_rom(f, &counter, 246, 7, 1, 0, 1, 0)
+	write_show_info_rom(f, &counter, 247, 7, 2, 0, 1, 0)
+	write_show_info_rom(f, &counter, 248, 7, 3, 0, 1, 0)
 	y++
-	write_string(f, &counter, 0, y, "SP:0x")
+	write_string(f, &counter, 0, y, "SP:0x1")
+	write_show_info_rom(f, &counter, 306, 6, 0, 0, 1, 0)
+	write_show_info_rom(f, &counter, 307, 6, 1, 0, 1, 0)
 	y++
 	y++
 	y++
