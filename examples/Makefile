@@ -1,13 +1,13 @@
 # prereq: brew install srecord cc65
 
-TARGET = example.bin
+SRCS = simple.s
 SV = ../include/boot_program.sv
+
 HEX = example.hex
 HEX_FPGA_DIR = ../utils/hex_fpga
 HEX_FPGA = $(HEX_FPGA_DIR)/hex_fpga
 HEX_FPGA_SRCS = $(HEX_FPGA_DIR)/main.go
-SRCS = hello_world.s \
-
+TARGET = example.bin
 OBJS=$(SRCS:.s=.o)
 LST=example.lst
 
