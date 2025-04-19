@@ -81,7 +81,7 @@ module tb_cpu;
     rst_n = 1;  // release
 
     // repeat(1) @(posedge clk); is same as #2; because 1 clock on->off is 2 cycles
-    repeat (4000) @(posedge clk);
+    repeat (5000) @(posedge clk);
 
     $display("=== Test End ===");
     $finish;

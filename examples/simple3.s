@@ -10,11 +10,13 @@ start:
 loop:
 ; display 'A'
     STA $E000
-; WVS: wait for 3 seconds
-    .byte $FF, $AE
+; WVS: wait for 1 second
+    .byte $FF, $3A
 ; IFO: show registers and memory at $0000-$007F
     .byte $DF,$00,$00
-; WVS: wait for 3 seconds
-    .byte $FF, $AE
+; WVS: wait for 1 second
+    .byte $FF, $3A
+; CLV: clear VRAM
+    .byte $CF
 ; loop
     JMP loop

@@ -61,7 +61,9 @@ module cpu (
     DECODE_EXECUTE,
     WRITE_REQ,
     SHOW_INFO,
-    SHOW_INFO2
+    SHOW_INFO2,
+    CLEAR_VRAM,
+    CLEAR_VRAM2
   } state_t;
 
   state_t state;
@@ -214,6 +216,7 @@ module cpu (
                   8'h18,  // CLC
                   8'hB8,  // CLV
                   8'h38,  // SEC
+                  8'hCF,  // CVR
                   8'hEF:  // HLT
                   state <= DECODE_EXECUTE;
 
@@ -2519,6 +2522,10 @@ module cpu (
               end
 
               // custom instructions which is not available in 6502
+              // CF
+              8'hCF: begin
+                  state <= CLEAR_VRAM;
+              end
               // DF
               8'hDF: begin
                 if (operands[15:0] != 8'hFFFF) begin
@@ -2679,6 +2686,24 @@ module cpu (
                 end
               end
             endcase
+          end
+
+          CLEAR_VRAM: begin
+            v_din <= 8'h20; // ' '
+            v_ada <= 0 & VRAMW;
+            state <= CLEAR_VRAM2;
+          end
+
+          CLEAR_VRAM2: begin
+            if (v_ada <= COLUMNS * ROWS) begin
+              v_ada <= (v_ada + 1) & VRAMW;
+              v_din <= 8'h20; // ' '
+            end else begin
+              pc <= pc + 1 & RAMW;
+              adb <= pc + 1 & RAMW;
+              state <= FETCH_REQ;
+              fetch_stage <= FETCH_OPCODE;
+            end
           end
 
         endcase

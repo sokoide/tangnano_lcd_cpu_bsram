@@ -70,6 +70,8 @@
   * (Indirect X)
   * (Indirect), Y
 * **!**: custom instruction which is not available in 6502
+  * `0xCF` CVR: Clear VRAM
+    * CF: (no operand) clear VRAM
   * `0xDF` IFO: Info ... show registers and memory
     * DF 0000: show registers and 0x0000-0x007F
     * DF 8000: show registers and 0x0080-0x00FF
@@ -119,9 +121,9 @@
 | 0xB | BCS | LDA |     |     | LDY | LDA | LDX |     | CLV | LDA | TSX |     | LDY | LDA | LDX |     |
 |     | rel | idy |     |     | zpx | zpx | zpy |     | impl| aby | impl|     | abx | abx | aby |     |
 |     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
-| 0xC | CPY | CMP |     |     | CPY | CMP | DEC |     | INY | CMP | DEX |     | CPY | CMP | DEC |     |
-|     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs |     |
-|     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
+| 0xC | CPY | CMP |     |     | CPY | CMP | DEC |     | INY | CMP | DEX |     | CPY | CMP | DEC | CVR |
+|     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs | impl|
+|     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   | !    |
 | 0xD | BNE | CMP |     |     |     | CMP | DEC |     | CLD | CMP |     |     |     | CMP | DEC | IFO |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx | abs |
 |     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   | !   |
