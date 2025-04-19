@@ -5,6 +5,24 @@
 * Tang Nano 9K or 20K + 043026-N6(ML) 4.3 inch 480x272 LCD module example
 * Change Makefile, Select Device and update the `.cst` file for 20K
 
+## Getting Started
+
+### Run an Example
+
+```bash
+cd examples
+# if not installed
+brew install srecord cc65
+# edit Makefile -> SRCS and change `simple.s` to any of the examples you want to use
+make
+# include/boot_program.sv and examples/example.lst are generated
+# take a look at the files
+
+cd ../
+make download
+# the exmple will be compined with the 6502 CPU / LCD controller and copied into Tang Nano
+```
+
 ## 043026-N6(ML) LCD spec
 
 ### Interface PIN connections
