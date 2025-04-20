@@ -3,7 +3,42 @@
 ## About
 
 * Tang Nano 9K or 20K + 043026-N6(ML) 4.3 inch 480x272 LCD module example
-* Change Makefile, Select Device and update the `.cst` file for 20K
+* The default is for 9K. To make it for 20K, change the following 3 files
+  * `lcd_cpu_bsram.gprj`
+
+    ```xml
+      <!-- Tang Nano 9K -->
+        <!-- <Device name="GW1NR-9C" pn="GW1NR-LV9QN88PC6/I5">gw1nr9c-004</Device> -->
+        <!-- Tang Nano 20K -->
+        <Device name="GW2AR-18C" pn="GW2AR-LV18QN88C8/I7">gw2ar18c-000</Device>
+
+            <!-- Tang Nano 9K -->
+            <!-- <File path="src/lcd_cpu_bsram_9K.cst" type="file.cst" enable="1"/>
+            <File path="src/gowin_rpll_9K/gowin_rpll40.v" type="file.verilog" enable="1"/>
+            <File path="src/gowin_rpll_9K/gowin_rpll9.v" type="file.verilog" enable="1"/> -->
+            <!-- Tang Nano 20K -->
+            <File path="src/lcd_cpu_bsram_20K.cst" type="file.cst" enable="1"/>
+            <File path="src/gowin_rpll_20K/gowin_rpll40.v" type="file.verilog" enable="1"/>
+            <File path="src/gowin_rpll_20K/gowin_rpll9.v" type="file.verilog" enable="1"/>
+    ```
+
+  * `Makefile`
+
+    ```make
+    # Tang Nano 20K
+    DEVICE=GW2AR-18C
+    # Tang Nano 9K
+    # DEVICE=GW1NR-9C
+    ```
+
+  * `src/top.sv`
+
+    ```systemverilog
+      // Tang Nano 9K:
+      //  wire rst_n = ResetButton;
+      // Tang Nano 20K:
+      wire rst_n = !ResetButton;
+    ```
 
 ## Getting Started
 

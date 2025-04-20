@@ -7,7 +7,7 @@
 
 -mod_name Gowin_rPLL9
 -file_name gowin_rpll9
--path /Users/scott/repo/sokoide/fpga/lcd_cpu_bsram/src/gowin_rpll/
+-path /Users/scott/repo/sokoide/fpga/lcd_cpu_bsram/src/gowin_rpll_9K/
 -type PLL
 -rPll true
 -file_type vlg

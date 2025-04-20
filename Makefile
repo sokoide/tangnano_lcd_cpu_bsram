@@ -3,12 +3,13 @@ SRCS= \
 	src/lcd.sv \
 	src/ram.sv \
 	src/cpu.sv \
-	src/gowin_rpll/gowin_rpll9.v \
-	src/gowin_rpll/gowin_rpll40.v \
 	src/gowin_sdpb/gowin_sdpb.v \
 	src/gowin_sdpb/gowin_sdpb_vram.v \
 	src/gowin_prom/gowin_prom_font.v \
 	impl/pnr/lcd_cpu_bsram.vo
+
+# src/gowin_rpll_9K/gowin_rpll9.v \
+# src/gowin_rpll_9K/gowin_rpll40.v \
 
 export BASE=lcd_cpu_bsram
 PROJ=$(BASE).gprj

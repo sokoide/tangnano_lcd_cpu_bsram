@@ -1,17 +1,17 @@
--series GW1NR
--device GW1NR-9
+-series GW2AR
+-device GW2AR-18
 -device_version C
--package QFN88P
--part_number GW1NR-LV9QN88PC6/I5
+-package QFN88
+-part_number GW2AR-LV18QN88C8/I7
 
 
 -mod_name Gowin_rPLL40
 -file_name gowin_rpll40
--path /Users/scott/repo/sokoide/fpga/lcd_cpu_bsram/src/gowin_rpll/
+-path /Users/scott/repo/sokoide/fpga/lcd_cpu_bsram/src/gowin_rpll_20K/
 -type PLL
 -rPll true
 -file_type vlg
--dev_type GW1NR-9C
+-dev_type GW2AR-18C
 -dyn_idiv_sel false
 -idiv_sel 2
 -dyn_fbdiv_sel false

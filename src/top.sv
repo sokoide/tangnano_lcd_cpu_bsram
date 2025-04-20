@@ -14,7 +14,7 @@ module top (
   // Tang Nano 9K:
   wire rst_n = ResetButton;
   // Tang Nano 20K:
-  // wire rst_n = !ResetButton;
+//   wire rst_n = !ResetButton;
 
   wire rst = !rst_n;
 
