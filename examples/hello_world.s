@@ -9,12 +9,10 @@ main_loop:
 
 print_message:
     LDX #0
-    LDY #0
 print_loop:
-    LDA message,Y
+    LDA message,X
     BEQ print_done
     STA $E000,X
-    INY
     INX
     BNE print_loop
 print_done:

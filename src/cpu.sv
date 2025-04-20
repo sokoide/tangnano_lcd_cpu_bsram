@@ -2,18 +2,18 @@
 module cpu (
     input  logic        rst_n,
     input  logic        clk,
-    input  logic [ 7:0] dout,                      // RAM data which was read
-    input  logic        vsync,                     // 1 during LCD vsync
-    input  logic [ 7:0] boot_program       [256],  // Boot program
-    input  logic [ 7:0] boot_program_length,       // Boot program length
-    output logic [ 7:0] din,                       // RAM data to write
-    output logic [12:0] ada,                       // write RAM
-    output logic        cea,                       // RAM write enable
-    output logic        ceb,                       // RAM read enable
-    output logic [12:0] adb,                       // read RAM
-    output logic [ 9:0] v_ada,                     // write VRAM
-    output logic        v_cea,                     // VRAM write enable
-    output logic [ 7:0] v_din                      // VRAM data to write
+    input  logic [ 7:0] dout,                       // RAM data which was read
+    input  logic        vsync,                      // 1 during LCD vsync
+    input  logic [ 7:0] boot_program       [7680],  // Boot program, max size 0x200-0x1FFF (7680 bytes)
+    input  logic [15:0] boot_program_length,        // Boot program length
+    output logic [ 7:0] din,                        // RAM data to write
+    output logic [12:0] ada,                        // write RAM
+    output logic        cea,                        // RAM write enable
+    output logic        ceb,                        // RAM read enable
+    output logic [12:0] adb,                        // read RAM
+    output logic [ 9:0] v_ada,                      // write VRAM
+    output logic        v_cea,                      // VRAM write enable
+    output logic [ 7:0] v_din                       // VRAM data to write
 );
 
   `include "cpu_ifo_task.sv"
@@ -54,7 +54,6 @@ module cpu (
     INIT,
     INIT_VRAM,
     INIT_RAM,
-    WAIT_64K_CLKS,
     HALT,
     FETCH_REQ,
     FETCH_RECV,
@@ -161,12 +160,6 @@ module cpu (
                 boot_idx   <= boot_idx + 1 & 8'hFF;
                 boot_write <= 1;
               end
-            end
-          end
-
-          WAIT_64K_CLKS: begin
-            if ((counter & 16'hFFFF) == 0) begin
-              state <= prev_state;
             end
           end
 
