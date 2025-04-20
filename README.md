@@ -119,10 +119,10 @@ make download
 |     | +   | +   |     |     | +   | +   | +   |     | +   | +   | +   |     |     | +   |     |     |
 | 0xA | LDY | LDA | LDX |     | LDY | LDA | LDX |     | TAY | LDA | TAX |     | LDY | LDA | LDX |     |
 |     | imm | idx | imm |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs |     |
-|     | +   |     | +   |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
+|     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
 | 0xB | BCS | LDA |     |     | LDY | LDA | LDX |     | CLV | LDA | TSX |     | LDY | LDA | LDX |     |
 |     | rel | idy |     |     | zpx | zpx | zpy |     | impl| aby | impl|     | abx | abx | aby |     |
-|     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
+|     | +   | +   |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
 | 0xC | CPY | CMP |     |     | CPY | CMP | DEC |     | INY | CMP | DEX |     | CPY | CMP | DEC | CVR |
 |     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs | impl|
 |     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   | !    |

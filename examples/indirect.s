@@ -37,7 +37,18 @@ loop:
     LDA #$A
     LDX #2
     STA ($04, X)
-
+; LDA (indirect-addr), Y -> means A = *(addr-in-indirect-addr+Y)
+; A = *($04,$05+Y) which means A = *$0072 = 1
+    ; clear A
+    LDA #0
+    LDY #2
+    LDA ($04), Y
+; LDA (indirect-addr, X) -> means new-addr = indirect-addr+X,
+; A = *(new-addr) which means A = *$0060 = $A
+    ; clear A
+    LDA #0
+    LDX #2
+    LDA ($04, X)
 
 ; CVR: clear VRAM
     .byte $CF

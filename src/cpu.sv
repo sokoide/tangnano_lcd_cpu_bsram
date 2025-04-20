@@ -601,17 +601,87 @@ module cpu (
                   fetch_stage <= FETCH_OPCODE;
                 end
               end
-              // TODO: LDA (indirect, X)
+              // LDA (indirect, X)
               8'hA1: begin
-                // fetch operands[7:0] + rx's and the next value from the zero page
-                // (total 16bit) in little endian.
+                // fetch operands[7:0] + rx and the next value from the zero page
+                // (total 16bit) in litte endian.
                 // then read an 8bit data pointed by the address.
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0] + rx & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // only RAM read is supported (VRAM is not)
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    adb <= addr & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  3: begin
+                    ra = dout;
+                    flg_z = (ra == 8'h00);
+                    flg_n = ra[7];
+                    pc <= pc + 3 & RAMW;
+                    adb <= pc + 3 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
-              // TODO: LDA (indirect), Y
+              // LDA (indirect), Y
               8'hB1: begin
                 // fetch operands[7:0] and the next value from the zero page
                 // (total 16bit) in litte endian.
                 // then read an 8bit data pointed by the address+ry.
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0] & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // only RAM read is supported (VRAM is not)
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
+                    adb <= addr & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  3: begin
+                    ra = dout;
+                    flg_z = (ra == 8'h00);
+                    flg_n = ra[7];
+                    pc <= pc + 3 & RAMW;
+                    adb <= pc + 3 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
               // LDX immediate
               8'hA2: begin
@@ -2558,7 +2628,7 @@ module cpu (
               // custom instructions which is not available in 6502
               // CF
               8'hCF: begin
-                  state <= CLEAR_VRAM;
+                state <= CLEAR_VRAM;
               end
               // DF
               8'hDF: begin
@@ -2723,7 +2793,7 @@ module cpu (
           end
 
           CLEAR_VRAM: begin
-            v_din <= 8'h20; // ' '
+            v_din <= 8'h20;  // ' '
             v_ada <= 0 & VRAMW;
             state <= CLEAR_VRAM2;
           end
@@ -2731,7 +2801,7 @@ module cpu (
           CLEAR_VRAM2: begin
             if (v_ada <= COLUMNS * ROWS) begin
               v_ada <= (v_ada + 1) & VRAMW;
-              v_din <= 8'h20; // ' '
+              v_din <= 8'h20;  // ' '
             end else begin
               pc <= pc + 1 & RAMW;
               adb <= pc + 1 & RAMW;
