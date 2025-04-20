@@ -16,8 +16,8 @@ func reopen() (*os.File, error) {
 }
 
 func write_show_info_rom(f *os.File, counter *int, v_ada int, v_din_t int, v_din int, diff int, vram_write int, mem_read int) {
-	buf := fmt.Sprintf("show_info_rom[%d] = '{ v_ada: 10'd%d, v_din_t: %d, v_din: 8'h%02X, diff: 8'h%02X, vram_write: %d, mem_read: %d};\n",
-		*counter, v_ada, v_din_t, v_din, diff, vram_write, mem_read)
+	buf := fmt.Sprintf("'{ v_ada: 10'd%d, v_din_t: %d, v_din: 8'h%02X, diff: 8'h%02X, vram_write: %d, mem_read: %d},\n",
+		v_ada, v_din_t, v_din, diff, vram_write, mem_read)
 	f.WriteString(buf)
 	*counter++
 }
@@ -31,6 +31,13 @@ func write_string(f *os.File, counter *int, x int, y int, str string) {
 		write_show_info_rom(f, counter, 60*y+x, 2, int(char), 0, 1, 0)
 		x++
 	}
+}
+
+func pad(f *os.File, counter *int) {
+	for ; *counter < 511; *counter++ {
+		f.WriteString("'{default:'0},\n")
+	}
+	f.WriteString("'{default:'0}\n")
 }
 
 func gen() {
@@ -114,6 +121,7 @@ func gen() {
 			prefetch += 1
 		}
 	}
+	pad(f, &counter)
 	f.Close()
 }
 

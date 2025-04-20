@@ -22,13 +22,18 @@ typedef struct packed {
   logic        mem_read;
 } show_info_cmd_t;
 
-show_info_cmd_t show_info_rom[1024];
+// show_info_cmd_t show_info_rom[1024];
 show_info_cmd_t show_info_cmd;
 
-initial begin
-  `include "cpu_ifo_auto_generated.sv"
-end
+// initial begin
+//   `include "cpu_ifo_auto_generated.sv"
+// end
 
+localparam show_info_cmd_t show_info_rom [512] =
+  '{
+  `include "cpu_ifo_auto_generated.sv"
+  }
+;
 
 function automatic logic [7:0] to_hexchar(input logic [3:0] nibble);
   if (nibble < 10) return 8'h30 + nibble;  // '0'〜'9'
