@@ -17,67 +17,50 @@ brew install srecord cc65
 make clean
 make
 # include/boot_program.sv and examples/example.lst are generated
-# take a look at the files
+# examples/example.lst is printed as below
+$ make
+ca65 -l example.lst -o simple.o simple.s
+ld65 -C baremetal.cfg -o example.bin simple.o
+srec_cat example.bin -binary -offset 0x0200 -o example.hex -Intel
+../utils/hex_fpga/hex_fpga -hexfile example.hex -svfile ../include/boot_program.sv
+INFO[0000] started
+INFO[0000] o: {hexFilePath:example.hex svFilePath:../include/boot_program.sv}
+INFO[0000] :020000040000FA
+INFO[0000] hexLine: &{length:2 addr:[0 0] recordType:4 data:[0 0] checksum:0}
+INFO[0000] :06020000A9418D00E0EFB2
+INFO[0000] hexLine: &{length:6 addr:[2 0] recordType:0 data:[169 65 141 0 224 239] checksum:0}
+INFO[0000] :00000001FF
+INFO[0000] hexLine: &{length:0 addr:[0 0] recordType:1 data:[] checksum:0}
+../include/boot_program.sv file written
+cat example.lst
+ca65 V2.18 - N/A
+Main file   : simple.s
+Current file: simple.s
 
+000000r 1               ; Simple Example) draw 'A' on top-left
+000000r 1               ;
+000000r 1               ; Used Instructions:
+000000r 1               ; LDA immediate (1byte)
+000000r 1               ; STA abosolute (2 bytes)
+000000r 1               ; $EF: HLT (custom instruction)
+000000r 1               ;
+000000r 1               ; Program loaded and starts at 0x0200
+000000r 1                   .org $0200
+000200  1
+000200  1               start:
+000200  1               ; load $41 ('A') into A register
+000200  1  A9 41            LDA #$41
+000202  1               ; store a value of A register at $E000 (top-left corner of VRAM)
+000202  1  8D 00 E0         STA $E000
+000205  1               ; HLT: stop CPU
+000205  1  EF               .byte $EF
+000205  1
+
+# make a bitstream and download it onto Tang Nano
 cd ../
 make download
 # the exmple will be compined with the 6502 CPU / LCD controller and copied into Tang Nano
 ```
-
-## 043026-N6(ML) LCD spec
-
-### Interface PIN connections
-
-| Pin No. | Symbol | Function |
-|---------|--------|----------|
-| 1       | LEDK   | Back light power supply negative |
-| 2       | LEDA   | Back light power supply positive |
-| 3       | GND    | Ground |
-| 4       | VCC    | Power supply |
-| 5-12    | R0-R7  | Red Data |
-| 13-20   | G0-G7  | Green Data |
-| 21-28   | B0-B7  | Blue Data |
-| 29      | GND    | Ground |
-| 30      | CLK    | Clock signal |
-| 31      | DISP   | Display on/off |
-| 32      | HSYNC  | Horizontal sync input in RGB mode (short to GND if not used) |
-| 33      | VSYNC  | Vertical sync input in RGB mode (short to GND if not used) |
-| 34      | DE     | Data enable |
-| 35      | NC     | No Connection |
-| 36      | GND    | Ground |
-| 37      | XR     | Touch panel X-right |
-| 38      | YD     | Touch panel Y-bottom |
-| 39      | XL     | Touch panel X-left |
-| 40      | YU     | Touch panel Y-up |
-
-
-### Parallel RGP Input Timing
-
-| Item   | Symbol| Values (Min.) | Values (Typ.) | Values (Max.) | Unit  | Remark |
-|--------|-------|---------------|---------------|---------------|-------|--------|
-| DCLK Frequency | Fclk    | 8    | 9    | 12   | MHz  ||
-| **Hsync**      |         |      |      |      |      ||
-| Period time    | Th      | 485  | 531  | 589  | DCLK ||
-| Display Period | Thdisp  | -    | 480- | -    | DCLK ||
-| Back Porch     | Thbp    | 3    | 43   | 43   | DCLK ||
-| Front Porch    | Thfp    | 2    | 4    | 75   | DCLK ||
-| **Vsync**      |         |      |      |      |      ||
-| Period time    | Tv      | 276  | 292  | 321  | H    ||
-| Display Period | Tvdisp  | -    | 272  | -    | H    ||
-| Back Porch     | Tvbp    | 2    | 12   | 12   | H    ||
-| Front Porch    | Tvfp    | 2    | 4    | 37   | H    ||
-
-### Sync Mode
-
-![sync](./docs/lcd_sync.png)
-
-### Sync DE Mode
-
-![sync DE](./docs/lcd_sync_de.png)
-
-## Example
-
-![lcd](./docs/lcd.jpg)
 
 ## Implemented Instructions
 
@@ -253,3 +236,58 @@ pROM address: 0x0000-0x0FFF: Font ROM (4KB)
 * Configure and run "library configuration" then `tb_cpu` in "Simulation Configuration"
 
 ![DSIM](./docs/dsimstudio.png)
+
+## 043026-N6(ML) LCD spec
+
+### Interface PIN connections
+
+| Pin No. | Symbol | Function |
+|---------|--------|----------|
+| 1       | LEDK   | Back light power supply negative |
+| 2       | LEDA   | Back light power supply positive |
+| 3       | GND    | Ground |
+| 4       | VCC    | Power supply |
+| 5-12    | R0-R7  | Red Data |
+| 13-20   | G0-G7  | Green Data |
+| 21-28   | B0-B7  | Blue Data |
+| 29      | GND    | Ground |
+| 30      | CLK    | Clock signal |
+| 31      | DISP   | Display on/off |
+| 32      | HSYNC  | Horizontal sync input in RGB mode (short to GND if not used) |
+| 33      | VSYNC  | Vertical sync input in RGB mode (short to GND if not used) |
+| 34      | DE     | Data enable |
+| 35      | NC     | No Connection |
+| 36      | GND    | Ground |
+| 37      | XR     | Touch panel X-right |
+| 38      | YD     | Touch panel Y-bottom |
+| 39      | XL     | Touch panel X-left |
+| 40      | YU     | Touch panel Y-up |
+
+
+### Parallel RGP Input Timing
+
+| Item   | Symbol| Values (Min.) | Values (Typ.) | Values (Max.) | Unit  | Remark |
+|--------|-------|---------------|---------------|---------------|-------|--------|
+| DCLK Frequency | Fclk    | 8    | 9    | 12   | MHz  ||
+| **Hsync**      |         |      |      |      |      ||
+| Period time    | Th      | 485  | 531  | 589  | DCLK ||
+| Display Period | Thdisp  | -    | 480- | -    | DCLK ||
+| Back Porch     | Thbp    | 3    | 43   | 43   | DCLK ||
+| Front Porch    | Thfp    | 2    | 4    | 75   | DCLK ||
+| **Vsync**      |         |      |      |      |      ||
+| Period time    | Tv      | 276  | 292  | 321  | H    ||
+| Display Period | Tvdisp  | -    | 272  | -    | H    ||
+| Back Porch     | Tvbp    | 2    | 12   | 12   | H    ||
+| Front Porch    | Tvfp    | 2    | 4    | 37   | H    ||
+
+### Sync Mode
+
+![sync](./docs/lcd_sync.png)
+
+### Sync DE Mode
+
+![sync DE](./docs/lcd_sync_de.png)
+
+## Example
+
+![lcd](./docs/lcd.jpg)

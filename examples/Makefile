@@ -3,6 +3,7 @@
 #  WSL / Linux) sudo apt install srecord cc65 golang
 
 SRCS = simple.s
+# target System Verilogy file path which is included by src/top.sv
 SV = ../include/boot_program.sv
 
 HEX = example.hex

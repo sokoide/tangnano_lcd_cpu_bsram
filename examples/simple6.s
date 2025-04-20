@@ -50,7 +50,7 @@ y_check:
 ; --- data ---
 ; count of data bytes, 1 byte
 num_data:
-        .byte 5
+    .byte 5
 ; 5 byte data
 data:
-        .byte $A, $B, $C, $D, $E
+    .byte $A, $B, $C, $D, $E
