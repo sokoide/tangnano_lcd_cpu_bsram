@@ -845,11 +845,45 @@ module cpu (
                 state <= FETCH_REQ;
                 fetch_stage <= FETCH_OPCODE;
               end
-              // TODO: STA (indirect, X)
+              // STA (indirect, X)
               8'h81: begin
                 // fetch operands[7:0] + rx and the next value from the zero page
                 // (total 16bit) in litte endian.
                 // then write an 8bit data pointed by the address.
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0] + rx & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // check if it's RAM or VRAM
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    if (addr >= VRAM_START) begin
+                      v_ada <= addr - VRAM_START & VRAMW;
+                      v_din <= ra;
+                    end else begin
+                      ada <= addr & RAMW;
+                      din <= ra;
+                      cea <= 1;
+                    end
+                    pc <= pc + 2 & RAMW;
+                    adb <= pc + 2 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
               // STA (indirect), Y
               8'h91: begin
@@ -880,7 +914,7 @@ module cpu (
                       v_ada <= addr - VRAM_START & VRAMW;
                       v_din <= ra;
                     end else begin
-                      ada <= {dout, fetched_data[7:0]} & RAMW;
+                      ada <= addr & RAMW;
                       din <= ra;
                       cea <= 1;
                     end
