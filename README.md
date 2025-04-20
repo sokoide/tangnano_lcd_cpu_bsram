@@ -113,7 +113,7 @@ make download
 |     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   |     |
 | 0x8 |     | STA |     |     | STY | STA | STX |     | DEY |     | TXA |     | STY | STA | STX |     |
 |     |     | idx |     |     | zp  | zp  | zp  |     | impl|     | impl|     | abs | abs | abs |     |
-|     |     |     |     |     | +   | +   | +   |     | +   |     | +   |     | +   | +   | +   |     |
+|     |     | +   |     |     | +   | +   | +   |     | +   |     | +   |     | +   | +   | +   |     |
 | 0x9 | BCC | STA |     |     | STY | STA | STX |     | TYA | STA | TXS |     |     | STA |     |     |
 |     | rel | idy |     |     | zpx | zpx | zpy |     | impl| aby | impl|     |     | abx |     |     |
 |     | +   | +   |     |     | +   | +   | +   |     | +   | +   | +   |     |     | +   |     |     |
