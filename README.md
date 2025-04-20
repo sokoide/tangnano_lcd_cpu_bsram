@@ -69,8 +69,8 @@ make download
 * **-**: not going to be implemented
   * break, interrupt related oned
 * ' ' (blank) : not implemented yet
-  * (Indirect X)
-  * (Indirect), Y
+  * some of (Indirect X), see below
+  * some of (Indirect), Y, see below
 * **!**: custom instruction which is not available in 6502
   * `0xCF` CVR: Clear VRAM
     * CF: (no operand) clear VRAM
@@ -107,10 +107,10 @@ make download
 |     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   |     |
 | 0x6 | RTS | ADC |     |     |     | ADC | ROR |     | PLA | ADC | ROR |     | JMP | ADC | ROR |     |
 |     | impl| idx |     |     |     | zp  | zp  |     | impl| imm | acc |     | ind | abs | abs |     |
-|     | +   |     |     |     |     | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
+|     | +   | +   |     |     |     | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
 | 0x7 | BVS | ADC |     |     |     | ADC | ROR |     | SEI | ADC |     |     |     | ADC | ROR |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
-|     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   |     |
+|     | +   | +   |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   |     |
 | 0x8 |     | STA |     |     | STY | STA | STX |     | DEY |     | TXA |     | STY | STA | STX |     |
 |     |     | idx |     |     | zp  | zp  | zp  |     | impl|     | impl|     | abs | abs | abs |     |
 |     |     | +   |     |     | +   | +   | +   |     | +   |     | +   |     | +   | +   | +   |     |

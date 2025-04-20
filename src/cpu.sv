@@ -635,8 +635,8 @@ module cpu (
                     ra = dout;
                     flg_z = (ra == 8'h00);
                     flg_n = ra[7];
-                    pc <= pc + 3 & RAMW;
-                    adb <= pc + 3 & RAMW;
+                    pc <= pc + 2 & RAMW;
+                    adb <= pc + 2 & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_OPCODE;
                   end
@@ -676,8 +676,8 @@ module cpu (
                     ra = dout;
                     flg_z = (ra == 8'h00);
                     flg_n = ra[7];
-                    pc <= pc + 3 & RAMW;
-                    adb <= pc + 3 & RAMW;
+                    pc <= pc + 2 & RAMW;
+                    adb <= pc + 2 & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_OPCODE;
                   end
@@ -1415,11 +1415,95 @@ module cpu (
                   fetch_stage <= FETCH_OPCODE;
                 end
               end
-              // TODO: ADC (indirect, X)
+              // ADC (indirect, X)
               8'h61: begin
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0] + rx & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // only RAM read is supported (VRAM is not)
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    adb <= addr & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  3: begin
+                    automatic logic [8:0] temp;  // make it 9bit to include carry
+                    temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                    flg_c = temp[8];
+                    flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                    ra = temp[7:0];
+
+                    flg_z = (ra == 8'h00);
+                    flg_n = ra[7];
+
+                    pc <= pc + 2 & RAMW;
+                    adb <= pc + 2 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
-              // TODO: ADC (indirect), Y
+              // ADC (indirect), Y
               8'h71: begin
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0] & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // only RAM read is supported (VRAM is not)
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
+                    adb <= addr & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  3: begin
+                    automatic logic [8:0] temp;  // make it 9bit to include carry
+                    temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                    flg_c = temp[8];
+                    flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                    ra = temp[7:0];
+
+                    flg_z = (ra == 8'h00);
+                    flg_n = ra[7];
+
+                    pc <= pc + 2 & RAMW;
+                    adb <= pc + 2 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
               // SBC immediate
               8'hE9: begin

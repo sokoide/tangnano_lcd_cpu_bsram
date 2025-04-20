@@ -49,6 +49,16 @@ loop:
     LDA #0
     LDX #2
     LDA ($04, X)
+; ADC (Indirect), Y
+    CLC;
+    LDA #10;
+    ; A = *$0072 + 10 = 11
+    ADC ($04), Y
+; ADC (Indirect, X)
+    CLC;
+    LDA #10;
+    ; A = *$0060 + 10 = 20
+    ADC ($04, X)
 
 ; CVR: clear VRAM
     .byte $CF
