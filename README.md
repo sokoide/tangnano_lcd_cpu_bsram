@@ -68,9 +68,6 @@ make download
   * All 6502 instructions except for the followings
 * **-**: not going to be implemented
   * break, interrupt related oned
-* ' ' (blank) : not implemented yet
-  * some of (Indirect X), see below
-  * some of (Indirect), Y, see below
 * **!**: custom instruction which is not available in 6502
   * `0xCF` CVR: Clear VRAM
     * CF: (no operand) clear VRAM
@@ -89,22 +86,22 @@ make download
 |-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
 | 0x0 | BRK | ORA |     |     |     | ORA | ASL |     | PHP | ORA | ASL |     |     | ORA | ASL |     |
 |     | impl| idx |     |     |     | zp  | zp  |     | impl| imm | acc |     |     | abs | abs |     |
-|     | -   |     |     |     |     | +   | +   |     | +   | +   | +   |     |     | +   | +   |     |
+|     | -   | +   |     |     |     | +   | +   |     | +   | +   | +   |     |     | +   | +   |     |
 | 0x1 | BPL | ORA |     |     |     | ORA | ASL |     | CLC | ORA |     |     |     | ORA | ASL |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
-|     | +   |     |     |     |     | +   | +   |     | +   | +   |     |     |     | +   | +   |     |
+|     | +   | +   |     |     |     | +   | +   |     | +   | +   |     |     |     | +   | +   |     |
 | 0x2 | JSR | AND |     |     | BIT | AND | ROL |     | PLP | AND | ROL |     | BIT | AND | ROL |     |
 |     | abs | idx |     |     | zp  | zp  | zp  |     | impl| imm | acc |     | abs | abs | abs |     |
-|     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
+|     | +   | +   |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
 | 0x3 | BMI | AND |     |     |     | AND | ROL |     | SEC | AND |     |     |     | AND | ROL |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
-|     | +   |     |     |     |     | +   | +   |     | +   | +   |     |     |     | +   | +   |     |
+|     | +   | +   |     |     |     | +   | +   |     | +   | +   |     |     |     | +   | +   |     |
 | 0x4 | RTI | EOR |     |     |     | EOR | LSR |     | PHA | EOR | LSR |     | JMP | EOR | LSR |     |
 |     | impl| idx |     |     |     | zp  | zp  |     | impl| imm | acc |     | abs | abs | abs |     |
-|     | -   |     |     |     |     | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
+|     | -   | +   |     |     |     | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
 | 0x5 | BVC | EOR |     |     |     | EOR | LSR |     | CLI | EOR |     |     |     | EOR | LSR |     |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx |     |
-|     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   |     |
+|     | +   | +   |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   |     |
 | 0x6 | RTS | ADC |     |     |     | ADC | ROR |     | PLA | ADC | ROR |     | JMP | ADC | ROR |     |
 |     | impl| idx |     |     |     | zp  | zp  |     | impl| imm | acc |     | ind | abs | abs |     |
 |     | +   | +   |     |     |     | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
@@ -125,10 +122,10 @@ make download
 |     | +   | +   |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   |     |
 | 0xC | CPY | CMP |     |     | CPY | CMP | DEC |     | INY | CMP | DEX |     | CPY | CMP | DEC | CVR |
 |     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs | impl|
-|     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   | !    |
+|     | +   | +   |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   | !    |
 | 0xD | BNE | CMP |     |     |     | CMP | DEC |     | CLD | CMP |     |     |     | CMP | DEC | IFO |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx | abs |
-|     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   | !   |
+|     | +   | +   |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   | !   |
 | 0xE | CPX | SBC |     |     | CPX | SBC | INC |     | INX | SBC | NOP |     | CPX | SBC | INC | HLT |
 |     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs | impl|
 |     | +   | +   |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   | !   |

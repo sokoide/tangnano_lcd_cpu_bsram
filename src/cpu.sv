@@ -1842,11 +1842,81 @@ module cpu (
                   fetch_stage <= FETCH_OPCODE;
                 end
               end
-              // TODO: AND (indirect, X)
+              // AND (indirect, X)
               8'h21: begin
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0] + rx & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // only RAM read is supported (VRAM is not)
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    adb <= addr & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  3: begin
+                    ra = ra & dout;
+                    flg_z = (ra == 8'h00);
+                    flg_n = ra[7];
+                    pc <= pc + 2 & RAMW;
+                    adb <= pc + 2 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
-              // TODO: AND (indirect), Y
+              // AND (indirect), Y
               8'h31: begin
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0] & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // only RAM read is supported (VRAM is not)
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
+                    adb <= addr & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  3: begin
+                    ra = ra & dout;
+                    flg_z = (ra == 8'h00);
+                    flg_n = ra[7];
+                    pc <= pc + 2 & RAMW;
+                    adb <= pc + 2 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
               // EOR immediate
               8'h49: begin
@@ -1946,11 +2016,81 @@ module cpu (
                   fetch_stage <= FETCH_OPCODE;
                 end
               end
-              // TODO: EOR (indirect, X)
+              // EOR (indirect, X)
               8'h41: begin
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0] + rx & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // only RAM read is supported (VRAM is not)
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    adb <= addr & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  3: begin
+                    ra = ra ^ dout;
+                    flg_z = (ra == 8'h00);
+                    flg_n = ra[7];
+                    pc <= pc + 2 & RAMW;
+                    adb <= pc + 2 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
-              // TODO: EOR (indirect), Y
+              // EOR (indirect), Y
               8'h51: begin
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0] & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // only RAM read is supported (VRAM is not)
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
+                    adb <= addr & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  3: begin
+                    ra = ra ^ dout;
+                    flg_z = (ra == 8'h00);
+                    flg_n = ra[7];
+                    pc <= pc + 3 & RAMW;
+                    adb <= pc + 3 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
               // ORA immediate
               8'h09: begin
@@ -2052,11 +2192,79 @@ module cpu (
               end
               // ORA (indirect, X)
               8'h01: begin
-                // TODO: Implement ORA (indirect, X)
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0] + rx & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // only RAM read is supported (VRAM is not)
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    adb <= addr & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  3: begin
+                    ra = ra | dout;
+                    flg_z = (ra == 8'h00);
+                    flg_n = ra[7];
+                    pc <= pc + 2 & RAMW;
+                    adb <= pc + 2 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
               // ORA (indirect), Y
               8'h11: begin
-                // TODO: Implement ORA (indirect), Y
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0] & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // only RAM read is supported (VRAM is not)
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
+                    adb <= addr & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  3: begin
+                    ra = ra | dout;
+                    flg_z = (ra == 8'h00);
+                    flg_n = ra[7];
+                    pc <= pc + 2 & RAMW;
+                    adb <= pc + 2 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
               // ASL accumulator
               8'h0A: begin
@@ -2477,11 +2685,83 @@ module cpu (
                   fetch_stage <= FETCH_OPCODE;
                 end
               end
-              // TODO: CMP (indirect, X)
+              // CMP (indirect, X)
               8'hC1: begin
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0] + rx & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // only RAM read is supported (VRAM is not)
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    adb <= addr & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  3: begin
+                    automatic logic [7:0] result = ra - dout;
+                    flg_c = ra >= dout ? 1 : 0;
+                    flg_z = (result == 8'h00);
+                    flg_n = result[7];
+                    pc <= pc + 3 & RAMW;
+                    adb <= pc + 3 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
-              // TODO: CMP (indirect), Y
+              // CMP (indirect), Y
               8'hD1: begin
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0] & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // only RAM read is supported (VRAM is not)
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
+                    adb <= addr & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  3: begin
+                    automatic logic [7:0] result = ra - dout;
+                    flg_c = ra >= dout ? 1 : 0;
+                    flg_z = (result == 8'h00);
+                    flg_n = result[7];
+                    pc <= pc + 3 & RAMW;
+                    adb <= pc + 3 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
               // CPX immediate; Compare X
               8'hE0: begin

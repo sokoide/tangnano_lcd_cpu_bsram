@@ -69,6 +69,38 @@ loop:
     LDA #15;
     ; A = 15 - *$0060 = 5
     SBC ($04, X)
+; AND (Indirect), Y
+    LDA #10;
+    ; A = 10 & *$0072
+    AND ($04), Y
+; AND (Indirect, X)
+    LDA #15;
+    ; A = 15 & *$0060
+    AND ($04, X)
+; EOR (Indirect), Y
+    LDA #10;
+    ; A = 10 xor *$0072
+    EOR ($04), Y
+; EOR (Indirect, X)
+    LDA #15;
+    ; A = 15 xor *$0060
+    EOR ($04, X)
+; ORA (Indirect), Y
+    LDA #10;
+    ; A = 10 or *$0072
+    ORA ($04), Y
+; ORA (Indirect, X)
+    LDA #15;
+    ; A = 15 or *$0060
+    ORA ($04, X)
+; CMP (Indirect), Y
+    LDA #10;
+    ; Test 10 - *$0072
+    CMP ($04), Y
+; CMP (Indirect, X)
+    ; Test 10 - *$0072
+    LDA #15;
+    CMP ($04, X)
 
 ; CVR: clear VRAM
     .byte $CF
