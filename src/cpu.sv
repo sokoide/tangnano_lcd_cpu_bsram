@@ -3080,7 +3080,7 @@ module cpu (
               end
               // DF
               8'hDF: begin
-                if (operands[15:0] != 8'hFFFF) begin
+                if (operands[15:0] != 16'hFFFF) begin
                   show_info_counter <= 0;
                   prev_state <= DECODE_EXECUTE;
                   state <= SHOW_INFO;
@@ -3220,7 +3220,7 @@ module cpu (
                   endcase
                 end
                 if (show_info_cmd.mem_read) begin
-                  adb <= operands[15:0] + show_info_cmd.diff;
+                  adb <= operands[15:0] + show_info_cmd.diff & RAMW;
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
                   next_state <= SHOW_INFO2;
@@ -3231,7 +3231,7 @@ module cpu (
                 if (show_info_counter == 1020) begin
                   show_info_counter <= 0;
                   state <= prev_state;
-                  operands[15:0] = 8'hFFFF;
+                  operands[15:0] = 16'hFFFF;
                   disable SHOW_INFO2_BLOCK;  //break
                 end else begin
                   show_info_stage <= SHOW_INFO_FETCH;

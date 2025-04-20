@@ -32,5 +32,5 @@ end
 
 function automatic logic [7:0] to_hexchar(input logic [3:0] nibble);
   if (nibble < 10) return 8'h30 + nibble;  // '0'〜'9'
-  else return 8'h41 + (nibble - 10);  // 'A'〜'F'
+  else return 8'h41 + (nibble - 10) & 8'hFF;  // 'A'〜'F'
 endfunction
