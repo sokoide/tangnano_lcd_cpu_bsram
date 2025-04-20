@@ -6,7 +6,7 @@ start:
     LDA #0
 loop:
     JSR foo
-; CLV: clear VRAM
+; CVR: clear VRAM
     .byte $CF
 ; IFO: show registers and memory at $0000-$007F
     .byte $DF,$00,$00

@@ -1,4 +1,10 @@
 ; Simple Example) draw 'A' on top-left
+;
+; Used Instructions:
+; LDA immediate (1byte)
+; STA abosolute (2 bytes)
+; $EF: HLT (custom instruction)
+;
 ; Program loaded and starts at 0x0200
     .org $0200
 

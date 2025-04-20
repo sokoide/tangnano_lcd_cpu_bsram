@@ -16,14 +16,15 @@ loop:
     .byte $DF,$00,$00
 ; WVS: wait for 1 second
     .byte $FF, $3A
-; CLV: clear VRAM
+; CVR: clear VRAM
     .byte $CF
 ; inclement A register
     CLC
     ADC #1
-; if A == 'F', A='A'
+; if A != 'F' (#$46), goto loop
     CMP #$46
     BNE loop
+; else A='A' (#$41)
     LDA #$41
 ; loop
     JMP loop

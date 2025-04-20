@@ -23,6 +23,7 @@ CFG = baremetal.cfg
 .PHONY: all disass od clean
 
 all: sv
+	cat $(LST)
 
 $(TARGET): $(OBJS)
 	$(LD) -C $(CFG) -o $@ $<
