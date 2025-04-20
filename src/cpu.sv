@@ -3164,30 +3164,39 @@ module cpu (
                 automatic logic [15:0] tmp_addr;
                 if (show_info_cmd.vram_write) begin
                   v_ada <= show_info_cmd.v_ada;
-                  // v_din <= show_info_cmd.v_din_t ? to_hexchar(dout[3:0]) : to_hexchar(dout[7:4]);
                   case (show_info_cmd.v_din_t)
-                    0: begin  // high nibble
-                      v_din <= to_hexchar(dout[7:4]);
-                    end
-                    1: begin  // low nibble
-                      v_din <= to_hexchar(dout[3:0]);
-                    end
-                    2: begin  // immediate
+                    0: begin  // immediate
                       v_din <= show_info_cmd.v_din;
                     end
-                    3: begin
+                    1: begin
+                      case (show_info_cmd.v_din)
+                        0: begin
+                          v_din <= to_hexchar(dout[7:4]);
+                        end
+                        1: begin
+                          v_din <= to_hexchar(dout[3:0]);
+                        end
+                        2, 3: begin
+                          ;  // do nothing
+                        end
+                        default: begin
+                          v_din <= dout[11-show_info_cmd.v_din] ? 8'h40 : 8'h20;
+                        end
+                      endcase
+                    end
+                    2: begin
                       v_din <= show_info_cmd.v_din ? to_hexchar(ra[3:0]) : to_hexchar(ra[7:4]);
                     end
-                    4: begin
+                    3: begin
                       v_din <= show_info_cmd.v_din ? to_hexchar(rx[3:0]) : to_hexchar(rx[7:4]);
                     end
-                    5: begin
+                    4: begin
                       v_din <= show_info_cmd.v_din ? to_hexchar(ry[3:0]) : to_hexchar(ry[7:4]);
                     end
-                    6: begin
+                    5: begin
                       v_din <= show_info_cmd.v_din ? to_hexchar(sp[3:0]) : to_hexchar(sp[7:4]);
                     end
-                    7: begin
+                    6: begin
                       case (show_info_cmd.v_din)
                         0: begin  // 1st nibble
                           v_din <= to_hexchar(pc[15:12]);
@@ -3203,7 +3212,7 @@ module cpu (
                         end
                       endcase
                     end
-                    8: begin  // operands (start memory address)
+                    7: begin  // operands (start memory address)
                       tmp_addr = operands + show_info_cmd.diff;
                       case (show_info_cmd.v_din)
                         0: begin  // 1st nibble
@@ -3223,7 +3232,11 @@ module cpu (
                   endcase
                 end
                 if (show_info_cmd.mem_read) begin
-                  adb <= operands[15:0] + show_info_cmd.diff & RAMW;
+                  if (show_info_cmd.v_din_t == 8) begin
+                    adb <= show_info_cmd.v_ada;
+                  end else begin
+                    adb <= operands[15:0] + show_info_cmd.diff & RAMW;
+                  end
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
                   next_state <= SHOW_INFO2;

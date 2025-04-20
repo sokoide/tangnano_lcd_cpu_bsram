@@ -25,16 +25,13 @@ func write_show_info_rom(f *os.File, counter *int, v_ada int, v_din_t int, v_din
 func write_string(f *os.File, counter *int, x int, y int, str string) {
 	f.WriteString(fmt.Sprintf("// %s\n", str))
 	for _, char := range str {
-		// buf = fmt.Sprintf("show_info_rom[%d] = '{ v_ada: 10'd%d, v_din_t: 2, v_din: 8'd%d, diff: 8'h0, vram_write: 1, mem_read: 0};\n",
-		// 	*counter, 60*y+x, char)
-		// f.WriteString(buf)
-		write_show_info_rom(f, counter, 60*y+x, 2, int(char), 0, 1, 0)
+		write_show_info_rom(f, counter, 60*y+x, 0, int(char), 0, 1, 0)
 		x++
 	}
 }
 
 func pad(f *os.File, counter *int) {
-	for ; *counter < 511; *counter++ {
+	for ; *counter < 1023; *counter++ {
 		f.WriteString("'{default:'0},\n")
 	}
 	f.WriteString("'{default:'0}\n")
@@ -57,26 +54,26 @@ func gen() {
 	write_string(f, &counter, 0, y, "Registers)")
 	y++
 	write_string(f, &counter, 0, y, "A :0x")
-	write_show_info_rom(f, &counter, 65, 3, 0, 0, 1, 0)
-	write_show_info_rom(f, &counter, 66, 3, 1, 0, 1, 0)
+	write_show_info_rom(f, &counter, 65, 2, 0, 0, 1, 0)
+	write_show_info_rom(f, &counter, 66, 2, 1, 0, 1, 0)
 	y++
 	write_string(f, &counter, 0, y, "X :0x")
-	write_show_info_rom(f, &counter, 125, 4, 0, 0, 1, 0)
-	write_show_info_rom(f, &counter, 126, 4, 1, 0, 1, 0)
+	write_show_info_rom(f, &counter, 125, 3, 0, 0, 1, 0)
+	write_show_info_rom(f, &counter, 126, 3, 1, 0, 1, 0)
 	y++
 	write_string(f, &counter, 0, y, "Y :0x")
-	write_show_info_rom(f, &counter, 185, 5, 0, 0, 1, 0)
-	write_show_info_rom(f, &counter, 186, 5, 1, 0, 1, 0)
+	write_show_info_rom(f, &counter, 185, 4, 0, 0, 1, 0)
+	write_show_info_rom(f, &counter, 186, 4, 1, 0, 1, 0)
 	y++
 	write_string(f, &counter, 0, y, "PC:0x")
-	write_show_info_rom(f, &counter, 245, 7, 0, 0, 1, 0)
-	write_show_info_rom(f, &counter, 246, 7, 1, 0, 1, 0)
-	write_show_info_rom(f, &counter, 247, 7, 2, 0, 1, 0)
-	write_show_info_rom(f, &counter, 248, 7, 3, 0, 1, 0)
+	write_show_info_rom(f, &counter, 245, 6, 0, 0, 1, 0)
+	write_show_info_rom(f, &counter, 246, 6, 1, 0, 1, 0)
+	write_show_info_rom(f, &counter, 247, 6, 2, 0, 1, 0)
+	write_show_info_rom(f, &counter, 248, 6, 3, 0, 1, 0)
 	y++
 	write_string(f, &counter, 0, y, "SP:0x1")
-	write_show_info_rom(f, &counter, 306, 6, 0, 0, 1, 0)
-	write_show_info_rom(f, &counter, 307, 6, 1, 0, 1, 0)
+	write_show_info_rom(f, &counter, 306, 5, 0, 0, 1, 0)
+	write_show_info_rom(f, &counter, 307, 5, 1, 0, 1, 0)
 	y++
 	y++
 	y++
@@ -90,9 +87,35 @@ func gen() {
 	// write_string(f, &counter, 14, y, "-")
 	write_string(f, &counter, 9, y, "+0+1+2+3 +4+5+6+7")
 	write_string(f, &counter, 28, y, "+8+9+A+B +C+D+E+F")
+	// LED indicators
+	write_string(f, &counter, 52, y, "76543210")
+	y++
+	write_string(f, &counter, 47, y, "0x00:")
+	y++
+	write_string(f, &counter, 47, y, "0x01:")
+	y++
+	write_string(f, &counter, 47, y, "0x02:")
+	y++
+	write_string(f, &counter, 47, y, "0x03:")
+	y++
+	write_string(f, &counter, 47, y, "0x04:")
+	y++
+	write_string(f, &counter, 47, y, "0x05:")
+	y++
+	write_string(f, &counter, 47, y, "0x06:")
+	y++
+	write_string(f, &counter, 47, y, "0x07:")
+	for y = 9; y < 17; y++ {
+		f.WriteString(fmt.Sprintf("// LED simulation 0x%02X\n", y-9))
+		write_show_info_rom(f, &counter, (y - 9), 8, 0, 0, 0, 1)
+		for x := 52; x < 60; x++ {
+			write_show_info_rom(f, &counter, 60*y+x, 1, 4+x-52, 0, 1, 0)
+		}
+	}
 
 	// memory dump data
 	f.WriteString("// Memory dump\n")
+	prefetch = 0
 	dx := 9 // first position to write the data
 	for i := 540; i < 60*17; i++ {
 		ada := i
@@ -100,24 +123,24 @@ func gen() {
 		case 0: // base address
 			write_string(f, &counter, 0, i/60, "0x:")
 		case 2:
-			write_show_info_rom(f, &counter, ada, 8, 0, 0x10*(i/60-9), 1, 0)
+			write_show_info_rom(f, &counter, ada, 7, 0, 0x10*(i/60-9), 1, 0)
 		case 3:
-			write_show_info_rom(f, &counter, ada, 8, 1, 0x10*(i/60-9), 1, 0)
+			write_show_info_rom(f, &counter, ada, 7, 1, 0x10*(i/60-9), 1, 0)
 		case 4:
-			write_show_info_rom(f, &counter, ada, 8, 2, 0x10*(i/60-9), 1, 0)
+			write_show_info_rom(f, &counter, ada, 7, 2, 0x10*(i/60-9), 1, 0)
 		case 5:
-			write_show_info_rom(f, &counter, ada, 8, 3, 0x10*(i/60-9), 1, 0)
+			write_show_info_rom(f, &counter, ada, 7, 3, 0x10*(i/60-9), 1, 0)
 		case 6:
 			write_string(f, &counter, 6, i/60, ":")
 		case 8: // prefetch
 			write_show_info_rom(f, &counter, 0, 0, 0, prefetch, 0, 1)
 		case dx, dx + 2, dx + 4, dx + 6, dx + 9, dx + 11, dx + 13, dx + 15, dx + 19, dx + 21, dx + 23, dx + 25, dx + 28, dx + 30, dx + 32, dx + 34: // write high nibble
-			write_show_info_rom(f, &counter, ada, 0, 0, 0, 1, 0)
+			write_show_info_rom(f, &counter, ada, 1, 0, 0, 1, 0)
 		case dx + 1, dx + 3, dx + 5, dx + 7, dx + 10, dx + 12, dx + 14, dx + 16, dx + 20, dx + 22, dx + 24, dx + 26, dx + 29, dx + 31, dx + 33: // write low nibble and prefetch
 			prefetch += 1
-			write_show_info_rom(f, &counter, ada, 1, 0, prefetch, 1, 1)
+			write_show_info_rom(f, &counter, ada, 1, 1, prefetch, 1, 1)
 		case dx + 35: // write low nibble
-			write_show_info_rom(f, &counter, ada, 1, 0, 0, 1, 0)
+			write_show_info_rom(f, &counter, ada, 1, 1, 0, 1, 0)
 			prefetch += 1
 		}
 	}

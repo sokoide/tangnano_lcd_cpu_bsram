@@ -1,35 +1,43 @@
 typedef struct packed {
-  logic [9:0]  v_ada;       // write addr
+  // write addr
+  logic [9:0] v_ada;
+
   // v_din_t: type of v_din
-  // 0: to_hexchar(dout[7:4])
-  // 1: to_hexchar(dout[3:0])
-  // 2: use v_din value
-  // 3: A register
-  // 4: X register
-  // 5: Y register
-  // 6: SP
-  // 7: PC
-  // 8: operands (start memory address)
-  logic [3:0]  v_din_t;
-  // v_din: value (if v_din_t is 2) or index of v_din
-  // 0: 1st nibble (e.g. high nibble of register A)
-  // 1: 2nd nibble (e.g. low nibble of register A)
-  // 2: 3rd nibble
-  // 3: 4th nibble
-  logic [7:0]  v_din;
-  logic [7:0] diff;    // read addr: number to add operands[15:0]
+  // 0: use v_din value
+  // 1: use dout value
+  // 2: A register
+  // 3: X register
+  // 4: Y register
+  // 5: SP
+  // 6: PC
+  // 7: operands (start memory address)
+  // 8: read specifiled address by v_ada. you can't read & write at the same time if you select this
+  logic [3:0] v_din_t;
+
+  // v_din: char code to display (if v_din_t is 0) or how to show v_din_t below
+  // 0x0: 1st nibble (e.g. high nibble of register A)
+  // 0x1: 2nd nibble (e.g. low nibble of register A)
+  // 0x2: 3rd nibble
+  // 0x3: 4th nibble
+  // 0x4: '@' if 7th bit is 1, ' ' otherwise
+  // 0x5: '@' if 6th bit is 1, ' ' otherwize
+  // 0x6: '@' if 5th bit is 1, ' ' otherwize
+  // 0x7: '@' if 4th bit is 1, ' ' otherwize
+  // 0x8: '@' if 3rd bit is 1, ' ' otherwize
+  // 0x9: '@' if 2nd bit is 1, ' ' otherwize
+  // 0xA: '@' if 1st bit is 1, ' ' otherwize
+  // 0xB: '@' if 0th bit is 1, ' ' otherwize
+  logic [7:0] v_din;
+
+  // diff: number to add operands[15:0]
+  logic [7:0] diff;
   logic        vram_write;
   logic        mem_read;
 } show_info_cmd_t;
 
-// show_info_cmd_t show_info_rom[1024];
 show_info_cmd_t show_info_cmd;
 
-// initial begin
-//   `include "cpu_ifo_auto_generated.sv"
-// end
-
-localparam show_info_cmd_t show_info_rom [512] =
+localparam show_info_cmd_t show_info_rom [1024] =
   '{
   `include "cpu_ifo_auto_generated.sv"
   }
