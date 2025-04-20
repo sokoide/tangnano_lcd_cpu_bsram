@@ -1499,7 +1499,7 @@ module cpu (
                     flg_n = ra[7];
 
                     pc <= pc + 2 & RAMW;
-                    adb <= pc + 2 & RAMW;
+                    adb <= pc + 3 & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_OPCODE;
                   end
@@ -1654,11 +1654,95 @@ module cpu (
               end
               // SBC (indirect, X)
               8'hE1: begin
-                // TODO: Implement SBC (indirect, X)
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0] + rx & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // only RAM read is supported (VRAM is not)
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    adb <= addr & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  3: begin
+                    automatic logic [8:0] temp;  // make it 9bit to include borrow
+                    temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+
+                    flg_c = ~temp[8];  // Borrow flag (inverted carry)
+                    flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                    ra = temp[7:0];
+
+                    flg_z = (ra == 8'h00);
+                    flg_n = ra[7];
+
+                    pc <= pc + 2 & RAMW;
+                    adb <= pc + 2 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
               // SBC (indirect), Y
               8'hF1: begin
-                // TODO: Implement SBC (indirect), Y
+                case (fetched_data_bytes)
+                  0: begin
+                    // fetch operands[7:0]
+                    adb <= operands[7:0] & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  1: begin
+                    // fetch operands[7:0]+1
+                    fetched_data[7:0] = dout;
+                    adb <= operands[7:0] + 8'h01 & 8'hFF;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  2: begin
+                    // fetched_data[15:8] = dout;
+                    // only RAM read is supported (VRAM is not)
+                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
+                    adb <= addr & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_DATA;
+                    next_state <= DECODE_EXECUTE;
+                  end
+                  3: begin
+                    automatic logic [8:0] temp;  // make it 9bit to include borrow
+                    temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+
+                    flg_c = ~temp[8];  // Borrow flag (inverted carry)
+                    flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+
+                    ra = temp[7:0];
+
+                    flg_z = (ra == 8'h00);
+                    flg_n = ra[7];
+
+                    pc <= pc + 2 & RAMW;
+                    adb <= pc + 2 & RAMW;
+                    state <= FETCH_REQ;
+                    fetch_stage <= FETCH_OPCODE;
+                  end
+                endcase
               end
               // AND immediate
               8'h29: begin

@@ -131,10 +131,10 @@ make download
 |     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   | !   |
 | 0xE | CPX | SBC |     |     | CPX | SBC | INC |     | INX | SBC | NOP |     | CPX | SBC | INC | HLT |
 |     | imm | idx |     |     | zp  | zp  | zp  |     | impl| imm | impl|     | abs | abs | abs | impl|
-|     | +   |     |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   | !   |
+|     | +   | +   |     |     | +   | +   | +   |     | +   | +   | +   |     | +   | +   | +   | !   |
 | 0xF | BEQ | SBC |     |     |     | SBC | INC |     | SED | SBC |     |     |     | SBC | INC | WVS |
 |     | rel | idy |     |     |     | zpx | zpx |     | impl| aby |     |     |     | abx | abx | imm |
-|     | +   |     |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   | !   |
+|     | +   | +   |     |     |     | +   | +   |     | -   | +   |     |     |     | +   | +   | !   |
 
 ## 6502 Addressing Modes - Legend
 
