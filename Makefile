@@ -1,4 +1,8 @@
 SRCS= \
+	include/consts.svh \
+	include/boot_program.sv \
+	include/cpu_ifo_auto_generated.sv \
+	include/cpu_ifo_task.sv \
 	src/top.sv \
 	src/lcd.sv \
 	src/ram.sv \
@@ -25,12 +29,10 @@ PRG=/Applications/GowinEDA.app/Contents/Resources/Gowin_EDA/Programmer/bin/progr
 
 export PATH
 
-.PHONY: clean wave synthesize download
+.PHONY: clean wave download
 
-synthesize: $(SRCS)
+$(FS): $(SRCS)
 	$(GWSH) proj.tcl
-
-$(FS): synthesize
 
 # operation_index
 # /Applications/GowinEDA.app/Contents/Resources/Gowin_EDA/Programmer/bin/programmer_cli -h

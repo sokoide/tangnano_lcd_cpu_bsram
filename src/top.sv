@@ -34,7 +34,7 @@ module top (
   // RAM
   logic cea, ceb, oce;
   logic reseta, resetb;
-  logic [12:0] ada, adb;
+  logic [14:0] ada, adb;
   logic [7:0] din;
   logic [7:0] dout;
   logic v_cea, v_ceb, v_oce;

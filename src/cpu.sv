@@ -7,10 +7,10 @@ module cpu (
     input logic [7:0] boot_program[7680],  // Boot program, max size 0x200-0x1FFF (7680 bytes)
     input logic [15:0] boot_program_length,  // Boot program length
     output logic [7:0] din,  // RAM data to write
-    output logic [12:0] ada,  // write RAM
+    output logic [14:0] ada,  // write RAM
     output logic cea,  // RAM write enable
     output logic ceb,  // RAM read enable
-    output logic [12:0] adb,  // read RAM
+    output logic [14:0] adb,  // read RAM
     output logic [9:0] v_ada,  // write VRAM
     output logic v_cea,  // VRAM write enable
     output logic [7:0] v_din  // VRAM data to write
@@ -100,7 +100,7 @@ module cpu (
       pc_plus2                                          <= 16'h0000;
       pc_plus3                                          <= 16'h0000;
       sp                                                <= 8'hFF;
-      ada                                               <= 13'h0000;
+      ada                                               <= 15'h0000;
       ceb                                               <= 1'b1;
       din                                               <= 8'h0;
       adb                                               <= PROGRAM_START;
@@ -139,11 +139,15 @@ module cpu (
 
           INIT_VRAM: begin
             v_cea <= 1;  // VRAM write enable
+            cea <= 1;  // RAM write enable
             v_din <= char_code;
+            din <= char_code;
             char_code <= (char_code < 8'h7F) ? (char_code + 1) & 8'hFF : 8'h20;
 
             if (v_ada <= COLUMNS * ROWS) begin
-              v_ada <= (v_ada + 1) & VRAMW;
+              v_ada <= v_ada + 1 & VRAMW;
+              // shadow VRAM
+              ada   <= v_ada + 1 + 15'h7C00 & RAMW;
             end else begin
               v_cea <= 0;  // VRAM write disable
               state <= HALT;
@@ -153,7 +157,7 @@ module cpu (
           INIT_RAM: begin
             if (boot_write) begin
               boot_write <= 0;
-              cea <= 1;  // write enable
+              cea <= 1;  // RAM write enable
               ada <= PROGRAM_START + boot_idx & RAMW;
               din <= boot_program[boot_idx];
             end else begin
@@ -874,6 +878,8 @@ module cpu (
                 if (addr >= VRAM_START) begin
                   v_ada <= addr - VRAM_START & VRAMW;
                   v_din <= ra;
+                  ada   <= addr - VRAM_START + 15'h7C00 & RAMW;
+                  din <= ra;
                 end else begin
                   ada <= addr & RAMW;
                   din <= ra;
@@ -891,6 +897,8 @@ module cpu (
                 if (addr >= VRAM_START) begin
                   v_ada <= addr - VRAM_START & VRAMW;
                   v_din <= ra;
+                  ada   <= addr - VRAM_START + 15'h7C00 & RAMW;
+                  din <= ra;
                 end else begin
                   ada <= addr & RAMW;
                   din <= ra;

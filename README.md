@@ -190,13 +190,18 @@ make download
 ## Memory Map
 
 ```text
-Total 8KB RAM:
+32KB RAM:
 0x0000-0x00FF: Zero Page (256B)
 0x0100-0x01FF: Stack (256B)
-0x0200-0x1FFF: RAM (7.5KB)
+0x0200-0x7BFF: RAM (30.5KB)
+0x7C00-0x7FFF: Shadow VRAM (1KB)
 
-Total 1KB VRAM (SDPB):
+1KB VRAM (SDPB):
+Write-only for CPU. Use the Shadow VRAM address for read.
 0xE000-0xE3FF: Text VRAM (1KB)
+
+4KB Font ROM (pROM):
+0xF000-0xFFFF: Font ROM (4KB)
 ```
 
 ## Font ROM

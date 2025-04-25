@@ -7,8 +7,8 @@ module ram (
     input logic oce,
     input logic reseta,
     input logic resetb,
-    input logic [12:0] ada,
-    input logic [12:0] adb,
+    input logic [14:0] ada,
+    input logic [14:0] adb,
     input logic [7:0] din,
     // VRAM
     output logic [7:0] v_dout,
@@ -22,7 +22,7 @@ module ram (
     input logic [7:0] v_din
 );
 
-  // RAM 8KB, address 8192, data width 8
+  // RAM 32KB, address 32768, data width 8
 
   Gowin_SDPB ram_inst (
       .dout(dout),  //output [7:0] dout, read data
