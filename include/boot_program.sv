@@ -10,7 +10,7 @@ localparam logic [7:0] boot_program[7680] = '{
         6: 8'h00,
         7: 8'hDF,
         8: 8'h00,
-        9: 8'h00,
+        9: 8'h7C,
         10: 8'hFF,
         11: 8'h3A,
         12: 8'hCF,

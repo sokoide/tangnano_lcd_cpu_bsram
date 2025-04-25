@@ -47,3 +47,25 @@ function automatic logic [7:0] to_hexchar(input logic [3:0] nibble);
   if (nibble < 10) return 8'h30 + nibble;  // '0'〜'9'
   else return 8'h41 + (nibble - 10) & 8'hFF;  // 'A'〜'F'
 endfunction
+
+task automatic sta_write(input logic [15:0] addr, input logic [7:0] data);
+  if (addr >= VRAM_START) begin
+    v_ada <= addr - VRAM_START & VRAMW;
+    v_din <= data;
+    ada   <= addr - VRAM_START + SHADOW_VRAM_START & RAMW;
+    din   <= data;
+    cea <= 1;
+  end else begin
+    ada <= addr & RAMW;
+    din <= data;
+    cea <= 1;
+  end
+endtask
+
+task automatic vram_write(input logic [15:0] addr, input logic [7:0] data);
+    v_ada <= addr & VRAMW;
+    v_din <= data;
+    ada   <= addr + SHADOW_VRAM_START & RAMW;
+    din   <= data;
+    cea <= 1;
+endtask

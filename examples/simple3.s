@@ -20,8 +20,8 @@ loop:
     ADC #1
 ; store a value of A register at $00
     STA $00
-; IFO: show registers and memory at $0000-$007F
-    .byte $DF,$00,$00
+; IFO: show registers and memory at $7C00-$7C7F (shadow VRAM)
+    .byte $DF,$00,$7C
 ; WVS: wait for 1 second
     .byte $FF, $3A
 ; CVR: clear VRAM

@@ -16,7 +16,7 @@ module cpu (
     output logic [7:0] v_din  // VRAM data to write
 );
 
-  `include "cpu_ifo_task.sv"
+  `include "cpu_tasks.sv"
 
 
   // Internal registers.
@@ -139,15 +139,15 @@ module cpu (
 
           INIT_VRAM: begin
             v_cea <= 1;  // VRAM write enable
-            cea <= 1;  // RAM write enable
+            // cea <= 1;  // RAM write enable
             v_din <= char_code;
-            din <= char_code;
+            // din <= char_code;
             char_code <= (char_code < 8'h7F) ? (char_code + 1) & 8'hFF : 8'h20;
 
             if (v_ada <= COLUMNS * ROWS) begin
               v_ada <= v_ada + 1 & VRAMW;
               // shadow VRAM
-              ada   <= v_ada + 1 + 15'h7C00 & RAMW;
+              // ada   <= v_ada + 1 + SHADOW_VRAM_START & RAMW;
             end else begin
               v_cea <= 0;  // VRAM write disable
               state <= HALT;
@@ -875,16 +875,7 @@ module cpu (
               8'h8D: begin
                 // check if it's RAM or VRAM
                 automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                if (addr >= VRAM_START) begin
-                  v_ada <= addr - VRAM_START & VRAMW;
-                  v_din <= ra;
-                  ada   <= addr - VRAM_START + 15'h7C00 & RAMW;
-                  din <= ra;
-                end else begin
-                  ada <= addr & RAMW;
-                  din <= ra;
-                  cea <= 1;
-                end
+                sta_write(addr, ra);
                 pc <= pc_plus3;
                 adb <= pc_plus3 & RAMW;
                 state <= FETCH_REQ;
@@ -894,16 +885,7 @@ module cpu (
               8'h9D: begin
                 // check if it's RAM or VRAM
                 automatic logic [15:0] addr = operands[15:0] + rx & 16'hFFFF;
-                if (addr >= VRAM_START) begin
-                  v_ada <= addr - VRAM_START & VRAMW;
-                  v_din <= ra;
-                  ada   <= addr - VRAM_START + 15'h7C00 & RAMW;
-                  din <= ra;
-                end else begin
-                  ada <= addr & RAMW;
-                  din <= ra;
-                  cea <= 1;
-                end
+                sta_write(addr, ra);
                 pc <= pc_plus3;
                 adb <= pc_plus3 & RAMW;
                 state <= FETCH_REQ;
@@ -913,14 +895,7 @@ module cpu (
               8'h99: begin
                 // check if it's RAM or VRAM
                 automatic logic [15:0] addr = operands[15:0] + ry & 16'hFFFF;
-                if (addr >= VRAM_START) begin
-                  v_ada <= addr - VRAM_START & VRAMW;
-                  v_din <= ra;
-                end else begin
-                  ada <= addr & RAMW;
-                  din <= ra;
-                  cea <= 1;
-                end
+                sta_write(addr, ra);
                 pc <= pc_plus3;
                 adb <= pc_plus3 & RAMW;
                 state <= FETCH_REQ;
@@ -951,14 +926,7 @@ module cpu (
                     // fetched_data[15:8] = dout;
                     // check if it's RAM or VRAM
                     automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
-                    if (addr >= VRAM_START) begin
-                      v_ada <= addr - VRAM_START & VRAMW;
-                      v_din <= ra;
-                    end else begin
-                      ada <= addr & RAMW;
-                      din <= ra;
-                      cea <= 1;
-                    end
+                    sta_write(addr, ra);
                     pc <= pc_plus2;
                     adb <= pc_plus2 & RAMW;
                     state <= FETCH_REQ;
@@ -991,14 +959,7 @@ module cpu (
                     // fetched_data[15:8] = dout;
                     // check if it's RAM or VRAM
                     automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
-                    if (addr >= VRAM_START) begin
-                      v_ada <= addr - VRAM_START & VRAMW;
-                      v_din <= ra;
-                    end else begin
-                      ada <= addr & RAMW;
-                      din <= ra;
-                      cea <= 1;
-                    end
+                    sta_write(addr, ra);
                     pc <= pc_plus2;
                     adb <= pc_plus2 & RAMW;
                     state <= FETCH_REQ;
@@ -1030,14 +991,7 @@ module cpu (
               8'h8E: begin
                 // check if it's RAM or VRAM
                 automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                if (addr >= VRAM_START) begin
-                  v_ada <= addr - VRAM_START & VRAMW;
-                  v_din <= rx;
-                end else begin
-                  ada <= addr & RAMW;
-                  din <= rx;
-                  cea <= 1;
-                end
+                sta_write(addr, rx);
                 pc <= pc_plus3;
                 adb <= pc_plus3 & RAMW;
                 state <= FETCH_REQ;
@@ -1067,14 +1021,7 @@ module cpu (
               8'h8C: begin
                 // check if it's RAM or VRAM
                 automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                if (addr >= VRAM_START) begin
-                  v_ada <= addr - VRAM_START & VRAMW;
-                  v_din <= ry;
-                end else begin
-                  ada <= addr & RAMW;
-                  din <= ry;
-                  cea <= 1;
-                end
+                sta_write(addr, ry);
                 pc <= pc_plus3;
                 adb <= pc_plus3 & RAMW;
                 state <= FETCH_REQ;
@@ -3172,51 +3119,65 @@ module cpu (
                 automatic logic [15:0] tmp_addr;
                 if (show_info_cmd.vram_write) begin
                   v_ada <= show_info_cmd.v_ada;
+                  ada   <= show_info_cmd.v_ada + SHADOW_VRAM_START & RAMW;
+                  cea   <= 1;
                   case (show_info_cmd.v_din_t)
                     0: begin  // immediate
                       v_din <= show_info_cmd.v_din;
+                      din   <= show_info_cmd.v_din;
                     end
                     1: begin
                       case (show_info_cmd.v_din)
                         0: begin
                           v_din <= to_hexchar(dout[7:4]);
+                          din   <= to_hexchar(dout[7:4]);
                         end
                         1: begin
                           v_din <= to_hexchar(dout[3:0]);
+                          din   <= to_hexchar(dout[3:0]);
                         end
                         2, 3: begin
                           ;  // do nothing
                         end
                         default: begin
                           v_din <= dout[11-show_info_cmd.v_din] ? 8'h40 : 8'h20;
+                          din   <= dout[11-show_info_cmd.v_din] ? 8'h40 : 8'h20;
                         end
                       endcase
                     end
                     2: begin
                       v_din <= show_info_cmd.v_din ? to_hexchar(ra[3:0]) : to_hexchar(ra[7:4]);
+                      din   <= show_info_cmd.v_din ? to_hexchar(ra[3:0]) : to_hexchar(ra[7:4]);
                     end
                     3: begin
                       v_din <= show_info_cmd.v_din ? to_hexchar(rx[3:0]) : to_hexchar(rx[7:4]);
+                      din   <= show_info_cmd.v_din ? to_hexchar(rx[3:0]) : to_hexchar(rx[7:4]);
                     end
                     4: begin
                       v_din <= show_info_cmd.v_din ? to_hexchar(ry[3:0]) : to_hexchar(ry[7:4]);
+                      din   <= show_info_cmd.v_din ? to_hexchar(ry[3:0]) : to_hexchar(ry[7:4]);
                     end
                     5: begin
                       v_din <= show_info_cmd.v_din ? to_hexchar(sp[3:0]) : to_hexchar(sp[7:4]);
+                      din   <= show_info_cmd.v_din ? to_hexchar(sp[3:0]) : to_hexchar(sp[7:4]);
                     end
                     6: begin
                       case (show_info_cmd.v_din)
                         0: begin  // 1st nibble
                           v_din <= to_hexchar(pc[15:12]);
+                          din   <= to_hexchar(pc[15:12]);
                         end
                         1: begin  // 2nd nibble
                           v_din <= to_hexchar(pc[11:8]);
+                          din   <= to_hexchar(pc[11:8]);
                         end
                         2: begin  // 3rd nibble
                           v_din <= to_hexchar(pc[7:4]);
+                          din   <= to_hexchar(pc[7:4]);
                         end
                         3: begin  // 4th nibble
                           v_din <= to_hexchar(pc[3:0]);
+                          din   <= to_hexchar(pc[3:0]);
                         end
                       endcase
                     end
@@ -3225,15 +3186,19 @@ module cpu (
                       case (show_info_cmd.v_din)
                         0: begin  // 1st nibble
                           v_din <= to_hexchar(tmp_addr[15:12]);
+                          din   <= to_hexchar(tmp_addr[15:12]);
                         end
                         1: begin  // 2nd nibble
                           v_din <= to_hexchar(tmp_addr[11:8]);
+                          din   <= to_hexchar(tmp_addr[11:8]);
                         end
                         2: begin  // 3rd nibble
                           v_din <= to_hexchar(tmp_addr[7:4]);
+                          din   <= to_hexchar(tmp_addr[7:4]);
                         end
                         3: begin  // 4th nibble
                           v_din <= to_hexchar(tmp_addr[3:0]);
+                          din   <= to_hexchar(tmp_addr[3:0]);
                         end
                       endcase
                     end
@@ -3265,15 +3230,17 @@ module cpu (
           end
 
           CLEAR_VRAM: begin
-            v_din <= 8'h20;  // ' '
-            v_ada <= 0 & VRAMW;
+            vram_write(0, 8'h20);
             state <= CLEAR_VRAM2;
           end
 
           CLEAR_VRAM2: begin
             if (v_ada <= COLUMNS * ROWS) begin
-              v_ada <= (v_ada + 1) & VRAMW;
+              v_ada <= v_ada + 1 & VRAMW;
               v_din <= 8'h20;  // ' '
+              ada   <= v_ada + SHADOW_VRAM_START & RAMW;
+              din   <= 8'h20;
+              cea   <= 1;
             end else begin
               pc <= pc_plus1;
               adb <= pc_plus1 & RAMW;

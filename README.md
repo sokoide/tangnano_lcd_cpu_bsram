@@ -197,7 +197,7 @@ make download
 0x7C00-0x7FFF: Shadow VRAM (1KB)
 
 1KB VRAM (SDPB):
-Write-only for CPU. Use the Shadow VRAM address for read.
+Write-only for CPU. Use the Shadow VRAM address which has the same data as VRAM for read.
 0xE000-0xE3FF: Text VRAM (1KB)
 
 4KB Font ROM (pROM):
