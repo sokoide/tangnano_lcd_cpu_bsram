@@ -2,7 +2,7 @@
 #  Mac) brew install srecord cc65 golang
 #  WSL / Linux) sudo apt install srecord cc65 golang
 
-SRCS = simple3.s
+SRCS = simple4.s
 # target System Verilogy file path which is included by src/top.sv
 SV = ../include/boot_program.sv
 

@@ -38,6 +38,7 @@ module cpu (
   logic [15:0] addr;
   logic signed [15:0] s_offset;
   logic signed [7:0] s_imm8;
+  logic [7:0] dout_r;          // RAM read latch
 
   // Internal states
   logic [7:0] opcode;
@@ -59,6 +60,7 @@ module cpu (
     INIT_RAM,
     HALT,
     FETCH_REQ,
+    FETCH_WAIT,
     FETCH_RECV,
     DECODE_EXECUTE,
     WRITE_REQ,
@@ -88,6 +90,10 @@ module cpu (
   } show_info_stage_t;
 
   show_info_stage_t show_info_stage;
+
+
+  // din ratch
+  always_ff @(posedge clk) dout_r <= dout;
 
   // Sequential logic: use an asynchronous active-low rst_n.
   always_ff @(posedge clk or negedge rst_n) begin
@@ -178,27 +184,33 @@ module cpu (
           end
 
           FETCH_REQ: begin
-            if (fetch_stage == FETCH_DATA) begin
-              fetched_data_bytes <= fetched_data_bytes + 1'd1;
-              state <= next_state;
-            end else begin
-              state <= FETCH_RECV;
+            if (fetch_stage != FETCH_DATA) begin
               // timing improvement to avoid "adb <= pc + 1 & RAMW;" in the DECODE_EXECUTE state
               pc_plus1 <= pc + 16'd1 & RAMW;
               pc_plus2 <= pc + 16'd2 & RAMW;
               pc_plus3 <= pc + 16'd3 & RAMW;
             end
+            state <= FETCH_WAIT;
+          end
+
+          FETCH_WAIT: begin
+            if (fetch_stage == FETCH_DATA) begin
+              fetched_data_bytes <= fetched_data_bytes + 1'd1;
+              state <= next_state;
+            end else begin
+              state <= FETCH_RECV;
+            end
           end
 
           FETCH_RECV: begin
-            case (fetch_stage)
+            unique case (fetch_stage)
               FETCH_OPCODE: begin
-                opcode <= dout;
+                opcode <= dout_r;
                 fetched_data_bytes <= 0;
                 written_data_bytes <= 0;
                 cea <= 0;  // disable write
 
-                case (dout)
+                case (dout_r)
                   // No operand instructions
                   8'hEA,  // NOP
                   8'h60,  // RTS
@@ -317,21 +329,21 @@ module cpu (
               end
 
               FETCH_OPERAND1: begin
-                operands[7:0] <= dout;
+                operands[7:0] <= dout_r;
                 state <= DECODE_EXECUTE;
               end
 
               FETCH_OPERAND1OF2: begin
                 // 2 byte operand will be stored as operands[15:0] in big endian
                 // which is easier to calculate
-                operands[7:0] <= dout;
+                operands[7:0] <= dout_r;
                 adb <= pc_plus2 & RAMW;
                 fetch_stage <= FETCH_OPERAND2;
                 state <= FETCH_REQ;
               end
 
               FETCH_OPERAND2: begin
-                operands[15:8] <= dout;
+                operands[15:8] <= dout_r;
                 state <= DECODE_EXECUTE;
               end
             endcase
@@ -364,7 +376,7 @@ module cpu (
                     next_state <= DECODE_EXECUTE;
                   end
                   1: begin
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= (operands[15:0] + 1) & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
@@ -372,8 +384,8 @@ module cpu (
                   end
                   2: begin
                     // relative data is already in little endian.
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & RAMW;
-                    fetched_data[15:8] = dout;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & RAMW;
+                    fetched_data[15:8] = dout_r;
                     pc <= addr;
                     adb <= addr;
                     state <= FETCH_REQ;
@@ -430,7 +442,7 @@ module cpu (
                   end
                   1: begin
                     // fetch high byte of PC-1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     sp = sp + 1'd1;
                     adb <= STACK + sp;
                     state <= FETCH_REQ;
@@ -438,7 +450,7 @@ module cpu (
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    fetched_data[15:8] = dout;
+                    fetched_data[15:8] = dout_r;
                     // fetched_data is in big endian.
                     pc <= fetched_data + 1'd1 & RAMW;
                     adb <= fetched_data + 1'd1 & RAMW;
@@ -467,7 +479,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = dout;
+                  ra = dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus1;
@@ -497,7 +509,7 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic dummy;
-                  {flg_n, flg_v, dummy, flg_b, flg_d, flg_i, flg_z, flg_c} = dout;
+                  {flg_n, flg_v, dummy, flg_b, flg_d, flg_i, flg_z, flg_c} = dout_r;
                   pc <= pc_plus1;
                   adb <= pc_plus1 & RAMW;
                   state <= FETCH_REQ;
@@ -523,10 +535,10 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = dout;
+                  ra = dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
-                  ra <= dout;
+                  ra <= dout_r;
                   pc <= pc_plus2;
                   adb <= pc_plus2 & RAMW;
                   state <= FETCH_REQ;
@@ -542,7 +554,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = dout;
+                  ra = dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus2;
@@ -561,7 +573,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = dout;
+                  ra = dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus3;
@@ -580,7 +592,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = dout;
+                  ra = dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus3;
@@ -599,7 +611,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = dout;
+                  ra = dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus3;
@@ -623,23 +635,23 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
                     adb <= addr & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   3: begin
-                    ra = dout;
+                    ra = dout_r;
                     flg_z = (ra == 8'h00);
                     flg_n = ra[7];
                     pc <= pc_plus2;
@@ -664,23 +676,23 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
                     adb <= addr & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   3: begin
-                    ra = dout;
+                    ra = dout_r;
                     flg_z = (ra == 8'h00);
                     flg_n = ra[7];
                     pc <= pc_plus2;
@@ -708,7 +720,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  rx = dout;
+                  rx = dout_r;
                   flg_z = (rx == 8'h00);
                   flg_n = rx[7];
                   pc <= pc_plus2;
@@ -725,7 +737,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  rx = dout;
+                  rx = dout_r;
                   flg_z = (rx == 8'h00);
                   flg_n = rx[7];
                   pc <= pc_plus2;
@@ -743,7 +755,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  rx = dout;
+                  rx = dout_r;
                   flg_z = (rx == 8'h00);
                   flg_n = rx[7];
                   pc <= pc_plus3;
@@ -761,7 +773,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  rx = dout;
+                  rx = dout_r;
                   flg_z = (rx == 8'h00);
                   flg_n = rx[7];
                   pc <= pc_plus3;
@@ -788,7 +800,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ry = dout;
+                  ry = dout_r;
                   flg_z = (ry == 8'h00);
                   flg_n = ry[7];
                   pc <= pc_plus2;
@@ -805,7 +817,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ry = dout;
+                  ry = dout_r;
                   flg_z = (ry == 8'h00);
                   flg_n = ry[7];
                   pc <= pc_plus2;
@@ -823,7 +835,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ry = dout;
+                  ry = dout_r;
                   flg_z = (ry == 8'h00);
                   flg_n = ry[7];
                   pc <= pc_plus3;
@@ -840,7 +852,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ry = dout;
+                  ry = dout_r;
                   flg_z = (ry == 8'h00);
                   flg_n = ry[7];
                   pc <= pc_plus3;
@@ -916,16 +928,16 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // check if it's RAM or VRAM
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
                     sta_write(addr, ra);
                     pc <= pc_plus2;
                     adb <= pc_plus2 & RAMW;
@@ -949,16 +961,16 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // check if it's RAM or VRAM
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
                     sta_write(addr, ra);
                     pc <= pc_plus2;
                     adb <= pc_plus2 & RAMW;
@@ -1035,7 +1047,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = dout + 8'd1;
+                  automatic logic [7:0] result = dout_r + 8'd1;
                   ada <= operands[7:0];
                   din <= result;
                   cea <= 1;
@@ -1055,7 +1067,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = dout + 8'd1;
+                  automatic logic [7:0] result = dout_r + 8'd1;
                   ada <= operands[7:0];
                   din <= result;
                   cea <= 1;
@@ -1077,7 +1089,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = dout + 8'd1;
+                  automatic logic [7:0] result = dout_r + 8'd1;
                   ada <= operands[15:0] & RAMW;
                   din <= result;
                   cea <= 1;
@@ -1099,7 +1111,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = dout + 8'd1;
+                  automatic logic [7:0] result = dout_r + 8'd1;
                   ada <= operands[15:0] & RAMW;
                   din <= result;
                   cea <= 1;
@@ -1139,7 +1151,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = dout - 8'd1;
+                  automatic logic [7:0] result = dout_r - 8'd1;
                   ada <= operands[7:0];
                   din <= result;
                   cea <= 1;
@@ -1159,7 +1171,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = dout - 8'd1;
+                  automatic logic [7:0] result = dout_r - 8'd1;
                   ada <= (operands[7:0] + rx) & 8'hFF;
                   din <= result;
                   cea <= 1;
@@ -1180,7 +1192,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = dout - 8'd1;
+                  automatic logic [7:0] result = dout_r - 8'd1;
                   ada <= operands[15:0] & RAMW;
                   din <= result;
                   cea <= 1;
@@ -1201,7 +1213,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = dout - 8'd1;
+                  automatic logic [7:0] result = dout_r - 8'd1;
                   ada <= (operands[15:0] + rx) & RAMW;
                   din <= result;
                   cea <= 1;
@@ -1237,9 +1249,9 @@ module cpu (
               8'h69: begin
                 automatic logic [8:0] temp;  // make it 9bit to include carry
                 // in ADC, +1 if flg_c is 1
-                temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
                 flg_c = temp[8];
-                flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                flg_v = (~(ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                 ra = temp[7:0];
 
@@ -1260,9 +1272,9 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
-                  temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                  temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
                   flg_c = temp[8];
-                  flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                  flg_v = (~(ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                   ra = temp[7:0];
 
@@ -1284,9 +1296,9 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
-                  temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                  temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
                   flg_c = temp[8];
-                  flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                  flg_v = (~(ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                   ra = temp[7:0];
 
@@ -1309,9 +1321,9 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
-                  temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                  temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
                   flg_c = temp[8];
-                  flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                  flg_v = (~(ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                   ra = temp[7:0];
 
@@ -1334,9 +1346,9 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
-                  temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                  temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
                   flg_c = temp[8];
-                  flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                  flg_v = (~(ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                   ra = temp[7:0];
 
@@ -1358,9 +1370,9 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
-                  temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                  temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
                   flg_c = temp[8];
-                  flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                  flg_v = (~(ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                   ra = temp[7:0];
 
@@ -1385,16 +1397,16 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
                     adb <= addr & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
@@ -1402,9 +1414,9 @@ module cpu (
                   end
                   3: begin
                     automatic logic [8:0] temp;  // make it 9bit to include carry
-                    temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                    temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
                     flg_c = temp[8];
-                    flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                    flg_v = (~(ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                     ra = temp[7:0];
 
@@ -1430,16 +1442,16 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
                     adb <= addr & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
@@ -1447,9 +1459,9 @@ module cpu (
                   end
                   3: begin
                     automatic logic [8:0] temp;  // make it 9bit to include carry
-                    temp = ra + dout + (flg_c ? 1 : 0) & 9'h1FF;
+                    temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
                     flg_c = temp[8];
-                    flg_v = (~(ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                    flg_v = (~(ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                     ra = temp[7:0];
 
@@ -1467,10 +1479,10 @@ module cpu (
               8'hE9: begin
                 automatic logic [8:0] temp;  // make it 9bit to include borrow
                 // in SBC, -1 if flg_c is 0 (clear)
-                temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+                temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
 
                 flg_c = ~temp[8];  // Borrow flag (inverted carry)
-                flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                flg_v = ((ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                 ra = temp[7:0];
 
@@ -1491,10 +1503,10 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include borrow
-                  temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+                  temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
 
                   flg_c = ~temp[8];  // Borrow flag (inverted carry)
-                  flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                  flg_v = ((ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                   ra = temp[7:0];
 
@@ -1516,10 +1528,10 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include borrow
-                  temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+                  temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
 
                   flg_c = ~temp[8];  // Borrow flag (inverted carry)
-                  flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                  flg_v = ((ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                   ra = temp[7:0];
 
@@ -1542,10 +1554,10 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include borrow
-                  temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+                  temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
 
                   flg_c = ~temp[8];  // Borrow flag (inverted carry)
-                  flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                  flg_v = ((ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                   ra = temp[7:0];
 
@@ -1568,10 +1580,10 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include borrow
-                  temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+                  temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
 
                   flg_c = ~temp[8];  // Borrow flag (inverted carry)
-                  flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                  flg_v = ((ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                   ra = temp[7:0];
 
@@ -1594,10 +1606,10 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include borrow
-                  temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+                  temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
 
                   flg_c = ~temp[8];  // Borrow flag (inverted carry)
-                  flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                  flg_v = ((ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                   ra = temp[7:0];
 
@@ -1622,16 +1634,16 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
                     adb <= addr & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
@@ -1639,10 +1651,10 @@ module cpu (
                   end
                   3: begin
                     automatic logic [8:0] temp;  // make it 9bit to include borrow
-                    temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+                    temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
 
                     flg_c = ~temp[8];  // Borrow flag (inverted carry)
-                    flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                    flg_v = ((ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                     ra = temp[7:0];
 
@@ -1668,16 +1680,16 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
                     adb <= addr & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
@@ -1685,10 +1697,10 @@ module cpu (
                   end
                   3: begin
                     automatic logic [8:0] temp;  // make it 9bit to include borrow
-                    temp = ra - dout - (flg_c ? 0 : 1) & 9'h1FF;
+                    temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
 
                     flg_c = ~temp[8];  // Borrow flag (inverted carry)
-                    flg_v = ((ra[7] ^ dout[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
+                    flg_v = ((ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
                     ra = temp[7:0];
 
@@ -1720,7 +1732,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = ra & dout;
+                  ra = ra & dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus2;
@@ -1737,7 +1749,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = ra & dout;
+                  ra = ra & dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus2;
@@ -1755,7 +1767,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = ra & dout;
+                  ra = ra & dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus3;
@@ -1773,7 +1785,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = ra & dout;
+                  ra = ra & dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus3;
@@ -1791,7 +1803,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = ra & dout;
+                  ra = ra & dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus3;
@@ -1812,23 +1824,23 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
                     adb <= addr & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   3: begin
-                    ra = ra & dout;
+                    ra = ra & dout_r;
                     flg_z = (ra == 8'h00);
                     flg_n = ra[7];
                     pc <= pc_plus2;
@@ -1850,23 +1862,23 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
                     adb <= addr & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   3: begin
-                    ra = ra & dout;
+                    ra = ra & dout_r;
                     flg_z = (ra == 8'h00);
                     flg_n = ra[7];
                     pc <= pc_plus2;
@@ -1894,7 +1906,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = ra ^ dout;
+                  ra = ra ^ dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus2;
@@ -1911,7 +1923,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = ra ^ dout;
+                  ra = ra ^ dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus2;
@@ -1929,7 +1941,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = ra ^ dout;
+                  ra = ra ^ dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus3;
@@ -1947,7 +1959,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = ra ^ dout;
+                  ra = ra ^ dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus3;
@@ -1965,7 +1977,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = ra ^ dout;
+                  ra = ra ^ dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus3;
@@ -1986,23 +1998,23 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
                     adb <= addr & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   3: begin
-                    ra = ra ^ dout;
+                    ra = ra ^ dout_r;
                     flg_z = (ra == 8'h00);
                     flg_n = ra[7];
                     pc <= pc_plus2;
@@ -2024,23 +2036,23 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
                     adb <= addr & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   3: begin
-                    ra = ra ^ dout;
+                    ra = ra ^ dout_r;
                     flg_z = (ra == 8'h00);
                     flg_n = ra[7];
                     pc <= pc_plus3;
@@ -2068,7 +2080,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = ra | dout;
+                  ra = ra | dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus2;
@@ -2085,7 +2097,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = ra | dout;
+                  ra = ra | dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus2;
@@ -2103,7 +2115,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = ra | dout;
+                  ra = ra | dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus3;
@@ -2121,7 +2133,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = ra | dout;
+                  ra = ra | dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus3;
@@ -2139,7 +2151,7 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  ra = ra | dout;
+                  ra = ra | dout_r;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus3;
@@ -2160,23 +2172,23 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
                     adb <= addr & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   3: begin
-                    ra = ra | dout;
+                    ra = ra | dout_r;
                     flg_z = (ra == 8'h00);
                     flg_n = ra[7];
                     pc <= pc_plus2;
@@ -2198,23 +2210,23 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
                     adb <= addr & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   3: begin
-                    ra = ra | dout;
+                    ra = ra | dout_r;
                     flg_z = (ra == 8'h00);
                     flg_n = ra[7];
                     pc <= pc_plus2;
@@ -2243,8 +2255,8 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  flg_c = dout[7];  // Capture the carry bit before shifting
-                  ra = dout << 1;
+                  flg_c = dout_r[7];  // Capture the carry bit before shifting
+                  ra = dout_r << 1;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus2;
@@ -2261,8 +2273,8 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  flg_c = dout[7];  // Capture the carry bit before shifting
-                  ra = dout << 1;
+                  flg_c = dout_r[7];  // Capture the carry bit before shifting
+                  ra = dout_r << 1;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus2;
@@ -2280,8 +2292,8 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  flg_c = dout[7];  // Capture the carry bit before shifting
-                  ra = dout << 1;
+                  flg_c = dout_r[7];  // Capture the carry bit before shifting
+                  ra = dout_r << 1;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus3;
@@ -2299,8 +2311,8 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  flg_c = dout[7];  // Capture the carry bit before shifting
-                  ra = dout << 1;
+                  flg_c = dout_r[7];  // Capture the carry bit before shifting
+                  ra = dout_r << 1;
                   flg_z = (ra == 8'h00);
                   flg_n = ra[7];
                   pc <= pc_plus3;
@@ -2330,8 +2342,8 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic carry_in = flg_c;
-                  flg_c = dout[7];  // Capture the carry bit before shifting
-                  din   = (dout << 1) | carry_in;
+                  flg_c = dout_r[7];  // Capture the carry bit before shifting
+                  din   = (dout_r << 1) | carry_in;
                   ada <= operands[7:0];
                   cea <= 1;
                   flg_z = (din == 8'h00);
@@ -2351,8 +2363,8 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic carry_in = flg_c;
-                  flg_c = dout[7];  // Capture the carry bit before shifting
-                  din   = (dout << 1) | carry_in;
+                  flg_c = dout_r[7];  // Capture the carry bit before shifting
+                  din   = (dout_r << 1) | carry_in;
                   ada <= (operands[7:0] + rx) & 8'hFF;
                   cea <= 1;
                   flg_z = (din == 8'h00);
@@ -2373,8 +2385,8 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic carry_in = flg_c;
-                  flg_c = dout[7];  // Capture the carry bit before shifting
-                  din   = (dout << 1) | carry_in;
+                  flg_c = dout_r[7];  // Capture the carry bit before shifting
+                  din   = (dout_r << 1) | carry_in;
                   ada <= operands[15:0] & RAMW;
                   cea <= 1;
                   flg_z = (din == 8'h00);
@@ -2395,8 +2407,8 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic carry_in = flg_c;
-                  flg_c = dout[7];  // Capture the carry bit before shifting
-                  din   = (dout << 1) | carry_in;
+                  flg_c = dout_r[7];  // Capture the carry bit before shifting
+                  din   = (dout_r << 1) | carry_in;
                   ada <= (operands[15:0] + rx) & RAMW;
                   cea <= 1;
                   flg_z = (din == 8'h00);
@@ -2428,8 +2440,8 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic carry_in = flg_c;
-                  flg_c = dout[0];  // Capture the carry bit before shifting
-                  din   = (dout >> 1) | (carry_in << 7);
+                  flg_c = dout_r[0];  // Capture the carry bit before shifting
+                  din   = (dout_r >> 1) | (carry_in << 7);
                   ada <= operands[7:0];
                   cea <= 1;
                   flg_z = (din == 8'h00);
@@ -2449,8 +2461,8 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic carry_in = flg_c;
-                  flg_c = dout[0];  // Capture the carry bit before shifting
-                  din   = (dout >> 1) | (carry_in << 7);
+                  flg_c = dout_r[0];  // Capture the carry bit before shifting
+                  din   = (dout_r >> 1) | (carry_in << 7);
                   ada <= (operands[7:0] + rx) & 8'hFF;
                   cea <= 1;
                   flg_z = (din == 8'h00);
@@ -2471,8 +2483,8 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic carry_in = flg_c;
-                  flg_c = dout[0];  // Capture the carry bit before shifting
-                  din   = (dout >> 1) | (carry_in << 7);
+                  flg_c = dout_r[0];  // Capture the carry bit before shifting
+                  din   = (dout_r >> 1) | (carry_in << 7);
                   ada <= operands[15:0] & RAMW;
                   cea <= 1;
                   flg_z = (din == 8'h00);
@@ -2493,8 +2505,8 @@ module cpu (
                   next_state <= DECODE_EXECUTE;
                 end else begin
                   automatic logic carry_in = flg_c;
-                  flg_c = dout[0];  // Capture the carry bit before shifting
-                  din   = (dout >> 1) | (carry_in << 7);
+                  flg_c = dout_r[0];  // Capture the carry bit before shifting
+                  din   = (dout_r >> 1) | (carry_in << 7);
                   ada <= (operands[15:0] + rx) & RAMW;
                   cea <= 1;
                   flg_z = (din == 8'h00);
@@ -2524,9 +2536,9 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  flg_z = (ra & dout) == 1'd0 ? 1'd1 : 1'd0;
-                  flg_n = dout[7];
-                  flg_v = dout[6];
+                  flg_z = (ra & dout_r) == 1'd0 ? 1'd1 : 1'd0;
+                  flg_n = dout_r[7];
+                  flg_v = dout_r[6];
                   pc <= pc_plus2;
                   adb <= pc_plus2 & RAMW;
                   state <= FETCH_REQ;
@@ -2542,9 +2554,9 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  flg_z = (ra & dout) == 1'd0 ? 1'd1 : 1'd0;
-                  flg_n = dout[7];
-                  flg_v = dout[6];
+                  flg_z = (ra & dout_r) == 1'd0 ? 1'd1 : 1'd0;
+                  flg_n = dout_r[7];
+                  flg_v = dout_r[6];
                   pc <= pc_plus3;
                   adb <= pc_plus3 & RAMW;
                   state <= FETCH_REQ;
@@ -2559,8 +2571,8 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = ra - dout;
-                  flg_c = ra >= dout ? 1 : 0;
+                  automatic logic [7:0] result = ra - dout_r;
+                  flg_c = ra >= dout_r ? 1 : 0;
                   flg_z = (result == 8'h00);
                   flg_n = result[7];
                   pc <= pc_plus2;
@@ -2577,8 +2589,8 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = ra - dout;
-                  flg_c = ra >= dout ? 1 : 0;
+                  automatic logic [7:0] result = ra - dout_r;
+                  flg_c = ra >= dout_r ? 1 : 0;
                   flg_z = (result == 8'h00);
                   flg_n = result[7];
                   pc <= pc_plus2;
@@ -2596,8 +2608,8 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = ra - dout;
-                  flg_c = ra >= dout ? 1 : 0;
+                  automatic logic [7:0] result = ra - dout_r;
+                  flg_c = ra >= dout_r ? 1 : 0;
                   flg_z = (result == 8'h00);
                   flg_n = result[7];
                   pc <= pc_plus3;
@@ -2615,8 +2627,8 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = ra - dout;
-                  flg_c = ra >= dout ? 1 : 0;
+                  automatic logic [7:0] result = ra - dout_r;
+                  flg_c = ra >= dout_r ? 1 : 0;
                   flg_z = (result == 8'h00);
                   flg_n = result[7];
                   pc <= pc_plus3;
@@ -2633,8 +2645,8 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = ra - dout;
-                  flg_c = ra >= dout ? 1 : 0;
+                  automatic logic [7:0] result = ra - dout_r;
+                  flg_c = ra >= dout_r ? 1 : 0;
                   flg_z = (result == 8'h00);
                   flg_n = result[7];
                   pc <= pc_plus3;
@@ -2655,24 +2667,24 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
                     adb <= addr & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   3: begin
-                    automatic logic [7:0] result = ra - dout;
-                    flg_c = ra >= dout ? 1 : 0;
+                    automatic logic [7:0] result = ra - dout_r;
+                    flg_c = ra >= dout_r ? 1 : 0;
                     flg_z = (result == 8'h00);
                     flg_n = result[7];
                     pc <= pc_plus3;
@@ -2694,24 +2706,24 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout;
+                    fetched_data[7:0] = dout_r;
                     adb <= operands[7:0] + 8'h01 & 8'hFF;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   2: begin
-                    // fetched_data[15:8] = dout;
+                    // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
                     adb <= addr & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
                   end
                   3: begin
-                    automatic logic [7:0] result = ra - dout;
-                    flg_c = ra >= dout ? 1 : 0;
+                    automatic logic [7:0] result = ra - dout_r;
+                    flg_c = ra >= dout_r ? 1 : 0;
                     flg_z = (result == 8'h00);
                     flg_n = result[7];
                     pc <= pc_plus3;
@@ -2741,8 +2753,8 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = rx - dout;
-                  flg_c = rx >= dout ? 1 : 0;
+                  automatic logic [7:0] result = rx - dout_r;
+                  flg_c = rx >= dout_r ? 1 : 0;
                   flg_z = (result == 8'h00);
                   flg_n = result[7];
                   pc <= pc_plus2;
@@ -2761,8 +2773,8 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = rx - dout;
-                  flg_c = rx >= dout ? 1 : 0;
+                  automatic logic [7:0] result = rx - dout_r;
+                  flg_c = rx >= dout_r ? 1 : 0;
                   flg_z = (result == 8'h00);
                   flg_n = result[7];
                   pc <= pc_plus3;
@@ -2790,8 +2802,8 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = ry - dout;
-                  flg_c = ry >= dout ? 1 : 0;
+                  automatic logic [7:0] result = ry - dout_r;
+                  flg_c = ry >= dout_r ? 1 : 0;
                   flg_z = (result == 8'h00);
                   flg_n = result[7];
                   pc <= pc_plus2;
@@ -2809,8 +2821,8 @@ module cpu (
                   fetch_stage <= FETCH_DATA;
                   next_state <= DECODE_EXECUTE;
                 end else begin
-                  automatic logic [7:0] result = ry - dout;
-                  flg_c = ry >= dout ? 1 : 0;
+                  automatic logic [7:0] result = ry - dout_r;
+                  flg_c = ry >= dout_r ? 1 : 0;
                   flg_z = (result == 8'h00);
                   flg_n = result[7];
                   pc <= pc_plus3;
@@ -3129,19 +3141,19 @@ module cpu (
                     1: begin
                       case (show_info_cmd.v_din)
                         0: begin
-                          v_din <= to_hexchar(dout[7:4]);
-                          din   <= to_hexchar(dout[7:4]);
+                          v_din <= to_hexchar(dout_r[7:4]);
+                          din   <= to_hexchar(dout_r[7:4]);
                         end
                         1: begin
-                          v_din <= to_hexchar(dout[3:0]);
-                          din   <= to_hexchar(dout[3:0]);
+                          v_din <= to_hexchar(dout_r[3:0]);
+                          din   <= to_hexchar(dout_r[3:0]);
                         end
                         2, 3: begin
                           ;  // do nothing
                         end
                         default: begin
-                          v_din <= dout[11-show_info_cmd.v_din] ? 8'h40 : 8'h20;
-                          din   <= dout[11-show_info_cmd.v_din] ? 8'h40 : 8'h20;
+                          v_din <= dout_r[11-show_info_cmd.v_din] ? 8'h40 : 8'h20;
+                          din   <= dout_r[11-show_info_cmd.v_din] ? 8'h40 : 8'h20;
                         end
                       endcase
                     end

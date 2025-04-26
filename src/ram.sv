@@ -22,7 +22,7 @@ module ram (
     input logic [7:0] v_din
 );
 
-  // RAM 32KB, address 32768, data width 8
+  // RAM 32KB, address 32768, data width 8, bypass
 
   Gowin_SDPB ram_inst (
       .dout(dout),  //output [7:0] dout, read data
@@ -38,7 +38,7 @@ module ram (
       .adb(adb)  //input [12:0] adb, for read
   );
 
-  // Text VRAM, address 1024, data width 8
+  // Text VRAM, address 1024, data width 8, bypass
 
   Gowin_SDPB_vram vram_inst (
       .dout(v_dout),  //output [7:0] dout, read data
