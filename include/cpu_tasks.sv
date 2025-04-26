@@ -48,6 +48,25 @@ function automatic logic [7:0] to_hexchar(input logic [3:0] nibble);
   else return 8'h41 + (nibble - 10) & 8'hFF;  // 'A'〜'F'
 endfunction
 
+task automatic fetch_opcode(input logic [1:0] pc_offset);
+  unique case (pc_offset)
+    1: begin
+      pc <= pc_plus1;
+      adb <= pc_plus1 & RAMW;
+    end
+    2: begin
+      pc <= pc_plus2;
+      adb <= pc_plus2 & RAMW;
+    end
+    default: begin
+      pc <= pc_plus3;
+      adb <= pc_plus3 & RAMW;
+    end
+  endcase
+  state <= FETCH_REQ;
+  fetch_stage <= FETCH_OPCODE;
+endtask
+
 task automatic sta_write(input logic [15:0] addr, input logic [7:0] data);
   if (addr >= VRAM_START) begin
     v_ada <= addr - VRAM_START & VRAMW;
