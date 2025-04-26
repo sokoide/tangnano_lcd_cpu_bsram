@@ -184,42 +184,17 @@ module cpu (
           end
 
           FETCH_REQ: begin
-            unique case (fetch_stage)
-              FETCH_OPCODE: begin
-                // timing improvement to avoid "adb <= pc + 1 & RAMW;" in the DECODE_EXECUTE state
-                pc_plus1 <= pc + 16'd1 & RAMW;
-                pc_plus2 <= pc + 16'd2 & RAMW;
-                pc_plus3 <= pc + 16'd3 & RAMW;
-                // use dout
-                state <= FETCH_RECV;
-              end
-              FETCH_DATA: begin
-                // use dout_r
-                state <= FETCH_WAIT;
-              end
-              default: begin
-                // timing improvement to avoid "adb <= pc + 1 & RAMW;" in the DECODE_EXECUTE state
-                pc_plus1 <= pc + 16'd1 & RAMW;
-                pc_plus2 <= pc + 16'd2 & RAMW;
-                pc_plus3 <= pc + 16'd3 & RAMW;
-                // use dout_r
-                state <= FETCH_WAIT;
-              end
-            endcase
-
-            // if (fetch_stage != FETCH_DATA) begin
-            //   // timing improvement to avoid "adb <= pc + 1 & RAMW;" in the DECODE_EXECUTE state
-            //   pc_plus1 <= pc + 16'd1 & RAMW;
-            //   pc_plus2 <= pc + 16'd2 & RAMW;
-            //   pc_plus3 <= pc + 16'd3 & RAMW;
-            // end
-            // if (fetch_stage FETCH_OPCODE) begin
-            //   // use dout
-            //   state <= FETCH_RECV;
-            // end else begin
-            //   // use dout_r
-            //   state <= FETCH_WAIT;
-            // end
+            if (fetch_stage == FETCH_OPCODE) begin
+              // use dout (no latch)
+              state <= FETCH_RECV;
+            end else begin
+              // use dout_r
+              state <= FETCH_WAIT;
+            end
+            // timing improvement to avoid "adb <= pc + 1 & RAMW;" in the DECODE_EXECUTE state
+            pc_plus1 <= pc + 16'd1 & RAMW;
+            pc_plus2 <= pc + 16'd2 & RAMW;
+            pc_plus3 <= pc + 16'd3 & RAMW;
           end
 
           FETCH_WAIT: begin
