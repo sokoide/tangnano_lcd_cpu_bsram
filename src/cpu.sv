@@ -20,36 +20,36 @@ module cpu (
 
 
   // Internal registers.
-  logic [15:0] pc;  // Program Counter
-  logic [15:0] pc_plus1;
-  logic [15:0] pc_plus2;
-  logic [15:0] pc_plus3;
-  logic [7:0] ra;  // A Register
-  logic [7:0] rx;  // X Register
-  logic [7:0] ry;  // Y Register
-  logic [7:0] sp;  // Stack Pointer
-  logic flg_c;  // carry flag
-  logic flg_z;  // zero flag
-  logic flg_i;  // interrupt disable (not used)
-  logic flg_d;  // desimal mode flag (not used)
-  logic flg_b;  // break command (not used)
-  logic flg_v;  // overflow flag
-  logic flg_n;  // negative flag
-  logic [15:0] addr;
+  logic        [15:0] pc;  // Program Counter
+  logic        [15:0] pc_plus1;
+  logic        [15:0] pc_plus2;
+  logic        [15:0] pc_plus3;
+  logic        [ 7:0] ra;  // A Register
+  logic        [ 7:0] rx;  // X Register
+  logic        [ 7:0] ry;  // Y Register
+  logic        [ 7:0] sp;  // Stack Pointer
+  logic               flg_c;  // carry flag
+  logic               flg_z;  // zero flag
+  logic               flg_i;  // interrupt disable (not used)
+  logic               flg_d;  // desimal mode flag (not used)
+  logic               flg_b;  // break command (not used)
+  logic               flg_v;  // overflow flag
+  logic               flg_n;  // negative flag
+  logic        [15:0] addr;
   logic signed [15:0] s_offset;
-  logic signed [7:0] s_imm8;
-  logic [7:0] dout_r;          // RAM read latch
+  logic signed [ 7:0] s_imm8;
+  logic        [ 7:0] dout_r;  // RAM read latch
 
   // Internal states
-  logic [7:0] opcode;
-  logic [15:0] operands;
-  logic [2:0] fetched_data_bytes;
-  logic [15:0] fetched_data;
-  logic [2:0] written_data_bytes;
-  logic [7:0] char_code;
-  logic [31:0] counter;
-  logic [9:0] boot_idx;
-  logic boot_write;
+  logic        [ 7:0] opcode;
+  logic        [15:0] operands;
+  logic        [ 2:0] fetched_data_bytes;
+  logic        [15:0] fetched_data;
+  logic        [ 2:0] written_data_bytes;
+  logic        [ 7:0] char_code;
+  logic        [31:0] counter;
+  logic        [ 9:0] boot_idx;
+  logic               boot_write;
   logic vsync_meta, vsync_sync;
   logic [ 1:0] vsync_stage;
   logic [31:0] show_info_counter;
@@ -184,13 +184,42 @@ module cpu (
           end
 
           FETCH_REQ: begin
-            if (fetch_stage != FETCH_DATA) begin
-              // timing improvement to avoid "adb <= pc + 1 & RAMW;" in the DECODE_EXECUTE state
-              pc_plus1 <= pc + 16'd1 & RAMW;
-              pc_plus2 <= pc + 16'd2 & RAMW;
-              pc_plus3 <= pc + 16'd3 & RAMW;
-            end
-            state <= FETCH_WAIT;
+            unique case (fetch_stage)
+              FETCH_OPCODE: begin
+                // timing improvement to avoid "adb <= pc + 1 & RAMW;" in the DECODE_EXECUTE state
+                pc_plus1 <= pc + 16'd1 & RAMW;
+                pc_plus2 <= pc + 16'd2 & RAMW;
+                pc_plus3 <= pc + 16'd3 & RAMW;
+                // use dout
+                state <= FETCH_RECV;
+              end
+              FETCH_DATA: begin
+                // use dout_r
+                state <= FETCH_WAIT;
+              end
+              default: begin
+                // timing improvement to avoid "adb <= pc + 1 & RAMW;" in the DECODE_EXECUTE state
+                pc_plus1 <= pc + 16'd1 & RAMW;
+                pc_plus2 <= pc + 16'd2 & RAMW;
+                pc_plus3 <= pc + 16'd3 & RAMW;
+                // use dout_r
+                state <= FETCH_WAIT;
+              end
+            endcase
+
+            // if (fetch_stage != FETCH_DATA) begin
+            //   // timing improvement to avoid "adb <= pc + 1 & RAMW;" in the DECODE_EXECUTE state
+            //   pc_plus1 <= pc + 16'd1 & RAMW;
+            //   pc_plus2 <= pc + 16'd2 & RAMW;
+            //   pc_plus3 <= pc + 16'd3 & RAMW;
+            // end
+            // if (fetch_stage FETCH_OPCODE) begin
+            //   // use dout
+            //   state <= FETCH_RECV;
+            // end else begin
+            //   // use dout_r
+            //   state <= FETCH_WAIT;
+            // end
           end
 
           FETCH_WAIT: begin
@@ -205,12 +234,14 @@ module cpu (
           FETCH_RECV: begin
             unique case (fetch_stage)
               FETCH_OPCODE: begin
-                opcode <= dout_r;
+                // use dout instead of dout_r (1 clock faster)
+                opcode <= dout;
                 fetched_data_bytes <= 0;
                 written_data_bytes <= 0;
                 cea <= 0;  // disable write
 
-                case (dout_r)
+                // use dout instead of dout_r (1 clock faster)
+                case (dout)
                   // No operand instructions
                   8'hEA,  // NOP
                   8'h60,  // RTS
