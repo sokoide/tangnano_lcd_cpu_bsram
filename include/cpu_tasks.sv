@@ -67,6 +67,13 @@ task automatic fetch_opcode(input logic [1:0] pc_offset);
   fetch_stage <= FETCH_OPCODE;
 endtask
 
+task automatic fetch_data(input logic [14:0] in_adb);
+  adb <= in_adb;
+  state <= FETCH_REQ;
+  fetch_stage <= FETCH_DATA;
+  next_state <= DECODE_EXECUTE;
+endtask
+
 task automatic sta_write(input logic [15:0] addr, input logic [7:0] data);
   if (addr >= VRAM_START) begin
     v_ada <= addr - VRAM_START & VRAMW;
@@ -82,9 +89,9 @@ task automatic sta_write(input logic [15:0] addr, input logic [7:0] data);
 endtask
 
 task automatic vram_write(input logic [15:0] addr, input logic [7:0] data);
-    v_ada <= addr & VRAMW;
-    v_din <= data;
-    ada   <= addr + SHADOW_VRAM_START & RAMW;
-    din   <= data;
-    cea <= 1;
+  v_ada <= addr & VRAMW;
+  v_din <= data;
+  ada   <= addr + SHADOW_VRAM_START & RAMW;
+  din   <= data;
+  cea <= 1;
 endtask

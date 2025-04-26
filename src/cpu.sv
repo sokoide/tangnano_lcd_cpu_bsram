@@ -373,17 +373,11 @@ module cpu (
               8'h6C: begin
                 case (fetched_data_bytes)
                   0: begin
-                    adb <= operands[15:0] & RAMW;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[15:0] & RAMW);
                   end
                   1: begin
                     fetched_data[7:0] = dout_r;
-                    adb <= (operands[15:0] + 1) & RAMW;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[15:0] + 1 & RAMW);
                   end
                   2: begin
                     // relative data is already in little endian.
@@ -438,19 +432,13 @@ module cpu (
                   0: begin
                     // fetch low byte of PC-1
                     sp = sp + 1'd1;
-                    adb <= STACK + sp;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(STACK + sp);
                   end
                   1: begin
                     // fetch high byte of PC-1
                     fetched_data[7:0] = dout_r;
                     sp = sp + 1'd1;
-                    adb <= STACK + sp;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(STACK + sp);
                   end
                   2: begin
                     fetched_data[15:8] = dout_r;
@@ -474,10 +462,7 @@ module cpu (
               8'h68: begin
                 if (fetched_data_bytes == 0) begin
                   sp = sp + 1'd1;
-                  adb <= STACK + sp;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(STACK + sp);
                 end else begin
                   ra = dout_r;
                   flg_z = (ra == 8'h00);
@@ -498,10 +483,7 @@ module cpu (
               8'h28: begin
                 if (fetched_data_bytes == 0) begin
                   sp = sp + 1'd1;
-                  adb <= STACK + sp;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(STACK + sp);
                 end else begin
                   automatic logic dummy;
                   {flg_n, flg_v, dummy, flg_b, flg_d, flg_i, flg_z, flg_c} = dout_r;
@@ -519,10 +501,7 @@ module cpu (
               8'hA5: begin
                 // fetch operands[7:0]'s value from memory and store it to ra.
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   ra = dout_r;
                   flg_z = (ra == 8'h00);
@@ -535,10 +514,7 @@ module cpu (
               8'hB5: begin
                 // fetch operands[7:0] + rx's value from memory and store it to ra.
                 if (fetched_data_bytes == 0) begin
-                  adb <= (operands[7:0] + rx) & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
                   ra = dout_r;
                   flg_z = (ra == 8'h00);
@@ -551,10 +527,7 @@ module cpu (
                 // fetch operands[15:0]'s value from memory and store it to ra.
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   ra = dout_r;
                   flg_z = (ra == 8'h00);
@@ -567,10 +540,7 @@ module cpu (
                 // fetch operands[15:0] + rx's value from memory and store it to ra.
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] + rx & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   ra = dout_r;
                   flg_z = (ra == 8'h00);
@@ -583,10 +553,7 @@ module cpu (
                 // fetch operands[15:0] + ry's value from memory and store it to ra.
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] + ry & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   ra = dout_r;
                   flg_z = (ra == 8'h00);
@@ -602,27 +569,17 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0] + rx & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + rx & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + rx  + 8'h01& 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
                     automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
-                    adb <= addr & RAMW;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(addr & RAMW);
                   end
                   3: begin
                     ra = dout_r;
@@ -640,27 +597,18 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0] & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
                     automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
-                    adb <= addr & RAMW;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(addr & RAMW);
                   end
                   3: begin
                     ra = dout_r;
@@ -680,10 +628,7 @@ module cpu (
               // LDX zero page
               8'hA6: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   rx = dout_r;
                   flg_z = (rx == 8'h00);
@@ -694,10 +639,7 @@ module cpu (
               // LDX zero page, Y
               8'hB6: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= (operands[7:0] + ry) & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + ry & 8'hFF);
                 end else begin
                   rx = dout_r;
                   flg_z = (rx == 8'h00);
@@ -709,10 +651,7 @@ module cpu (
               8'hAE: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   rx = dout_r;
                   flg_z = (rx == 8'h00);
@@ -724,10 +663,7 @@ module cpu (
               8'hBE: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] + ry & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   rx = dout_r;
                   flg_z = (rx == 8'h00);
@@ -745,10 +681,7 @@ module cpu (
               // LDY zero page
               8'hA4: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   ry = dout_r;
                   flg_z = (ry == 8'h00);
@@ -759,10 +692,7 @@ module cpu (
               // LDY zero page, X
               8'hB4: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= (operands[7:0] + rx) & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
                   ry = dout_r;
                   flg_z = (ry == 8'h00);
@@ -774,10 +704,7 @@ module cpu (
               8'hAC: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   ry = dout_r;
                   flg_z = (ry == 8'h00);
@@ -788,10 +715,7 @@ module cpu (
               // LDY abosolute, X
               8'hBC: begin
                 if (fetched_data_bytes == 0) begin
-                  adb = operands[15:0] + rx & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[15:0] + rx & RAMW);
                 end else begin
                   ry = dout_r;
                   flg_z = (ry == 8'h00);
@@ -844,18 +768,12 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0] + rx & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + rx & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -874,18 +792,12 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0];
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0]);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -941,10 +853,7 @@ module cpu (
               // INC zero page
               8'hE6: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   automatic logic [7:0] result = dout_r + 8'd1;
                   ada <= operands[7:0];
@@ -958,10 +867,7 @@ module cpu (
               // INC zero page, X
               8'hF6: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0] + rx & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
                   automatic logic [7:0] result = dout_r + 8'd1;
                   ada <= operands[7:0];
@@ -977,10 +883,7 @@ module cpu (
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
                   // VRAM is write only. INC for VRAM is not supported.
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   automatic logic [7:0] result = dout_r + 8'd1;
                   ada <= operands[15:0] & RAMW;
@@ -996,10 +899,7 @@ module cpu (
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] + rx & 16'hFFFF;
                   // VRAM is write only. INC for VRAM is not supported.
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   automatic logic [7:0] result = dout_r + 8'd1;
                   ada <= operands[15:0] & RAMW;
@@ -1027,10 +927,7 @@ module cpu (
               // DEC zero page
               8'hC6: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   automatic logic [7:0] result = dout_r - 8'd1;
                   ada <= operands[7:0];
@@ -1044,10 +941,7 @@ module cpu (
               // DEC zero page, X
               8'hD6: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= (operands[7:0] + rx) & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
                   automatic logic [7:0] result = dout_r - 8'd1;
                   ada <= (operands[7:0] + rx) & 8'hFF;
@@ -1062,10 +956,7 @@ module cpu (
               8'hCE: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   automatic logic [7:0] result = dout_r - 8'd1;
                   ada <= operands[15:0] & RAMW;
@@ -1080,10 +971,7 @@ module cpu (
               8'hDE: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   automatic logic [7:0] result = dout_r - 8'd1;
                   ada <= (operands[15:0] + rx) & RAMW;
@@ -1126,10 +1014,7 @@ module cpu (
               // ADC zero page
               8'h65: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
                   temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
@@ -1147,10 +1032,7 @@ module cpu (
               // ADC zero page, X
               8'h75: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0] + rx & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
                   temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
@@ -1169,10 +1051,7 @@ module cpu (
               8'h6D: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & RAMW;
-                  adb <= addr;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
                   temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
@@ -1191,10 +1070,7 @@ module cpu (
               8'h7D: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] + rx & RAMW;
-                  adb <= addr;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
                   temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
@@ -1212,10 +1088,7 @@ module cpu (
               8'h79: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] + ry & RAMW;
-                  adb <= addr;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
                   temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
@@ -1235,27 +1108,18 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0] + rx & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + rx & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
                     automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
-                    adb <= addr & RAMW;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(addr & RAMW);
                   end
                   3: begin
                     automatic logic [8:0] temp;  // make it 9bit to include carry
@@ -1277,27 +1141,18 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0] & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
                     automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
-                    adb <= addr & RAMW;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(addr & RAMW);
                   end
                   3: begin
                     automatic logic [8:0] temp;  // make it 9bit to include carry
@@ -1333,10 +1188,7 @@ module cpu (
               // SBC zero page
               8'hE5: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include borrow
                   temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
@@ -1355,10 +1207,7 @@ module cpu (
               // SBC zero page, X
               8'hF5: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0] + rx & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include borrow
                   temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
@@ -1378,10 +1227,7 @@ module cpu (
               8'hED: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & RAMW;
-                  adb <= addr;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include borrow
                   temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
@@ -1401,10 +1247,7 @@ module cpu (
               8'hFD: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] + rx & RAMW;
-                  adb <= addr;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include borrow
                   temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
@@ -1424,10 +1267,7 @@ module cpu (
               8'hF9: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] + ry & RAMW;
-                  adb <= addr;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include borrow
                   temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
@@ -1448,27 +1288,18 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0] + rx & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + rx & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
                     automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
-                    adb <= addr & RAMW;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(addr & RAMW);
                   end
                   3: begin
                     automatic logic [8:0] temp;  // make it 9bit to include borrow
@@ -1491,27 +1322,18 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0] & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
                     automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
-                    adb <= addr & RAMW;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(addr & RAMW);
                   end
                   3: begin
                     automatic logic [8:0] temp;  // make it 9bit to include borrow
@@ -1539,10 +1361,7 @@ module cpu (
               // AND zero page
               8'h25: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   ra = ra & dout_r;
                   flg_z = (ra == 8'h00);
@@ -1553,10 +1372,7 @@ module cpu (
               // AND zero page, X
               8'h35: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= (operands[7:0] + rx) & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
                   ra = ra & dout_r;
                   flg_z = (ra == 8'h00);
@@ -1568,10 +1384,7 @@ module cpu (
               8'h2D: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   ra = ra & dout_r;
                   flg_z = (ra == 8'h00);
@@ -1583,10 +1396,7 @@ module cpu (
               8'h3D: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] + rx & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   ra = ra & dout_r;
                   flg_z = (ra == 8'h00);
@@ -1598,10 +1408,7 @@ module cpu (
               8'h39: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] + ry & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   ra = ra & dout_r;
                   flg_z = (ra == 8'h00);
@@ -1614,27 +1421,18 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0] + rx & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + rx & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
                     automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
-                    adb <= addr & RAMW;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(addr & RAMW);
                   end
                   3: begin
                     ra = ra & dout_r;
@@ -1649,27 +1447,18 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0] & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
                     automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
-                    adb <= addr & RAMW;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(addr & RAMW);
                   end
                   3: begin
                     ra = ra & dout_r;
@@ -1689,10 +1478,7 @@ module cpu (
               // EOR zero page
               8'h45: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   ra = ra ^ dout_r;
                   flg_z = (ra == 8'h00);
@@ -1703,10 +1489,7 @@ module cpu (
               // EOR zero page, X
               8'h55: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= (operands[7:0] + rx) & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
                   ra = ra ^ dout_r;
                   flg_z = (ra == 8'h00);
@@ -1718,10 +1501,7 @@ module cpu (
               8'h4D: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   ra = ra ^ dout_r;
                   flg_z = (ra == 8'h00);
@@ -1733,10 +1513,7 @@ module cpu (
               8'h5D: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] + rx & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   ra = ra ^ dout_r;
                   flg_z = (ra == 8'h00);
@@ -1748,10 +1525,7 @@ module cpu (
               8'h59: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] + ry & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   ra = ra ^ dout_r;
                   flg_z = (ra == 8'h00);
@@ -1764,27 +1538,18 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0] + rx & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + rx & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
                     automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
-                    adb <= addr & RAMW;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(addr & RAMW);
                   end
                   3: begin
                     ra = ra ^ dout_r;
@@ -1799,27 +1564,18 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0] & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
                     automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
-                    adb <= addr & RAMW;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(addr & RAMW);
                   end
                   3: begin
                     ra = ra ^ dout_r;
@@ -1839,10 +1595,7 @@ module cpu (
               // ORA zero page
               8'h05: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   ra = ra | dout_r;
                   flg_z = (ra == 8'h00);
@@ -1853,10 +1606,7 @@ module cpu (
               // ORA zero page, X
               8'h15: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= (operands[7:0] + rx) & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
                   ra = ra | dout_r;
                   flg_z = (ra == 8'h00);
@@ -1868,10 +1618,7 @@ module cpu (
               8'h0D: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   ra = ra | dout_r;
                   flg_z = (ra == 8'h00);
@@ -1883,10 +1630,7 @@ module cpu (
               8'h1D: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] + rx & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   ra = ra | dout_r;
                   flg_z = (ra == 8'h00);
@@ -1898,10 +1642,7 @@ module cpu (
               8'h19: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] + ry & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   ra = ra | dout_r;
                   flg_z = (ra == 8'h00);
@@ -1914,27 +1655,18 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0] + rx & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + rx & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
                     automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
-                    adb <= addr & RAMW;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(addr & RAMW);
                   end
                   3: begin
                     ra = ra | dout_r;
@@ -1949,24 +1681,18 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0] & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
                     automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
-                    adb <= addr & RAMW;
+                    fetch_data(addr & RAMW);
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
                     next_state <= DECODE_EXECUTE;
@@ -1990,10 +1716,7 @@ module cpu (
               // ASL zero pabe
               8'h06: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   flg_c = dout_r[7];  // Capture the carry bit before shifting
                   ra = dout_r << 1;
@@ -2005,10 +1728,7 @@ module cpu (
               // ASL zero page, X
               8'h16: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= (operands[7:0] + rx) & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
                   flg_c = dout_r[7];  // Capture the carry bit before shifting
                   ra = dout_r << 1;
@@ -2021,10 +1741,7 @@ module cpu (
               8'h0E: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   flg_c = dout_r[7];  // Capture the carry bit before shifting
                   ra = dout_r << 1;
@@ -2037,10 +1754,7 @@ module cpu (
               8'h1E: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   flg_c = dout_r[7];  // Capture the carry bit before shifting
                   ra = dout_r << 1;
@@ -2061,10 +1775,7 @@ module cpu (
               // ROL zero page
               8'h26: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   automatic logic carry_in = flg_c;
                   flg_c = dout_r[7];  // Capture the carry bit before shifting
@@ -2079,10 +1790,7 @@ module cpu (
               // ROL zero page, X
               8'h36: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= (operands[7:0] + rx) & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
                   automatic logic carry_in = flg_c;
                   flg_c = dout_r[7];  // Capture the carry bit before shifting
@@ -2098,10 +1806,7 @@ module cpu (
               8'h2E: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   automatic logic carry_in = flg_c;
                   flg_c = dout_r[7];  // Capture the carry bit before shifting
@@ -2117,10 +1822,7 @@ module cpu (
               8'h3E: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   automatic logic carry_in = flg_c;
                   flg_c = dout_r[7];  // Capture the carry bit before shifting
@@ -2144,10 +1846,7 @@ module cpu (
               // ROR zero page
               8'h66: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   automatic logic carry_in = flg_c;
                   flg_c = dout_r[0];  // Capture the carry bit before shifting
@@ -2162,10 +1861,7 @@ module cpu (
               // ROR zero page, X
               8'h76: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= (operands[7:0] + rx) & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
                   automatic logic carry_in = flg_c;
                   flg_c = dout_r[0];  // Capture the carry bit before shifting
@@ -2181,10 +1877,7 @@ module cpu (
               8'h6E: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   automatic logic carry_in = flg_c;
                   flg_c = dout_r[0];  // Capture the carry bit before shifting
@@ -2200,10 +1893,7 @@ module cpu (
               8'h7E: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   automatic logic carry_in = flg_c;
                   flg_c = dout_r[0];  // Capture the carry bit before shifting
@@ -2226,10 +1916,7 @@ module cpu (
               // BIT zero apge
               8'h24: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   flg_z = (ra & dout_r) == 1'd0 ? 1'd1 : 1'd0;
                   flg_n = dout_r[7];
@@ -2241,10 +1928,7 @@ module cpu (
               8'h2C: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   flg_z = (ra & dout_r) == 1'd0 ? 1'd1 : 1'd0;
                   flg_n = dout_r[7];
@@ -2255,10 +1939,7 @@ module cpu (
               // CMP zero page
               8'hC5: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   automatic logic [7:0] result = ra - dout_r;
                   flg_c = ra >= dout_r ? 1 : 0;
@@ -2270,10 +1951,7 @@ module cpu (
               // CMP zero page, X
               8'hD5: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= (operands[7:0] + rx) & 8'hFF;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
                   automatic logic [7:0] result = ra - dout_r;
                   flg_c = ra >= dout_r ? 1 : 0;
@@ -2286,10 +1964,7 @@ module cpu (
               8'hCD: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   automatic logic [7:0] result = ra - dout_r;
                   flg_c = ra >= dout_r ? 1 : 0;
@@ -2302,10 +1977,7 @@ module cpu (
               8'hDD: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] + rx & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   automatic logic [7:0] result = ra - dout_r;
                   flg_c = ra >= dout_r ? 1 : 0;
@@ -2317,10 +1989,7 @@ module cpu (
               // CMP absolute, Y
               8'hD9: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[15:0] + ry & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[15:0] + ry & RAMW);
                 end else begin
                   automatic logic [7:0] result = ra - dout_r;
                   flg_c = ra >= dout_r ? 1 : 0;
@@ -2334,27 +2003,18 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0] + rx & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + rx & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + rx + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
                     automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
-                    adb <= addr & RAMW;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(addr & RAMW);
                   end
                   3: begin
                     automatic logic [7:0] result = ra - dout_r;
@@ -2370,27 +2030,18 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    adb <= operands[7:0] & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    adb <= operands[7:0] + 8'h01 & 8'hFF;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(operands[7:0] + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
                     automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
-                    adb <= addr & RAMW;
-                    state <= FETCH_REQ;
-                    fetch_stage <= FETCH_DATA;
-                    next_state <= DECODE_EXECUTE;
+                    fetch_data(addr & RAMW);
                   end
                   3: begin
                     automatic logic [7:0] result = ra - dout_r;
@@ -2412,10 +2063,7 @@ module cpu (
               // CPX zero page
               8'hE4: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   automatic logic [7:0] result = rx - dout_r;
                   flg_c = rx >= dout_r ? 1 : 0;
@@ -2428,10 +2076,7 @@ module cpu (
               8'hEC: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   automatic logic [7:0] result = rx - dout_r;
                   flg_c = rx >= dout_r ? 1 : 0;
@@ -2451,10 +2096,7 @@ module cpu (
               // CPY zero page
               8'hC4: begin
                 if (fetched_data_bytes == 0) begin
-                  adb <= operands[7:0];
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(operands[7:0]);
                 end else begin
                   automatic logic [7:0] result = ry - dout_r;
                   flg_c = ry >= dout_r ? 1 : 0;
@@ -2467,10 +2109,7 @@ module cpu (
               8'hCC: begin
                 if (fetched_data_bytes == 0) begin
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  adb <= addr & RAMW;
-                  state <= FETCH_REQ;
-                  fetch_stage <= FETCH_DATA;
-                  next_state <= DECODE_EXECUTE;
+                  fetch_data(addr & RAMW);
                 end else begin
                   automatic logic [7:0] result = ry - dout_r;
                   flg_c = ry >= dout_r ? 1 : 0;
