@@ -31,6 +31,55 @@ module top (
       .clkin (XTAL_IN)      //  27MHz
   );
 
+  // pROM for font
+  // 16bytes/char x 256 chars = 4KB
+  logic f_ce, f_oce, f_reset;
+  logic [ 7:0] f_dout;
+  logic [11:0] f_ad;
+  Gowin_pROM_font prom_font_inst (
+      .dout(f_dout),  //output [7:0] dout
+      .clk(MEMORY_CLK),  //input clk
+      .oce(f_oce),  //input oce
+      .ce(f_ce),  //input ce
+      .reset(f_reset),  //input reset
+      .ad(f_ad)  //input [11:0] ad
+  );
+
+  // LCD
+  logic vsync;
+
+  lcd lcd_inst (
+      .PixelClk(LCD_CLK),
+      .nRST    (rst_n),
+      .v_dout  (v_dout),
+      .f_dout  (f_dout),
+
+      .LCD_DE(LCD_DEN),
+      .LCD_B (LCD_B),
+      .LCD_G (LCD_G),
+      .LCD_R (LCD_R),
+      .v_adb (v_adb),
+      .f_ad  (f_ad),
+      .vsync (vsync)
+  );
+
+  // --- VRAM Read Address Clock Domain Crossing (CDC) Synchronization ---
+  // v_adb 信号 (PixelClk ドメインから MEMORY_CLK ドメインへ) を同期化する
+  logic [9:0] v_adb_sync1;  // 第1段レジスタ
+  logic [9:0] v_adb_sync2;  // 第2段レジスタ (同期化された信号)
+
+  // MEMORY_CLK ドメインで動作する同期化レジスタチェーン
+  always_ff @(posedge MEMORY_CLK or negedge rst_n) begin
+    if (!rst_n) begin
+      v_adb_sync1 <= 10'd0;  // リセット時は0クリア
+      v_adb_sync2 <= 10'd0;
+    end else begin
+      v_adb_sync1 <= lcd_inst.v_adb; // PixelClk ドメインからの信号を MEMORY_CLK で捕捉
+      v_adb_sync2 <= v_adb_sync1;   // 捕捉した信号をもう一段レジスタに通し、安定化
+    end
+  end
+  // --- End of CDC Synchronization ---
+
   // RAM
   logic cea, ceb, oce;
   logic reseta, resetb;
@@ -64,40 +113,8 @@ module top (
       .v_reseta(v_reseta),
       .v_resetb(v_resetb),
       .v_ada(v_ada),
-      .v_adb(v_adb),
+      .v_adb(v_adb_sync2),
       .v_din(v_din)
-  );
-
-  // pROM for font
-  // 16bytes/char x 256 chars = 4KB
-  logic f_ce, f_oce, f_reset;
-  logic [ 7:0] f_dout;
-  logic [11:0] f_ad;
-  Gowin_pROM_font prom_font_inst (
-      .dout(f_dout),  //output [7:0] dout
-      .clk(MEMORY_CLK),  //input clk
-      .oce(f_oce),  //input oce
-      .ce(f_ce),  //input ce
-      .reset(f_reset),  //input reset
-      .ad(f_ad)  //input [11:0] ad
-  );
-
-  // LCD
-  logic vsync;
-
-  lcd lcd_inst (
-      .PixelClk(LCD_CLK),
-      .nRST    (rst_n),
-      .v_dout  (v_dout),
-      .f_dout  (f_dout),
-
-      .LCD_DE(LCD_DEN),
-      .LCD_B (LCD_B),
-      .LCD_G (LCD_G),
-      .LCD_R (LCD_R),
-      .v_adb (v_adb),
-      .f_ad  (f_ad),
-      .vsync (vsync)
   );
 
   // Boot program instance

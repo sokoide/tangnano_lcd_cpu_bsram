@@ -15,9 +15,9 @@ start:
     STA offset_hi
 
 main_loop:
-    ; Wait for VSync x 5
+    ; Wait for VSync
     .byte $FF
-    .byte $04
+    .byte $00
     JSR print_message
 
     ; offset++
