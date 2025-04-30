@@ -151,7 +151,7 @@ module cpu (
             char_code <= (char_code < 8'h7F) ? (char_code + 1) & 8'hFF : 8'h20;
 
             if (v_ada <= COLUMNS * ROWS) begin
-              v_ada <= v_ada + 1 & VRAMW;
+              v_ada <= (v_ada + 1) & VRAMW;
               // shadow VRAM
               // ada   <= v_ada + 1 + SHADOW_VRAM_START & RAMW;
             end else begin
@@ -164,7 +164,7 @@ module cpu (
             if (boot_write) begin
               boot_write <= 0;
               cea <= 1;  // RAM write enable
-              ada <= PROGRAM_START + boot_idx & RAMW;
+              ada <= (PROGRAM_START + boot_idx) & RAMW;
               din <= boot_program[boot_idx];
             end else begin
               cea <= 0;
@@ -173,7 +173,7 @@ module cpu (
                 state <= FETCH_REQ;
                 fetch_stage <= FETCH_OPCODE;
               end else begin
-                boot_idx   <= boot_idx + 1 & 8'hFF;
+                boot_idx   <= (boot_idx + 1) & RAMW;
                 boot_write <= 1;
               end
             end
@@ -191,10 +191,10 @@ module cpu (
               // use dout_r
               state <= FETCH_WAIT;
             end
-            // timing improvement to avoid "adb <= pc + 1 & RAMW;" in the DECODE_EXECUTE state
-            pc_plus1 <= pc + 16'd1 & RAMW;
-            pc_plus2 <= pc + 16'd2 & RAMW;
-            pc_plus3 <= pc + 16'd3 & RAMW;
+            // timing improvement to avoid "adb <= (pc + 1) & RAMW;" in the DECODE_EXECUTE state
+            pc_plus1 <= (pc + 16'd1) & RAMW;
+            pc_plus2 <= (pc + 16'd2) & RAMW;
+            pc_plus3 <= (pc + 16'd3) & RAMW;
           end
 
           FETCH_WAIT: begin
@@ -377,7 +377,7 @@ module cpu (
                   end
                   1: begin
                     fetched_data[7:0] = dout_r;
-                    fetch_data(operands[15:0] + 1 & RAMW);
+                    fetch_data((operands[15:0] + 1) & RAMW);
                   end
                   2: begin
                     // relative data is already in little endian.
@@ -443,8 +443,8 @@ module cpu (
                   2: begin
                     fetched_data[15:8] = dout_r;
                     // fetched_data is in big endian.
-                    pc <= fetched_data + 1'd1 & RAMW;
-                    adb <= fetched_data + 1'd1 & RAMW;
+                    pc <= (fetched_data + 1'd1) & RAMW;
+                    adb <= (fetched_data + 1'd1) & RAMW;
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_OPCODE;
                   end
@@ -674,8 +674,8 @@ module cpu (
               // LDY immediate
               8'hA0: begin
                 ry = operands[7:0];
-                flg_z = (rx == 8'h00);
-                flg_n = rx[7];
+                flg_z = (ry == 8'h00);
+                flg_n = ry[7];
                 fetch_opcode(2);
               end
               // LDY zero page
@@ -715,7 +715,7 @@ module cpu (
               // LDY abosolute, X
               8'hBC: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[15:0] + rx & RAMW);
+                  fetch_data((operands[15:0] + rx) & RAMW);
                 end else begin
                   ry = dout_r;
                   flg_z = (ry == 8'h00);
@@ -1069,7 +1069,7 @@ module cpu (
               // ADC absolute, X
               8'h7D: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] + rx & RAMW;
+                  automatic logic [15:0] addr = (operands[15:0] + rx) & RAMW;
                   fetch_data(addr);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
@@ -1080,6 +1080,7 @@ module cpu (
                   ra = temp[7:0];
 
                   flg_z = (ra == 8'h00);
+                  flg_n = ra[7];
 
                   fetch_opcode(3);
                 end
@@ -1087,7 +1088,7 @@ module cpu (
               // ADC absolute, Y
               8'h79: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] + ry & RAMW;
+                  automatic logic [15:0] addr = (operands[15:0] + ry) & RAMW;
                   fetch_data(addr);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
@@ -1246,7 +1247,7 @@ module cpu (
               // SBC absolute, X
               8'hFD: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] + rx & RAMW;
+                  automatic logic [15:0] addr = (operands[15:0] + rx) & RAMW;
                   fetch_data(addr);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include borrow
@@ -1266,7 +1267,7 @@ module cpu (
               // SBC absolute, Y
               8'hF9: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] + ry & RAMW;
+                  automatic logic [15:0] addr = (operands[15:0] + ry) & RAMW;
                   fetch_data(addr);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include borrow
@@ -1763,6 +1764,15 @@ module cpu (
                   fetch_opcode(3);
                 end
               end
+              // TODO: LSR accumulator
+              8'h4A: begin
+              end
+              // TODO: LSR zero page
+              8'h46: begin
+              end
+              // TODO: LSR zero page, X
+              8'h56: begin
+              end
               // ROL accumulator
               8'h2A: begin
                 automatic logic carry_in = flg_c;
@@ -1989,7 +1999,7 @@ module cpu (
               // CMP absolute, Y
               8'hD9: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[15:0] + ry & RAMW);
+                  fetch_data((operands[15:0] + ry) & RAMW);
                 end else begin
                   automatic logic [7:0] result = ra - dout_r;
                   flg_c = ra >= dout_r ? 1 : 0;
@@ -2165,7 +2175,7 @@ module cpu (
                   // sign extend
                   s_imm8 = operands[7:0];
                   s_offset = s_imm8;
-                  addr = pc_plus2 + s_offset & RAMW;
+                  addr = (pc_plus2 + s_offset) & RAMW;
                   pc  <= addr;
                   adb <= addr;
                 end else begin
@@ -2181,7 +2191,7 @@ module cpu (
                   // sign extend
                   s_imm8 = operands[7:0];
                   s_offset = s_imm8;
-                  addr = pc_plus2 + s_offset & RAMW;
+                  addr = (pc_plus2 + s_offset) & RAMW;
                   pc  <= addr;
                   adb <= addr;
                 end else begin
@@ -2197,7 +2207,7 @@ module cpu (
                   // sign extend
                   s_imm8 = operands[7:0];
                   s_offset = s_imm8;
-                  addr = pc_plus2 + s_offset & RAMW;
+                  addr = (pc_plus2 + s_offset) & RAMW;
                   pc  <= addr;
                   adb <= addr;
                 end else begin
@@ -2213,7 +2223,7 @@ module cpu (
                   // sign extend
                   s_imm8 = operands[7:0];
                   s_offset = s_imm8;
-                  addr = pc_plus2 + s_offset & RAMW;
+                  addr = (pc_plus2 + s_offset) & RAMW;
                   pc  <= addr;
                   adb <= addr;
                 end else begin
@@ -2229,7 +2239,7 @@ module cpu (
                   // sign extend
                   s_imm8 = operands[7:0];
                   s_offset = s_imm8;
-                  addr = pc_plus2 + s_offset & RAMW;
+                  addr = (pc_plus2 + s_offset) & RAMW;
                   pc  <= addr;
                   adb <= addr;
                 end else begin
@@ -2245,7 +2255,7 @@ module cpu (
                   // sign extend
                   s_imm8 = operands[7:0];
                   s_offset = s_imm8;
-                  addr = pc_plus2 + s_offset & RAMW;
+                  addr = (pc_plus2 + s_offset) & RAMW;
                   pc  <= addr;
                   adb <= addr;
                 end else begin
@@ -2261,7 +2271,7 @@ module cpu (
                   // sign extend
                   s_imm8 = operands[7:0];
                   s_offset = s_imm8;
-                  addr = pc_plus2 + s_offset & RAMW;
+                  addr = (pc_plus2 + s_offset) & RAMW;
                   pc  <= addr;
                   adb <= addr;
                 end else begin
@@ -2277,7 +2287,7 @@ module cpu (
                   // sign extend
                   s_imm8 = operands[7:0];
                   s_offset = s_imm8;
-                  addr = pc_plus2 + s_offset & RAMW;
+                  addr = (pc_plus2 + s_offset) & RAMW;
                   pc  <= addr;
                   adb <= addr;
                 end else begin
@@ -2385,7 +2395,7 @@ module cpu (
                 automatic logic [15:0] tmp_addr;
                 if (show_info_cmd.vram_write) begin
                   v_ada <= show_info_cmd.v_ada;
-                  ada   <= show_info_cmd.v_ada + SHADOW_VRAM_START & RAMW;
+                  ada   <= (show_info_cmd.v_ada + SHADOW_VRAM_START) & RAMW;
                   cea   <= 1;
                   case (show_info_cmd.v_din_t)
                     0: begin  // immediate
@@ -2474,7 +2484,7 @@ module cpu (
                   if (show_info_cmd.v_din_t == 8) begin
                     adb <= show_info_cmd.v_ada;
                   end else begin
-                    adb <= operands[15:0] + show_info_cmd.diff & RAMW;
+                    adb <= (operands[15:0] + show_info_cmd.diff) & RAMW;
                   end
                   state <= FETCH_REQ;
                   fetch_stage <= FETCH_DATA;
@@ -2502,9 +2512,9 @@ module cpu (
 
           CLEAR_VRAM2: begin
             if (v_ada <= COLUMNS * ROWS) begin
-              v_ada <= v_ada + 1 & VRAMW;
+              v_ada <= (v_ada + 1) & VRAMW;
               v_din <= 8'h20;  // ' '
-              ada   <= v_ada + SHADOW_VRAM_START & RAMW;
+              ada   <= (v_ada + SHADOW_VRAM_START) & RAMW;
               din   <= 8'h20;
               cea   <= 1;
             end else begin
