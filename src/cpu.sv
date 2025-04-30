@@ -573,7 +573,7 @@ module cpu (
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetch_data(operands[7:0] + rx  + 8'h01& 8'hFF);
+                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -1109,7 +1109,7 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                    fetch_data(operands[7:0] + rx & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
@@ -1289,7 +1289,7 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                    fetch_data(operands[7:0] + rx & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
@@ -1714,15 +1714,17 @@ module cpu (
                 flg_n = ra[7];
                 fetch_opcode(1);
               end
-              // ASL zero pabe
+              // ASL zero page
               8'h06: begin
                 if (fetched_data_bytes == 0) begin
                   fetch_data(operands[7:0]);
                 end else begin
-                  flg_c = dout_r[7];  // Capture the carry bit before shifting
-                  ra = dout_r << 1;
-                  flg_z = (ra == 8'h00);
-                  flg_n = ra[7];
+                  flg_c = dout_r[7];
+                  din = dout_r << 1;
+                  ada <= operands[7:0];
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = din[7];
                   fetch_opcode(2);
                 end
               end
@@ -1731,10 +1733,12 @@ module cpu (
                 if (fetched_data_bytes == 0) begin
                   fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
-                  flg_c = dout_r[7];  // Capture the carry bit before shifting
-                  ra = dout_r << 1;
-                  flg_z = (ra == 8'h00);
-                  flg_n = ra[7];
+                  flg_c = dout_r[7];
+                  din = dout_r << 1;
+                  ada <= (operands[7:0] + rx) & 8'hFF;
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = din[7];
                   fetch_opcode(2);
                 end
               end
@@ -1744,10 +1748,12 @@ module cpu (
                   automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
                   fetch_data(addr & RAMW);
                 end else begin
-                  flg_c = dout_r[7];  // Capture the carry bit before shifting
-                  ra = dout_r << 1;
-                  flg_z = (ra == 8'h00);
-                  flg_n = ra[7];
+                  flg_c = dout_r[7];
+                  din = dout_r << 1;
+                  ada <= operands[15:0] & RAMW;
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = din[7];
                   fetch_opcode(3);
                 end
               end
@@ -1757,21 +1763,80 @@ module cpu (
                   automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
                   fetch_data(addr & RAMW);
                 end else begin
-                  flg_c = dout_r[7];  // Capture the carry bit before shifting
-                  ra = dout_r << 1;
-                  flg_z = (ra == 8'h00);
-                  flg_n = ra[7];
+                  flg_c = dout_r[7];
+                  din = dout_r << 1;
+                  ada <= (operands[15:0] + rx) & RAMW;
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = din[7];
                   fetch_opcode(3);
                 end
               end
-              // TODO: LSR accumulator
+              // LSR accumulator
               8'h4A: begin
+                flg_c = ra[0];
+                ra = ra >> 1;
+                flg_z = (ra == 8'h00);
+                flg_n = 1'b0;
+                fetch_opcode(1);
               end
-              // TODO: LSR zero page
+              // LSR zero page
               8'h46: begin
+                if (fetched_data_bytes == 0) begin
+                  fetch_data(operands[7:0]);
+                end else begin
+                  flg_c = dout_r[0];  // Capture the carry bit before shifting
+                  din   = dout_r >> 1;
+                  ada <= operands[7:0];
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = 1'b0;  // The result of LSR always clears the negative flag
+                  fetch_opcode(2);
+                end
               end
-              // TODO: LSR zero page, X
+              // LSR zero page, X
               8'h56: begin
+                if (fetched_data_bytes == 0) begin
+                  fetch_data(operands[7:0] + rx & 8'hFF);
+                end else begin
+                  flg_c = dout_r[0];  // Capture the carry bit before shifting
+                  din   = dout_r >> 1;
+                  ada <= (operands[7:0] + rx) & 8'hFF;
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = 1'b0;  // The result of LSR always clears the negative flag
+                  fetch_opcode(2);
+                end
+              end
+              // LSR absolute
+              8'h4E: begin
+                if (fetched_data_bytes == 0) begin
+                  automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
+                  fetch_data(addr & RAMW);
+                end else begin
+                  flg_c = dout_r[0];  // Capture the carry bit before shifting
+                  din   = dout_r >> 1;
+                  ada <= operands[15:0] & RAMW;
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = 1'b0;  // The result of LSR always clears the negative flag
+                  fetch_opcode(3);
+                end
+              end
+              // LSR absolute, X
+              8'h5E: begin
+                if (fetched_data_bytes == 0) begin
+                  automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
+                  fetch_data(addr & RAMW);
+                end else begin
+                  flg_c = dout_r[0];  // Capture the carry bit before shifting
+                  din   = dout_r >> 1;
+                  ada <= (operands[15:0] + rx) & RAMW;
+                  cea <= 1;
+                  flg_z = (din == 8'h00);
+                  flg_n = 1'b0;  // The result of LSR always clears the negative flag
+                  fetch_opcode(3);
+                end
               end
               // ROL accumulator
               8'h2A: begin
