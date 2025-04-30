@@ -539,7 +539,7 @@ module cpu (
               8'hBD: begin
                 // fetch operands[15:0] + rx's value from memory and store it to ra.
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] + rx & 16'hFFFF;
+                  automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
                   fetch_data(addr & RAMW);
                 end else begin
                   ra = dout_r;
@@ -552,7 +552,7 @@ module cpu (
               8'hB9: begin
                 // fetch operands[15:0] + ry's value from memory and store it to ra.
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] + ry & 16'hFFFF;
+                  automatic logic [15:0] addr = (operands[15:0] + ry) & 16'hFFFF;
                   fetch_data(addr & RAMW);
                 end else begin
                   ra = dout_r;
@@ -607,7 +607,7 @@ module cpu (
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = ({dout_r, fetched_data[7:0]} + ry) & 16'hFFFF;
                     fetch_data(addr & RAMW);
                   end
                   3: begin
@@ -662,7 +662,7 @@ module cpu (
               // LDX absolute, Y
               8'hBE: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] + ry & 16'hFFFF;
+                  automatic logic [15:0] addr = (operands[15:0] + ry) & 16'hFFFF;
                   fetch_data(addr & RAMW);
                 end else begin
                   rx = dout_r;
@@ -749,14 +749,14 @@ module cpu (
               // STA absolute, X
               8'h9D: begin
                 // check if it's RAM or VRAM
-                automatic logic [15:0] addr = operands[15:0] + rx & 16'hFFFF;
+                automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
                 sta_write(addr, ra);
                 fetch_opcode(3);
               end
               // STA absolute, Y
               8'h99: begin
                 // check if it's RAM or VRAM
-                automatic logic [15:0] addr = operands[15:0] + ry & 16'hFFFF;
+                automatic logic [15:0] addr = (operands[15:0] + ry) & 16'hFFFF;
                 sta_write(addr, ra);
                 fetch_opcode(3);
               end
@@ -802,7 +802,7 @@ module cpu (
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // check if it's RAM or VRAM
-                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = ({dout_r, fetched_data[7:0]} + ry) & 16'hFFFF;
                     sta_write(addr, ra);
                     fetch_opcode(2);
                   end
@@ -897,7 +897,7 @@ module cpu (
               // INC absolute, X
               8'hFE: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] + rx & 16'hFFFF;
+                  automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
                   // VRAM is write only. INC for VRAM is not supported.
                   fetch_data(addr & RAMW);
                 end else begin
@@ -1152,7 +1152,7 @@ module cpu (
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = ({dout_r, fetched_data[7:0]} + ry) & 16'hFFFF;
                     fetch_data(addr & RAMW);
                   end
                   3: begin
@@ -1333,7 +1333,7 @@ module cpu (
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = ({dout_r, fetched_data[7:0]} + ry) & 16'hFFFF;
                     fetch_data(addr & RAMW);
                   end
                   3: begin
@@ -1396,7 +1396,7 @@ module cpu (
               // AND absolute, X
               8'h3D: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] + rx & 16'hFFFF;
+                  automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
                   fetch_data(addr & RAMW);
                 end else begin
                   ra = ra & dout_r;
@@ -1408,7 +1408,7 @@ module cpu (
               // AND absolute, Y
               8'h39: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] + ry & 16'hFFFF;
+                  automatic logic [15:0] addr = (operands[15:0] + ry) & 16'hFFFF;
                   fetch_data(addr & RAMW);
                 end else begin
                   ra = ra & dout_r;
@@ -1458,7 +1458,7 @@ module cpu (
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = ({dout_r, fetched_data[7:0]} + ry) & 16'hFFFF;
                     fetch_data(addr & RAMW);
                   end
                   3: begin
@@ -1513,7 +1513,7 @@ module cpu (
               // EOR absolute, X
               8'h5D: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] + rx & 16'hFFFF;
+                  automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
                   fetch_data(addr & RAMW);
                 end else begin
                   ra = ra ^ dout_r;
@@ -1525,7 +1525,7 @@ module cpu (
               // EOR absolute, Y
               8'h59: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] + ry & 16'hFFFF;
+                  automatic logic [15:0] addr = (operands[15:0] + ry) & 16'hFFFF;
                   fetch_data(addr & RAMW);
                 end else begin
                   ra = ra ^ dout_r;
@@ -1575,7 +1575,7 @@ module cpu (
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = ({dout_r, fetched_data[7:0]} + ry) & 16'hFFFF;
                     fetch_data(addr & RAMW);
                   end
                   3: begin
@@ -1630,7 +1630,7 @@ module cpu (
               // ORA absolute, X
               8'h1D: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] + rx & 16'hFFFF;
+                  automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
                   fetch_data(addr & RAMW);
                 end else begin
                   ra = ra | dout_r;
@@ -1642,7 +1642,7 @@ module cpu (
               // ORA absolute, Y
               8'h19: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] + ry & 16'hFFFF;
+                  automatic logic [15:0] addr = (operands[15:0] + ry) & 16'hFFFF;
                   fetch_data(addr & RAMW);
                 end else begin
                   ra = ra | dout_r;
@@ -1692,7 +1692,7 @@ module cpu (
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = ({dout_r, fetched_data[7:0]} + ry) & 16'hFFFF;
                     fetch_data(addr & RAMW);
                     state <= FETCH_REQ;
                     fetch_stage <= FETCH_DATA;
@@ -2051,7 +2051,7 @@ module cpu (
               // CMP absolute, X
               8'hDD: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] + rx & 16'hFFFF;
+                  automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
                   fetch_data(addr & RAMW);
                 end else begin
                   automatic logic [7:0] result = ra - dout_r;
@@ -2115,7 +2115,7 @@ module cpu (
                   2: begin
                     // fetched_data[15:8] = dout_r;
                     // only RAM read is supported (VRAM is not)
-                    automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} + ry & 16'hFFFF;
+                    automatic logic [15:0] addr = ({dout_r, fetched_data[7:0]} + ry) & 16'hFFFF;
                     fetch_data(addr & RAMW);
                   end
                   3: begin
