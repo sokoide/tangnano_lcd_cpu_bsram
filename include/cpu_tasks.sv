@@ -78,7 +78,7 @@ task automatic sta_write(input logic [15:0] addr, input logic [7:0] data);
   if (addr >= VRAM_START) begin
     v_ada <= addr - VRAM_START & VRAMW;
     v_din <= data;
-    ada   <= addr - VRAM_START + SHADOW_VRAM_START & RAMW;
+    ada   <= (addr - VRAM_START + SHADOW_VRAM_START) & RAMW;
     din   <= data;
     cea <= 1;
   end else begin
@@ -101,7 +101,7 @@ endtask
 
 //       // Draw in the shadow VRAM
 //       // $E000-$E3FF -> $7C00-$7FFF
-//       ada <= addr - VRAM_START + SHADOW_VRAM_START;
+//       ada <= (addr - VRAM_START + SHADOW_VRAM_START) & RAMW;
 //       din <= data;
 //       cea <= 1;
 //     end else begin
@@ -118,7 +118,7 @@ endtask
 task automatic vram_write(input logic [15:0] addr, input logic [7:0] data);
   v_ada <= addr & VRAMW;
   v_din <= data;
-  ada   <= addr + SHADOW_VRAM_START & RAMW;
+  ada   <= (addr + SHADOW_VRAM_START) & RAMW;
   din   <= data;
   cea <= 1;
 endtask
