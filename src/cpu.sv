@@ -2142,7 +2142,7 @@ module cpu (
                     flg_c = ra >= dout_r ? 1 : 0;
                     flg_z = (result == 8'h00);
                     flg_n = result[7];
-                    fetch_opcode(3);
+                    fetch_opcode(2);
                   end
                 endcase
               end
@@ -2169,7 +2169,7 @@ module cpu (
                     flg_c = ra >= dout_r ? 1 : 0;
                     flg_z = (result == 8'h00);
                     flg_n = result[7];
-                    fetch_opcode(3);
+                    fetch_opcode(2);
                   end
                 endcase
               end
