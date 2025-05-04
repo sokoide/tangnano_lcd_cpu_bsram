@@ -522,7 +522,7 @@ module cpu (
               8'hB5: begin
                 // fetch operands[7:0] + rx's value from memory and store it to ra.
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                  fetch_data((operands[7:0] + rx) & 8'hFF);
                 end else begin
                   ra = dout_r;
                   flg_z = (ra == 8'h00);
@@ -577,11 +577,11 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    fetch_data(operands[7:0] + rx & 8'hFF);
+                    fetch_data((operands[7:0] + rx) & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
-                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
+                    fetch_data((operands[7:0] + rx + 8'h01) & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -610,7 +610,7 @@ module cpu (
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    fetch_data(operands[7:0] + 8'h01 & 8'hFF);
+                    fetch_data((operands[7:0] + 8'h01) & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -647,7 +647,7 @@ module cpu (
               // LDX zero page, Y
               8'hB6: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[7:0] + ry & 8'hFF);
+                  fetch_data((operands[7:0] + ry) & 8'hFF);
                 end else begin
                   rx = dout_r;
                   flg_z = (rx == 8'h00);
@@ -700,7 +700,7 @@ module cpu (
               // LDY zero page, X
               8'hB4: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                  fetch_data((operands[7:0] + rx) & 8'hFF);
                 end else begin
                   ry = dout_r;
                   flg_z = (ry == 8'h00);
@@ -743,7 +743,7 @@ module cpu (
               // STA zero page, X
               8'h95: begin
                 // always RAM (zero page)
-                ada <= operands[7:0] + rx & 8'hFF;
+                ada <= (operands[7:0] + rx) & 8'hFF;
                 din <= ra;
                 cea   = 1;  // Explicit RAM write
                 v_cea = 0;  // Not VRAM
@@ -784,12 +784,12 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    fetch_data(operands[7:0] + rx & 8'hFF);
+                    fetch_data((operands[7:0] + rx) & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
+                    fetch_data((operands[7:0] + rx + 8'h01) & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -838,7 +838,7 @@ module cpu (
               end
               // STX zero page, Y
               8'h96: begin
-                ada <= operands[7:0] + ry & 8'hFF;
+                ada <= (operands[7:0] + ry) & 8'hFF;
                 din <= rx;
                 cea   = 1;  // Explicit RAM write
                 v_cea = 0;  // Not VRAM
@@ -863,7 +863,7 @@ module cpu (
               end
               //  STY zero page, X
               8'h94: begin
-                ada <= operands[7:0] + rx & 8'hFF;
+                ada <= (operands[7:0] + rx) & 8'hFF;
                 din <= ry;
                 cea   = 1;  // Explicit RAM write
                 v_cea = 0;  // Not VRAM
@@ -896,7 +896,7 @@ module cpu (
               // INC zero page, X
               8'hF6: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                  fetch_data((operands[7:0] + rx) & 8'hFF);
                 end else begin
                   automatic logic [7:0] result = dout_r + 8'd1;
                   ada <= operands[7:0];  // << Keep original address here
@@ -940,14 +940,14 @@ module cpu (
               end
               // INX
               8'hE8: begin
-                rx = rx + 1 & 8'hFF;
+                rx = (rx + 1) & 8'hFF;
                 flg_z = (rx == 8'h00);
                 flg_n = rx[7];
                 fetch_opcode(1);
               end
               // INY
               8'hC8: begin
-                ry = ry + 1 & 8'hFF;
+                ry = (ry + 1) & 8'hFF;
                 flg_z = (ry == 8'h00);
                 flg_n = ry[7];
                 fetch_opcode(1);
@@ -970,7 +970,7 @@ module cpu (
               // DEC zero page, X
               8'hD6: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                  fetch_data((operands[7:0] + rx) & 8'hFF);
                 end else begin
                   automatic logic [7:0] result = dout_r - 8'd1;
                   ada <= (operands[7:0] + rx) & 8'hFF;
@@ -1014,14 +1014,14 @@ module cpu (
               end
               // DEX
               8'hCA: begin
-                rx = rx - 1 & 8'hFF;
+                rx = (rx - 1) & 8'hFF;
                 flg_z = (rx == 8'h00);
                 flg_n = rx[7];
                 fetch_opcode(1);
               end
               // DEY
               8'h88: begin
-                ry = ry - 1 & 8'hFF;
+                ry = (ry - 1) & 8'hFF;
                 flg_z = (ry == 8'h00);
                 flg_n = ry[7];
                 fetch_opcode(1);
@@ -1030,7 +1030,7 @@ module cpu (
               8'h69: begin
                 automatic logic [8:0] temp;  // make it 9bit to include carry
                 // in ADC, +1 if flg_c is 1
-                temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
+                temp = (ra + dout_r + (flg_c ? 1 : 0)) & 9'h1FF;
                 flg_c = temp[8];
                 flg_v = (~(ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
@@ -1062,7 +1062,7 @@ module cpu (
               // ADC zero page, X
               8'h75: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                  fetch_data((operands[7:0] + rx) & 8'hFF);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
                   temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
@@ -1122,7 +1122,7 @@ module cpu (
                   fetch_data(addr);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include carry
-                  temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
+                  temp = (ra + dout_r + (flg_c ? 1 : 0)) & 9'h1FF;
                   flg_c = temp[8];
                   flg_v = (~(ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
@@ -1139,12 +1139,12 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    fetch_data(operands[7:0] + rx & 8'hFF);
+                    fetch_data((operands[7:0] + rx) & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
+                    fetch_data((operands[7:0] + rx + 8'h01) & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -1154,7 +1154,7 @@ module cpu (
                   end
                   3: begin
                     automatic logic [8:0] temp;  // make it 9bit to include carry
-                    temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
+                    temp = (ra + dout_r + (flg_c ? 1 : 0)) & 9'h1FF;
                     flg_c = temp[8];
                     flg_v = (~(ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
@@ -1177,7 +1177,7 @@ module cpu (
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    fetch_data(operands[7:0] + 8'h01 & 8'hFF);
+                    fetch_data((operands[7:0] + 8'h01) & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -1187,7 +1187,7 @@ module cpu (
                   end
                   3: begin
                     automatic logic [8:0] temp;  // make it 9bit to include carry
-                    temp = ra + dout_r + (flg_c ? 1 : 0) & 9'h1FF;
+                    temp = (ra + dout_r + (flg_c ? 1 : 0)) & 9'h1FF;
                     flg_c = temp[8];
                     flg_v = (~(ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
 
@@ -1204,7 +1204,7 @@ module cpu (
               8'hE9: begin
                 automatic logic [8:0] temp;  // make it 9bit to include borrow
                 // in SBC, -1 if flg_c is 0 (clear)
-                temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
+                temp = (ra - dout_r - (flg_c ? 0 : 1)) & 9'h1FF;
 
                 flg_c = ~temp[8];  // Borrow flag (inverted carry)
                 flg_v = ((ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
@@ -1222,7 +1222,7 @@ module cpu (
                   fetch_data(operands[7:0]);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include borrow
-                  temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
+                  temp = (ra - dout_r - (flg_c ? 0 : 1)) & 9'h1FF;
 
                   flg_c = ~temp[8];  // Borrow flag (inverted carry)
                   flg_v = ((ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
@@ -1238,10 +1238,10 @@ module cpu (
               // SBC zero page, X
               8'hF5: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                  fetch_data((operands[7:0] + rx) & 8'hFF);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include borrow
-                  temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
+                  temp = (ra - dout_r - (flg_c ? 0 : 1)) & 9'h1FF;
 
                   flg_c = ~temp[8];  // Borrow flag (inverted carry)
                   flg_v = ((ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
@@ -1281,7 +1281,7 @@ module cpu (
                   fetch_data(addr);
                 end else begin
                   automatic logic [8:0] temp;  // make it 9bit to include borrow
-                  temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
+                  temp = (ra - dout_r - (flg_c ? 0 : 1)) & 9'h1FF;
 
                   flg_c = ~temp[8];  // Borrow flag (inverted carry)
                   flg_v = ((ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
@@ -1319,12 +1319,12 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    fetch_data(operands[7:0] + rx & 8'hFF);
+                    fetch_data((operands[7:0] + rx) & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
+                    fetch_data((operands[7:0] + rx + 8'h01) & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -1334,7 +1334,7 @@ module cpu (
                   end
                   3: begin
                     automatic logic [8:0] temp;  // make it 9bit to include borrow
-                    temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
+                    temp = (ra - dout_r - (flg_c ? 0 : 1)) & 9'h1FF;
 
                     flg_c = ~temp[8];  // Borrow flag (inverted carry)
                     flg_v = ((ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
@@ -1358,7 +1358,7 @@ module cpu (
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    fetch_data(operands[7:0] + 8'h01 & 8'hFF);
+                    fetch_data((operands[7:0] + 8'h01) & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -1368,7 +1368,7 @@ module cpu (
                   end
                   3: begin
                     automatic logic [8:0] temp;  // make it 9bit to include borrow
-                    temp = ra - dout_r - (flg_c ? 0 : 1) & 9'h1FF;
+                    temp = (ra - dout_r - (flg_c ? 0 : 1)) & 9'h1FF;
 
                     flg_c = ~temp[8];  // Borrow flag (inverted carry)
                     flg_v = ((ra[7] ^ dout_r[7]) & (ra[7] ^ temp[7])) ? 1 : 0;
@@ -1403,7 +1403,7 @@ module cpu (
               // AND zero page, X
               8'h35: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                  fetch_data((operands[7:0] + rx) & 8'hFF);
                 end else begin
                   ra = ra & dout_r;
                   flg_z = (ra == 8'h00);
@@ -1452,12 +1452,12 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    fetch_data(operands[7:0] + rx & 8'hFF);
+                    fetch_data((operands[7:0] + rx) & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
+                    fetch_data((operands[7:0] + rx + 8'h01) & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -1483,7 +1483,7 @@ module cpu (
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    fetch_data(operands[7:0] + 8'h01 & 8'hFF);
+                    fetch_data((operands[7:0] + 8'h01) & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -1520,7 +1520,7 @@ module cpu (
               // EOR zero page, X
               8'h55: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                  fetch_data((operands[7:0] + rx) & 8'hFF);
                 end else begin
                   ra = ra ^ dout_r;
                   flg_z = (ra == 8'h00);
@@ -1569,12 +1569,12 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    fetch_data(operands[7:0] + rx & 8'hFF);
+                    fetch_data((operands[7:0] + rx) & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
+                    fetch_data((operands[7:0] + rx + 8'h01) & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -1600,7 +1600,7 @@ module cpu (
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    fetch_data(operands[7:0] + 8'h01 & 8'hFF);
+                    fetch_data((operands[7:0] + 8'h01) & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -1637,7 +1637,7 @@ module cpu (
               // ORA zero page, X
               8'h15: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                  fetch_data((operands[7:0] + rx) & 8'hFF);
                 end else begin
                   ra = ra | dout_r;
                   flg_z = (ra == 8'h00);
@@ -1686,12 +1686,12 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    fetch_data(operands[7:0] + rx & 8'hFF);
+                    fetch_data((operands[7:0] + rx) & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
+                    fetch_data((operands[7:0] + rx + 8'h01) & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -1717,7 +1717,7 @@ module cpu (
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    fetch_data(operands[7:0] + 8'h01 & 8'hFF);
+                    fetch_data((operands[7:0] + 8'h01) & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -1762,7 +1762,7 @@ module cpu (
               // ASL zero page, X
               8'h16: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                  fetch_data((operands[7:0] + rx) & 8'hFF);
                 end else begin
                   flg_c = dout_r[7];
                   din   = dout_r << 1;
@@ -1832,7 +1832,7 @@ module cpu (
               // LSR zero page, X
               8'h56: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                  fetch_data((operands[7:0] + rx) & 8'hFF);
                 end else begin
                   flg_c = dout_r[0];  // Capture the carry bit before shifting
                   din   = dout_r >> 1;
@@ -1904,7 +1904,7 @@ module cpu (
               // ROL zero page, X
               8'h36: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                  fetch_data((operands[7:0] + rx) & 8'hFF);
                 end else begin
                   automatic logic carry_in = flg_c;
                   flg_c = dout_r[7];  // Capture the carry bit before shifting
@@ -1979,7 +1979,7 @@ module cpu (
               // ROR zero page, X
               8'h76: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                  fetch_data((operands[7:0] + rx) & 8'hFF);
                 end else begin
                   automatic logic carry_in = flg_c;
                   flg_c = dout_r[0];  // Capture the carry bit before shifting
@@ -2072,7 +2072,7 @@ module cpu (
               // CMP zero page, X
               8'hD5: begin
                 if (fetched_data_bytes == 0) begin
-                  fetch_data(operands[7:0] + rx & 8'hFF);
+                  fetch_data((operands[7:0] + rx) & 8'hFF);
                 end else begin
                   automatic logic [7:0] result = ra - dout_r;
                   flg_c = ra >= dout_r ? 1 : 0;
@@ -2124,12 +2124,12 @@ module cpu (
                 case (fetched_data_bytes)
                   0: begin
                     // fetch operands[7:0]
-                    fetch_data(operands[7:0] + rx & 8'hFF);
+                    fetch_data((operands[7:0] + rx) & 8'hFF);
                   end
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    fetch_data(operands[7:0] + rx + 8'h01 & 8'hFF);
+                    fetch_data((operands[7:0] + rx + 8'h01) & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
@@ -2156,7 +2156,7 @@ module cpu (
                   1: begin
                     // fetch operands[7:0]+1
                     fetched_data[7:0] = dout_r;
-                    fetch_data(operands[7:0] + 8'h01 & 8'hFF);
+                    fetch_data((operands[7:0] + 8'h01) & 8'hFF);
                   end
                   2: begin
                     // fetched_data[15:8] = dout_r;
