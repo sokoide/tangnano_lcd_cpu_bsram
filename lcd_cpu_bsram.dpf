@@ -13,6 +13,8 @@ simulations:
     options: +define+DEBUG_MODE -top work.tb_cpu -L dut +acc+b -waves waveform.vcd
 source_files:
   - language: verilog
+    path: deps/gw1n/prim_sim.v
+  - language: verilog
     path: src/cpu.sv
     options: +define+DEBUG_MODE -incdir ./include
   - language: verilog
@@ -33,8 +35,8 @@ source_files:
   - language: verilog
     path: src/tb_top.sv
     options: +define+DEBUG_MODE -incdir ./include
-  - language: verilog
-    path: src/uart_master/tb/prim_sim.v
+  # - language: verilog
+  #   path: src/uart_master/tb/prim_sim.v
   - language: verilog
     path: src/gowin_sdpb/gowin_sdpb.v
   - language: verilog

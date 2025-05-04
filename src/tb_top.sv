@@ -1,4 +1,7 @@
 module tb_top;
+  // for TB
+  GSR GSR (.GSRI(1'b1));
+
   logic clk;
   logic rst_n;
 
@@ -10,7 +13,7 @@ module tb_top;
   // BSRAM 8KB, address 8192, data width 8
   logic cea, ceb, oce;
   logic reseta, resetb;
-  logic [12:0] ada, adb;
+  logic [14:0] ada, adb;
   logic [7:0] din;
   logic [7:0] dout;
 

@@ -16,9 +16,6 @@ module cpu (
     output logic [7:0] v_din  // VRAM data to write
 );
 
-  `include "cpu_tasks.sv"
-
-
   // Internal registers.
   logic        [15:0] pc;  // Program Counter
   logic        [15:0] pc_plus1;
@@ -92,6 +89,7 @@ module cpu (
 
   show_info_stage_t show_info_stage;
 
+  `include "cpu_tasks.sv"
 
   // din ratch
   always_ff @(posedge clk) dout_r <= dout;
