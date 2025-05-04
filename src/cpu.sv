@@ -2510,8 +2510,10 @@ module cpu (
                 automatic logic [15:0] tmp_addr;
                 if (show_info_cmd.vram_write) begin
                   v_ada <= show_info_cmd.v_ada;
+                  v_cea <= 1;
                   ada   <= (show_info_cmd.v_ada + SHADOW_VRAM_START) & RAMW;
                   cea   <= 1;
+
                   case (show_info_cmd.v_din_t)
                     0: begin  // immediate
                       v_din <= show_info_cmd.v_din;
