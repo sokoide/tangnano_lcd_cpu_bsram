@@ -39,6 +39,7 @@ module cpu (
   logic signed [15:0] s_offset;
   logic signed [ 7:0] s_imm8;
   logic        [ 7:0] dout_r;  // RAM read latch
+  logic               write_to_vram;  // Flag set by sta_write
 
   // Internal states
   logic        [ 7:0] opcode;
@@ -213,7 +214,8 @@ module cpu (
                 opcode <= dout;
                 fetched_data_bytes <= 0;
                 written_data_bytes <= 0;
-                cea <= 0;  // disable write
+                cea <= 0;  // disable RAM write
+                v_cea <= 0;  // disable VRAM write
 
                 // use dout instead of dout_r (1 clock faster)
                 case (dout)
@@ -356,6 +358,10 @@ module cpu (
           end
 
           DECODE_EXECUTE: begin
+            cea = 0;
+            v_cea = 0;
+            write_to_vram = 0;  // Clear flag unless set by sta_write below
+
             case (opcode)
               // NOP
               8'hEA: begin
@@ -455,7 +461,8 @@ module cpu (
                 ada <= STACK + sp;
                 sp = sp - 1'd1;
                 din <= ra;
-                cea <= 1;
+                cea   = 1;  // Explicit RAM write
+                v_cea = 0;
                 fetch_opcode(1);
               end
               // PLA; pull accumulator
@@ -476,7 +483,8 @@ module cpu (
                 ada <= STACK + sp;
                 sp = sp - 1'd1;
                 din <= {flg_n, flg_v, 1'b1, flg_b, flg_d, flg_i, flg_z, flg_c};
-                cea <= 1;
+                cea   = 1;  // Explicit RAM write
+                v_cea = 0;
                 fetch_opcode(1);
               end
               // PLP; pull processor status
@@ -728,7 +736,8 @@ module cpu (
                 // always RAM (zero page)
                 ada <= operands[7:0];
                 din <= ra;
-                cea <= 1;
+                cea   = 1;  // Explicit RAM write
+                v_cea = 0;  // Not VRAM
                 fetch_opcode(2);
               end
               // STA zero page, X
@@ -736,28 +745,35 @@ module cpu (
                 // always RAM (zero page)
                 ada <= operands[7:0] + rx & 8'hFF;
                 din <= ra;
-                cea <= 1;
+                cea   = 1;  // Explicit RAM write
+                v_cea = 0;  // Not VRAM
                 fetch_opcode(2);
               end
               // STA absolute
               8'h8D: begin
                 // check if it's RAM or VRAM
                 automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                sta_write(addr, ra);
+                sta_write(addr, ra);  // Sets ada/din/v_ada/v_din and write_to_vram flag
+                cea   = 1;  // Assert RAM write (for shadow or regular RAM)
+                v_cea = write_to_vram;  // Assert VRAM write based on flag
                 fetch_opcode(3);
               end
               // STA absolute, X
               8'h9D: begin
                 // check if it's RAM or VRAM
                 automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
-                sta_write(addr, ra);
+                sta_write(addr, ra);  // Sets ada/din/v_ada/v_din and write_to_vram flag
+                cea   = 1;  // Assert RAM write
+                v_cea = write_to_vram;  // Assert VRAM write based on flag
                 fetch_opcode(3);
               end
               // STA absolute, Y
               8'h99: begin
                 // check if it's RAM or VRAM
                 automatic logic [15:0] addr = (operands[15:0] + ry) & 16'hFFFF;
-                sta_write(addr, ra);
+                sta_write(addr, ra);  // Sets ada/din/v_ada/v_din and write_to_vram flag
+                cea   = 1;  // Assert RAM write
+                v_cea = write_to_vram;  // Assert VRAM write based on flag
                 fetch_opcode(3);
               end
               // STA (indirect, X)
@@ -779,7 +795,9 @@ module cpu (
                     // fetched_data[15:8] = dout_r;
                     // check if it's RAM or VRAM
                     automatic logic [15:0] addr = {dout_r, fetched_data[7:0]} & 16'hFFFF;
-                    sta_write(addr, ra);
+                    sta_write(addr, ra);  // Sets ada/din/v_ada/v_din and write_to_vram flag
+                    cea   = 1;  // Assert RAM write
+                    v_cea = write_to_vram;  // Assert VRAM write based on flag
                     fetch_opcode(2);
                   end
                 endcase
@@ -803,7 +821,9 @@ module cpu (
                     // fetched_data[15:8] = dout_r;
                     // check if it's RAM or VRAM
                     automatic logic [15:0] addr = ({dout_r, fetched_data[7:0]} + ry) & 16'hFFFF;
-                    sta_write(addr, ra);
+                    sta_write(addr, ra);  // Sets ada/din/v_ada/v_din and write_to_vram flag
+                    cea   = 1;  // Assert RAM write
+                    v_cea = write_to_vram;  // Assert VRAM write based on flag
                     fetch_opcode(2);
                   end
                 endcase
@@ -812,42 +832,50 @@ module cpu (
               8'h86: begin
                 ada <= operands[7:0];
                 din <= rx;
-                cea <= 1;
+                cea   = 1;  // Explicit RAM write
+                v_cea = 0;  // Not VRAM
                 fetch_opcode(2);
               end
               // STX zero page, Y
               8'h96: begin
                 ada <= operands[7:0] + ry & 8'hFF;
                 din <= rx;
-                cea <= 1;
+                cea   = 1;  // Explicit RAM write
+                v_cea = 0;  // Not VRAM
                 fetch_opcode(2);
               end
               // STX absolute
               8'h8E: begin
                 // check if it's RAM or VRAM
                 automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                sta_write(addr, rx);
+                sta_write(addr, rx);  // Use sta_write, sets flag & signals
+                cea   = 1;  // Assert RAM write
+                v_cea = write_to_vram;  // Assert VRAM write based on flag
                 fetch_opcode(3);
               end
               //  STY zero page
               8'h84: begin
                 ada <= operands[7:0];
                 din <= ry;
-                cea <= 1;
+                cea   = 1;  // Explicit RAM write
+                v_cea = 0;  // Not VRAM
                 fetch_opcode(2);
               end
               //  STY zero page, X
               8'h94: begin
                 ada <= operands[7:0] + rx & 8'hFF;
                 din <= ry;
-                cea <= 1;
+                cea   = 1;  // Explicit RAM write
+                v_cea = 0;  // Not VRAM
                 fetch_opcode(2);
               end
               // STY absolute
               8'h8C: begin
                 // check if it's RAM or VRAM
                 automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                sta_write(addr, ry);
+                sta_write(addr, ry);  // Use sta_write, sets flag & signals
+                cea   = 1;  // Assert RAM write
+                v_cea = write_to_vram;  // Assert VRAM write based on flag
                 fetch_opcode(3);
               end
               // INC zero page
@@ -858,7 +886,8 @@ module cpu (
                   automatic logic [7:0] result = dout_r + 8'd1;
                   ada <= operands[7:0];
                   din <= result;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (result == 8'h00);
                   flg_n = result[7];
                   fetch_opcode(2);
@@ -870,9 +899,10 @@ module cpu (
                   fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
                   automatic logic [7:0] result = dout_r + 8'd1;
-                  ada <= operands[7:0];
+                  ada <= operands[7:0];  // << Keep original address here
                   din <= result;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (result == 8'h00);
                   flg_n = result[7];
                   fetch_opcode(2);
@@ -881,14 +911,13 @@ module cpu (
               // INC absolute
               8'hEE: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  // VRAM is write only. INC for VRAM is not supported.
-                  fetch_data(addr & RAMW);
+                  fetch_data(operands[15:0] & RAMW);
                 end else begin
                   automatic logic [7:0] result = dout_r + 8'd1;
                   ada <= operands[15:0] & RAMW;
                   din <= result;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (result == 8'h00);
                   flg_n = result[7];
                   fetch_opcode(3);
@@ -897,14 +926,13 @@ module cpu (
               // INC absolute, X
               8'hFE: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
-                  // VRAM is write only. INC for VRAM is not supported.
-                  fetch_data(addr & RAMW);
+                  fetch_data((operands[15:0] + rx) & RAMW);
                 end else begin
                   automatic logic [7:0] result = dout_r + 8'd1;
-                  ada <= operands[15:0] & RAMW;
+                  ada <= operands[15:0] & RAMW;  // << Keep original address here
                   din <= result;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (result == 8'h00);
                   flg_n = result[7];
                   fetch_opcode(3);
@@ -932,7 +960,8 @@ module cpu (
                   automatic logic [7:0] result = dout_r - 8'd1;
                   ada <= operands[7:0];
                   din <= result;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (result == 8'h00) ? 1'd1 : 1'd0;
                   flg_n = result[7];
                   fetch_opcode(2);
@@ -946,7 +975,8 @@ module cpu (
                   automatic logic [7:0] result = dout_r - 8'd1;
                   ada <= (operands[7:0] + rx) & 8'hFF;
                   din <= result;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (result == 8'h00) ? 1'd1 : 1'd0;
                   flg_n = result[7];
                   fetch_opcode(2);
@@ -955,13 +985,13 @@ module cpu (
               // DEC absolute
               8'hCE: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = operands[15:0] & 16'hFFFF;
-                  fetch_data(addr & RAMW);
+                  fetch_data(operands[15:0] & RAMW);
                 end else begin
                   automatic logic [7:0] result = dout_r - 8'd1;
                   ada <= operands[15:0] & RAMW;
                   din <= result;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (result == 8'h00) ? 1'd1 : 1'd0;
                   flg_n = result[7];
                   fetch_opcode(3);
@@ -970,13 +1000,13 @@ module cpu (
               // DEC absolute, X
               8'hDE: begin
                 if (fetched_data_bytes == 0) begin
-                  automatic logic [15:0] addr = (operands[15:0] + rx) & 16'hFFFF;
-                  fetch_data(addr & RAMW);
+                  fetch_data((operands[15:0] + rx) & RAMW);
                 end else begin
                   automatic logic [7:0] result = dout_r - 8'd1;
                   ada <= (operands[15:0] + rx) & RAMW;
                   din <= result;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (result == 8'h00) ? 1'd1 : 1'd0;
                   flg_n = result[7];
                   fetch_opcode(3);
@@ -1720,9 +1750,10 @@ module cpu (
                   fetch_data(operands[7:0]);
                 end else begin
                   flg_c = dout_r[7];
-                  din = dout_r << 1;
+                  din   = dout_r << 1;
                   ada <= operands[7:0];
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = din[7];
                   fetch_opcode(2);
@@ -1734,9 +1765,10 @@ module cpu (
                   fetch_data(operands[7:0] + rx & 8'hFF);
                 end else begin
                   flg_c = dout_r[7];
-                  din = dout_r << 1;
+                  din   = dout_r << 1;
                   ada <= (operands[7:0] + rx) & 8'hFF;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = din[7];
                   fetch_opcode(2);
@@ -1749,9 +1781,10 @@ module cpu (
                   fetch_data(addr & RAMW);
                 end else begin
                   flg_c = dout_r[7];
-                  din = dout_r << 1;
+                  din   = dout_r << 1;
                   ada <= operands[15:0] & RAMW;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = din[7];
                   fetch_opcode(3);
@@ -1764,9 +1797,10 @@ module cpu (
                   fetch_data(addr & RAMW);
                 end else begin
                   flg_c = dout_r[7];
-                  din = dout_r << 1;
+                  din   = dout_r << 1;
                   ada <= (operands[15:0] + rx) & RAMW;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = din[7];
                   fetch_opcode(3);
@@ -1788,7 +1822,8 @@ module cpu (
                   flg_c = dout_r[0];  // Capture the carry bit before shifting
                   din   = dout_r >> 1;
                   ada <= operands[7:0];
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = 1'b0;  // The result of LSR always clears the negative flag
                   fetch_opcode(2);
@@ -1802,7 +1837,8 @@ module cpu (
                   flg_c = dout_r[0];  // Capture the carry bit before shifting
                   din   = dout_r >> 1;
                   ada <= (operands[7:0] + rx) & 8'hFF;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = 1'b0;  // The result of LSR always clears the negative flag
                   fetch_opcode(2);
@@ -1817,7 +1853,8 @@ module cpu (
                   flg_c = dout_r[0];  // Capture the carry bit before shifting
                   din   = dout_r >> 1;
                   ada <= operands[15:0] & RAMW;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = 1'b0;  // The result of LSR always clears the negative flag
                   fetch_opcode(3);
@@ -1832,7 +1869,8 @@ module cpu (
                   flg_c = dout_r[0];  // Capture the carry bit before shifting
                   din   = dout_r >> 1;
                   ada <= (operands[15:0] + rx) & RAMW;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = 1'b0;  // The result of LSR always clears the negative flag
                   fetch_opcode(3);
@@ -1856,7 +1894,8 @@ module cpu (
                   flg_c = dout_r[7];  // Capture the carry bit before shifting
                   din   = (dout_r << 1) | carry_in;
                   ada <= operands[7:0];
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = din[7];
                   fetch_opcode(2);
@@ -1871,7 +1910,8 @@ module cpu (
                   flg_c = dout_r[7];  // Capture the carry bit before shifting
                   din   = (dout_r << 1) | carry_in;
                   ada <= (operands[7:0] + rx) & 8'hFF;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = din[7];
                   fetch_opcode(2);
@@ -1887,7 +1927,8 @@ module cpu (
                   flg_c = dout_r[7];  // Capture the carry bit before shifting
                   din   = (dout_r << 1) | carry_in;
                   ada <= operands[15:0] & RAMW;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = din[7];
                   fetch_opcode(3);
@@ -1903,7 +1944,8 @@ module cpu (
                   flg_c = dout_r[7];  // Capture the carry bit before shifting
                   din   = (dout_r << 1) | carry_in;
                   ada <= (operands[15:0] + rx) & RAMW;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = din[7];
                   fetch_opcode(3);
@@ -1927,7 +1969,8 @@ module cpu (
                   flg_c = dout_r[0];  // Capture the carry bit before shifting
                   din   = (dout_r >> 1) | (carry_in << 7);
                   ada <= operands[7:0];
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = din[7];
                   fetch_opcode(2);
@@ -1942,7 +1985,8 @@ module cpu (
                   flg_c = dout_r[0];  // Capture the carry bit before shifting
                   din   = (dout_r >> 1) | (carry_in << 7);
                   ada <= (operands[7:0] + rx) & 8'hFF;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = din[7];
                   fetch_opcode(2);
@@ -1958,7 +2002,8 @@ module cpu (
                   flg_c = dout_r[0];  // Capture the carry bit before shifting
                   din   = (dout_r >> 1) | (carry_in << 7);
                   ada <= operands[15:0] & RAMW;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = din[7];
                   fetch_opcode(3);
@@ -1974,7 +2019,8 @@ module cpu (
                   flg_c = dout_r[0];  // Capture the carry bit before shifting
                   din   = (dout_r >> 1) | (carry_in << 7);
                   ada <= (operands[15:0] + rx) & RAMW;
-                  cea <= 1;
+                  cea   = 1;  // Explicit RAM write
+                  v_cea = 0;  // Not VRAM
                   flg_z = (din == 8'h00);
                   flg_n = din[7];
                   fetch_opcode(3);
@@ -2439,8 +2485,12 @@ module cpu (
             endcase
           end
 
-          WRITE_REQ: begin
+          WRITE_REQ: begin  // JSR stack push uses this
             written_data_bytes <= written_data_bytes + 1'd1;
+            // cea/v_cea were asserted in DECODE_EXECUTE before entering WRITE_REQ
+            // De-assert them when moving back to DECODE_EXECUTE or FETCH
+            cea   = 0;
+            v_cea = 0;
             state <= DECODE_EXECUTE;
           end
 

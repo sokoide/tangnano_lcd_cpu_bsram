@@ -75,45 +75,22 @@ task automatic fetch_data(input logic [14:0] in_adb);
 endtask
 
 task automatic sta_write(input logic [15:0] addr, input logic [7:0] data);
-  if (addr >= VRAM_START) begin
-    v_ada <= addr - VRAM_START & VRAMW;
+  // Check if the address falls within the VRAM range
+  // VRAM size is COLUMNS * ROWS bytes
+  if (addr >= VRAM_START && addr < VRAM_START + (COLUMNS * ROWS)) begin
+    // VRAM write + Shadow VRAM write
+    v_ada <= (addr - VRAM_START) & VRAMW;
     v_din <= data;
     ada   <= (addr - VRAM_START + SHADOW_VRAM_START) & RAMW;
     din   <= data;
-    cea <= 1;
+    write_to_vram = 1'b1;
   end else begin
+    // Regular RAM write
     ada <= addr & RAMW;
     din <= data;
-    cea <= 1;
+    write_to_vram = 1'b0;
   end
 endtask
-
-// task automatic sta_write(input logic [15:0] addr, input logic [7:0] data);
-//   v_cea <= 0;
-//   cea <= 0;
-
-//   if (addr >= VRAM_START) begin
-//     // VRAM must be E000-E3FF
-//     if (addr <= 16'hE3FF) begin
-//       v_ada <= addr - VRAM_START;
-//       v_din <= data;
-//       v_cea <= 1;
-
-//       // Draw in the shadow VRAM
-//       // $E000-$E3FF -> $7C00-$7FFF
-//       ada <= (addr - VRAM_START + SHADOW_VRAM_START) & RAMW;
-//       din <= data;
-//       cea <= 1;
-//     end else begin
-//       // ignore if >= 0xE400
-//       // v_cea, cea are already 0
-//     end
-//   end else begin // RAM
-//     ada <= addr & RAMW;
-//     din <= data;
-//     cea <= 1;
-//   end
-// endtask
 
 task automatic vram_write(input logic [15:0] addr, input logic [7:0] data);
   v_ada <= addr & VRAMW;
