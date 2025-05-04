@@ -95,6 +95,7 @@ endtask
 task automatic vram_write(input logic [15:0] addr, input logic [7:0] data);
   v_ada <= addr & VRAMW;
   v_din <= data;
+  v_cea <= 1;
   ada   <= (addr + SHADOW_VRAM_START) & RAMW;
   din   <= data;
   cea <= 1;

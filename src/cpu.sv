@@ -2425,11 +2425,11 @@ module cpu (
               end
 
               // custom instructions which is not available in 6502
-              // CF
+              // CVR: clear VRAM
               8'hCF: begin
                 state <= CLEAR_VRAM;
               end
-              // DF
+              // IFO: show registers and memory at $0000-$007F
               8'hDF: begin
                 if (operands[15:0] != 16'hFFFF) begin
                   show_info_counter <= 0;
@@ -2442,11 +2442,11 @@ module cpu (
                 end
               end
 
-              // HLT
+              // HLT: halt
               8'hEF: begin
                 state <= HALT;
               end
-              // WVS
+              // WVS: wait for vsync
               8'hFF: begin
                 case (vsync_stage)
                   0: begin
@@ -2504,6 +2504,8 @@ module cpu (
               SHOW_INFO_FETCH: begin
                 show_info_cmd   <= show_info_rom[show_info_counter];
                 show_info_stage <= SHOW_INFO_EXECUTE;
+                v_cea <= 0;
+                cea   <= 0;
               end
 
               SHOW_INFO_EXECUTE: begin
@@ -2614,6 +2616,8 @@ module cpu (
                   show_info_counter <= 0;
                   state <= prev_state;
                   operands[15:0] = 16'hFFFF;
+                  v_cea <= 0;
+                  cea   <= 0;
                   disable SHOW_INFO2_BLOCK;  //break
                 end else begin
                   show_info_stage <= SHOW_INFO_FETCH;
@@ -2631,6 +2635,7 @@ module cpu (
             if (v_ada <= COLUMNS * ROWS) begin
               v_ada <= (v_ada + 1) & VRAMW;
               v_din <= 8'h20;  // ' '
+              v_cea <= 1;
               ada   <= (v_ada + SHADOW_VRAM_START) & RAMW;
               din   <= 8'h20;
               cea   <= 1;
@@ -2639,6 +2644,8 @@ module cpu (
               adb <= pc_plus1 & RAMW;
               state <= FETCH_REQ;
               fetch_stage <= FETCH_OPCODE;
+              v_cea <= 0;
+              cea <= 0;
             end
           end
 
