@@ -6,9 +6,11 @@ start:
 ; load 'A' into A register
     LDA #$41
 loop:
+; CVR: clear VRAM
+    .byte $CF
 ; store a value of A register at $01
     STA $01
-; display 'A'
+; display register A's value
     STA $E000
 ; WVS: wait for 1 second
     .byte $FF, $3A
@@ -16,8 +18,6 @@ loop:
     .byte $DF,$00,$00
 ; WVS: wait for 1 second
     .byte $FF, $3A
-; CVR: clear VRAM
-    .byte $CF
 ; inclement A register
     CLC
     ADC #1

@@ -49,7 +49,7 @@ module cpu (
   logic        [ 2:0] written_data_bytes;
   logic        [ 7:0] char_code;
   logic        [31:0] counter;
-  logic        [ 9:0] boot_idx;
+  logic        [14:0] boot_idx;
   logic               boot_write;
   logic vsync_meta, vsync_sync;
   logic [ 1:0] vsync_stage;
@@ -353,6 +353,10 @@ module cpu (
               FETCH_OPERAND2: begin
                 operands[15:8] <= dout;
                 state <= DECODE_EXECUTE;
+              end
+
+              default: begin
+                ;  // shouldn't come here. do nothing
               end
             endcase
           end
@@ -2502,10 +2506,10 @@ module cpu (
           SHOW_INFO2: begin : SHOW_INFO2_BLOCK
             case (show_info_stage)
               SHOW_INFO_FETCH: begin
-                show_info_cmd   <= show_info_rom[show_info_counter];
+                show_info_cmd <= show_info_rom[show_info_counter];
                 show_info_stage <= SHOW_INFO_EXECUTE;
                 v_cea <= 0;
-                cea   <= 0;
+                cea <= 0;
               end
 
               SHOW_INFO_EXECUTE: begin
