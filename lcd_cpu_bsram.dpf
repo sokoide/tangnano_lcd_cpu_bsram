@@ -35,8 +35,6 @@ source_files:
   - language: verilog
     path: src/tb_top.sv
     options: +define+DEBUG_MODE -incdir ./include
-  # - language: verilog
-  #   path: src/uart_master/tb/prim_sim.v
   - language: verilog
     path: src/gowin_sdpb/gowin_sdpb.v
   - language: verilog
