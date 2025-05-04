@@ -337,21 +337,21 @@ module cpu (
               end
 
               FETCH_OPERAND1: begin
-                operands[7:0] <= dout_r;
+                operands[7:0] <= dout;
                 state <= DECODE_EXECUTE;
               end
 
               FETCH_OPERAND1OF2: begin
                 // 2 byte operand will be stored as operands[15:0] in big endian
                 // which is easier to calculate
-                operands[7:0] <= dout_r;
+                operands[7:0] <= dout;
                 adb <= pc_plus2 & RAMW;
                 fetch_stage <= FETCH_OPERAND2;
                 state <= FETCH_REQ;
               end
 
               FETCH_OPERAND2: begin
-                operands[15:8] <= dout_r;
+                operands[15:8] <= dout;
                 state <= DECODE_EXECUTE;
               end
             endcase
