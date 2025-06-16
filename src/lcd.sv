@@ -63,11 +63,11 @@ module lcd (
 
   always_comb begin
     automatic logic signed [31:0] x_full, y_full;
-    x_full = H_PixelCount - H_BackPorch + 16'd8;
+    x_full = H_PixelCount - H_BackPorch + CHAR_WIDTH;
     y_full = V_PixelCount - V_BackPorch;
     x = x_full[15:0];
     y = y_full[15:0];
-    active_area = (-1 <= x && x < H_PixelValid + 8 - 1 && 0 <= y && y < V_PixelValid);
+    active_area = (-1 <= x && x < H_PixelValid + CHAR_WIDTH - 1 && 0 <= y && y < V_PixelValid);
 
   end
 
@@ -82,20 +82,20 @@ module lcd (
       LCD_B <= 5'b00000;
     end else if (active_area) begin
       // get char code
-      if (-5 <= x && x < H_PixelValid -5 + 8 && 0 <= y && y < V_PixelValid && (x+5) % 8 == 0) begin
-        v_adb <= (x) / 8 + (y / 16) * 60 & VRAMW;
-      end else if (-4 <= x && x < H_PixelValid -4 + 8 && 0 <= y && y < V_PixelValid && (x+4) % 8 == 0) begin
+      if (-5 <= x && x < H_PixelValid -5 + CHAR_WIDTH && 0 <= y && y < V_PixelValid && (x+5) % CHAR_WIDTH == 0) begin
+        v_adb <= ((x / CHAR_WIDTH) + ((y / CHAR_HEIGHT) * COLUMNS)) & VRAMW;
+      end else if (-4 <= x && x < H_PixelValid -4 + CHAR_WIDTH && 0 <= y && y < V_PixelValid && (x+4) % CHAR_WIDTH == 0) begin
         char <= v_dout;
-      end else if (-3 <= x && x < H_PixelValid -3 + 8 && 0 <= y && y < V_PixelValid && (x+3) % 8 == 0) begin
-        f_ad <= char * 16 + (y % 16);
-      end else if (-2 <= x && x < H_PixelValid -2 + 8 && 0 <= y && y < V_PixelValid && (x+2) % 8 == 0) begin
+      end else if (-3 <= x && x < H_PixelValid -3 + CHAR_WIDTH && 0 <= y && y < V_PixelValid && (x+3) % CHAR_WIDTH == 0) begin
+        f_ad <= char * CHAR_HEIGHT + (y % CHAR_HEIGHT);
+      end else if (-2 <= x && x < H_PixelValid -2 + CHAR_WIDTH && 0 <= y && y < V_PixelValid && (x+2) % CHAR_WIDTH == 0) begin
         fontline <= f_dout;
       end
       // get fontline
 
       // draw the char
       if (char >= 0 && char <= 127) begin
-        if (fontline[7-(x+1)%8] == 1'b1) begin
+        if (fontline[7-(x+1)%CHAR_WIDTH] == 1'b1) begin
           LCD_R <= 5'b00000;  // green, foreground
           LCD_G <= 6'b111111;
           LCD_B <= 5'b00000;

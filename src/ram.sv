@@ -14,7 +14,7 @@ module ram (
     output logic [7:0] v_dout,
     input logic v_cea,
     input logic v_ceb,
-    logic v_oce,
+    input logic v_oce,
     input logic v_reseta,
     input logic v_resetb,
     input logic [9:0] v_ada,

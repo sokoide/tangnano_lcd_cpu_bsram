@@ -138,18 +138,24 @@ module top (
       .v_din(v_din)
   );
 
+  // Initialize control signals
   always_ff @(posedge MEMORY_CLK or negedge rst_n) begin
     if (!rst_n) begin
-      reseta <= 0;
-      resetb <= 0;
-      oce <= 0;  // dout is not reflected
-      v_reseta <= 0;
-      v_resetb <= 0;
-      v_ceb = 1;  // enable read
-      v_oce = 0;  // v_dout is not reflected
-      f_ce = 1;  // enable font read
-      f_oce = 1;  // enable font output
-      f_reset = 0;
+      // RAM control signals
+      reseta <= 1'b0;
+      resetb <= 1'b0;
+      oce <= 1'b0;        // RAM output not reflected initially
+      
+      // VRAM control signals  
+      v_reseta <= 1'b0;
+      v_resetb <= 1'b0;
+      v_ceb <= 1'b1;      // Enable VRAM read
+      v_oce <= 1'b0;      // VRAM output not reflected initially
+      
+      // Font ROM control signals
+      f_ce <= 1'b1;       // Enable font ROM
+      f_oce <= 1'b1;      // Enable font ROM output
+      f_reset <= 1'b0;
     end
   end
 
