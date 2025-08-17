@@ -1,5 +1,10 @@
 # Tang Nano LCD + 8bit 6502 CPU + BSRAM example
 
+## 📚 Documentation
+
+- **[DEVELOPER.md](./DEVELOPER.md)** - Technical architecture and component diagrams
+- **[README_architecture_ja.md](./README_architecture_ja.md)** - CPU implementation details (Japanese)
+
 ## About
 
 * Tang Nano 9K or 20K + 043026-N6(ML) 4.3 inch 480x272 LCD module example
