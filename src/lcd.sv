@@ -1,17 +1,32 @@
+// lcd.sv - LCD Controller for 480x272 Display
+//
+// This module generates the timing and pixel data for a 480x272 RGB LCD display.
+// It implements a text-based display system with the following features:
+// - 60 columns × 17 rows character display
+// - 16×8 pixel characters from font ROM
+// - Dual clock domain operation (LCD pixel clock and memory clock)
+// - Hardware-accelerated character rendering pipeline
+//
+// The module operates by:
+// 1. Generating horizontal and vertical sync timing
+// 2. Calculating character positions based on pixel coordinates  
+// 3. Fetching character codes from VRAM with proper timing offsets
+// 4. Looking up font bitmaps and rendering pixels
+//
 `include "consts.svh"
 module lcd (
-    input logic       PixelClk,
-    input logic       nRST,
-    input logic [7:0] v_dout,
-    input logic [7:0] f_dout,
+    input logic       PixelClk,        // LCD pixel clock (9MHz)
+    input logic       nRST,            // Active-low reset
+    input logic [7:0] v_dout,          // VRAM read data (character codes)
+    input logic [7:0] f_dout,          // Font ROM read data (pixel bitmap)
 
-    output logic        LCD_DE,
-    output logic [ 4:0] LCD_B,
-    output logic [ 5:0] LCD_G,
-    output logic [ 4:0] LCD_R,
-    output logic [ 9:0] v_adb,
-    output logic [11:0] f_ad,
-    output logic        vsync
+    output logic        LCD_DE,        // Data enable signal for LCD
+    output logic [ 4:0] LCD_B,         // Blue color output (5-bit)
+    output logic [ 5:0] LCD_G,         // Green color output (6-bit)  
+    output logic [ 4:0] LCD_R,         // Red color output (5-bit)
+    output logic [ 9:0] v_adb,         // VRAM read address
+    output logic [11:0] f_ad,          // Font ROM address
+    output logic        vsync          // Vertical sync for CPU synchronization
 );
 
   logic vsync_reg;
@@ -40,15 +55,17 @@ module lcd (
     end
   end
 
-  // if you do this w/o using vsync_reg, the FPGA timing report may see
-  // it a timing voloation because
-  // これは combinational logic です。
-  // V_PixelCount は PixelClk ドメインで動いています。
-  // vsync は combinational なため、そのまま cpu に渡すと、タイミング解析では「PixelClk → vsync → CPUクロックのFF」 というパスが解析されます。
-  // 結果として、再びタイミング違反として報告される or 非同期パスにならないとツールに誤解される。
-  // Don't do this:
+  // VSync is registered to avoid timing violations in cross-clock domain paths
+  // 
+  // Without vsync_reg, the FPGA timing analyzer sees a problematic path:
+  // PixelClk → combinational vsync → CPU clock domain flip-flops
+  // This creates timing analysis issues as the signal crosses clock domains
+  // without proper synchronization. The registered version provides clean
+  // clock domain crossing behavior.
+  //
+  // Avoided combinational implementation:
   // assign vsync = (V_PixelCount < V_BackPorch) ||
-  //              (V_PixelCount >= V_BackPorch + V_PixelValid);
+  //                (V_PixelCount >= V_BackPorch + V_PixelValid);
 
   // SYNC-DE MODE
   assign LCD_DE = ((H_PixelCount >= H_BackPorch) &&
@@ -81,38 +98,47 @@ module lcd (
       LCD_G <= 6'b000000;
       LCD_B <= 5'b00000;
     end else if (active_area) begin
-      // get char code
-      if (-5 <= x && x < H_PixelValid -5 + CHAR_WIDTH && 0 <= y && y < V_PixelValid && (x+5) % CHAR_WIDTH == 0) begin
+      // Character rendering pipeline with precise timing offsets
+      // Each stage is offset to account for memory access latency
+      if (CHAR_FETCH_OFFSET_1 <= x && x < H_PixelValid + CHAR_FETCH_OFFSET_1 + CHAR_WIDTH && 0 <= y && y < V_PixelValid && (x - CHAR_FETCH_OFFSET_1) % CHAR_WIDTH == 0) begin
+        // Stage 1: Calculate VRAM address for character lookup
         v_adb <= ((x / CHAR_WIDTH) + ((y / CHAR_HEIGHT) * COLUMNS)) & VRAMW;
-      end else if (-4 <= x && x < H_PixelValid -4 + CHAR_WIDTH && 0 <= y && y < V_PixelValid && (x+4) % CHAR_WIDTH == 0) begin
+      end else if (CHAR_FETCH_OFFSET_2 <= x && x < H_PixelValid + CHAR_FETCH_OFFSET_2 + CHAR_WIDTH && 0 <= y && y < V_PixelValid && (x - CHAR_FETCH_OFFSET_2) % CHAR_WIDTH == 0) begin
+        // Stage 2: Capture character code from VRAM
         char <= v_dout;
-      end else if (-3 <= x && x < H_PixelValid -3 + CHAR_WIDTH && 0 <= y && y < V_PixelValid && (x+3) % CHAR_WIDTH == 0) begin
+      end else if (CHAR_FETCH_OFFSET_3 <= x && x < H_PixelValid + CHAR_FETCH_OFFSET_3 + CHAR_WIDTH && 0 <= y && y < V_PixelValid && (x - CHAR_FETCH_OFFSET_3) % CHAR_WIDTH == 0) begin
+        // Stage 3: Calculate font ROM address
         f_ad <= char * CHAR_HEIGHT + (y % CHAR_HEIGHT);
-      end else if (-2 <= x && x < H_PixelValid -2 + CHAR_WIDTH && 0 <= y && y < V_PixelValid && (x+2) % CHAR_WIDTH == 0) begin
+      end else if (CHAR_FETCH_OFFSET_4 <= x && x < H_PixelValid + CHAR_FETCH_OFFSET_4 + CHAR_WIDTH && 0 <= y && y < V_PixelValid && (x - CHAR_FETCH_OFFSET_4) % CHAR_WIDTH == 0) begin
+        // Stage 4: Capture font bitmap data
         fontline <= f_dout;
       end
       // get fontline
 
-      // draw the char
-      if (char >= 0 && char <= 127) begin
-        if (fontline[7-(x+1)%CHAR_WIDTH] == 1'b1) begin
-          LCD_R <= 5'b00000;  // green, foreground
-          LCD_G <= 6'b111111;
-          LCD_B <= 5'b00000;
+      // Render character pixels
+      if (char >= CHAR_CODE_MIN && char <= CHAR_CODE_MAX) begin
+        if (fontline[7-(x + CHAR_RENDER_OFFSET)%CHAR_WIDTH] == 1'b1) begin
+          // Foreground pixel (green)
+          LCD_R <= LCD_RED_ON;
+          LCD_G <= LCD_GREEN_ON;
+          LCD_B <= LCD_BLUE_ON;
         end else begin
-          LCD_R <= 5'b00000;  // black, background
-          LCD_G <= 6'b000000;
-          LCD_B <= 5'b00000;
+          // Background pixel (black)
+          LCD_R <= LCD_RED_OFF;
+          LCD_G <= LCD_GREEN_OFF;
+          LCD_B <= LCD_BLUE_OFF;
         end
       end else begin
-        LCD_R <= 5'b11111;  // red (char is not defined)
-        LCD_G <= 6'b000000;
-        LCD_B <= 5'b00000;
+        // Invalid character code (red)
+        LCD_R <= LCD_RED_ERROR;
+        LCD_G <= LCD_GREEN_ERROR;
+        LCD_B <= LCD_BLUE_ERROR;
       end
     end else begin
-      LCD_R <= 5'b11111;  // yellow
-      LCD_G <= 6'b111111;
-      LCD_B <= 5'b00000;
+      // Border area (yellow)
+      LCD_R <= LCD_RED_BORDER;
+      LCD_G <= LCD_GREEN_BORDER;
+      LCD_B <= LCD_BLUE_BORDER;
     end
   end
 

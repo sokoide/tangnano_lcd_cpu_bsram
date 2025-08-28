@@ -1,25 +1,36 @@
+// ram.sv - Memory Interface Wrapper
+// 
+// This module provides a clean abstraction layer over Gowin IP cores for:
+// - 32KB SDPB RAM for CPU main memory
+// - 1KB SDPB VRAM for video text display
+//
+// The module hides the complexity of dual-port memory interfaces and provides
+// consistent naming conventions for both memory types.
+//
 module ram (
     input logic MEMORY_CLK,
-    // RAM
-    output logic [7:0] dout,
-    input logic cea,
-    input logic ceb,
-    input logic oce,
-    input logic reseta,
-    input logic resetb,
-    input logic [14:0] ada,
-    input logic [14:0] adb,
-    input logic [7:0] din,
-    // VRAM
-    output logic [7:0] v_dout,
-    input logic v_cea,
-    input logic v_ceb,
-    input logic v_oce,
-    input logic v_reseta,
-    input logic v_resetb,
-    input logic [9:0] v_ada,
-    input logic [9:0] v_adb,
-    input logic [7:0] v_din
+    
+    // Main RAM Interface (32KB)
+    output logic [7:0] dout,        // RAM read data
+    input logic cea,                // RAM write enable
+    input logic ceb,                // RAM read enable
+    input logic oce,                // RAM output clock enable
+    input logic reseta,             // RAM write port reset
+    input logic resetb,             // RAM read port reset
+    input logic [14:0] ada,         // RAM write address
+    input logic [14:0] adb,         // RAM read address
+    input logic [7:0] din,          // RAM write data
+    
+    // Video RAM Interface (1KB)  
+    output logic [7:0] v_dout,      // VRAM read data
+    input logic v_cea,              // VRAM write enable
+    input logic v_ceb,              // VRAM read enable
+    input logic v_oce,              // VRAM output clock enable
+    input logic v_reseta,           // VRAM write port reset
+    input logic v_resetb,           // VRAM read port reset
+    input logic [9:0] v_ada,        // VRAM write address
+    input logic [9:0] v_adb,        // VRAM read address
+    input logic [7:0] v_din         // VRAM write data
 );
 
   // RAM 32KB, address 32768, data width 8, bypass
@@ -50,7 +61,7 @@ module ram (
       .resetb(v_resetb),  //input resetb
       .oce(v_oce),  //input oce, timing when the read value is reflected on dout
       .ada(v_ada),  //input [9:0] ada, for write
-      .din(v_din),  //input [7:0] din, wirtten data
+      .din(v_din),  //input [7:0] din, written data
       .adb(v_adb)  //input [9:0] adb, for read
   );
 

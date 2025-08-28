@@ -31,4 +31,33 @@ localparam int PixelForVS   = V_BackPorch + V_PixelValid + V_FrontPorch;
 
 // VSync Period = (8+12) * (480+8+43) = 10620 cycles
 
+// LCD Character Positioning Offsets
+// These constants are used in lcd.sv for precise character timing
+localparam int CHAR_FETCH_OFFSET_1 = -5;  // VRAM address calculation timing
+localparam int CHAR_FETCH_OFFSET_2 = -4;  // Character data fetch timing
+localparam int CHAR_FETCH_OFFSET_3 = -3;  // Font address calculation timing
+localparam int CHAR_FETCH_OFFSET_4 = -2;  // Font data fetch timing
+localparam int CHAR_RENDER_OFFSET = -1;   // Character rendering offset
+
+// LCD Color Definitions (RGB565 format)
+localparam logic [4:0] LCD_RED_OFF = 5'b00000;
+localparam logic [5:0] LCD_GREEN_OFF = 6'b000000; 
+localparam logic [4:0] LCD_BLUE_OFF = 5'b00000;
+
+localparam logic [4:0] LCD_RED_ON = 5'b00000;
+localparam logic [5:0] LCD_GREEN_ON = 6'b111111;
+localparam logic [4:0] LCD_BLUE_ON = 5'b00000;
+
+localparam logic [4:0] LCD_RED_ERROR = 5'b11111;
+localparam logic [5:0] LCD_GREEN_ERROR = 6'b000000;
+localparam logic [4:0] LCD_BLUE_ERROR = 5'b00000;
+
+localparam logic [4:0] LCD_RED_BORDER = 5'b11111;
+localparam logic [5:0] LCD_GREEN_BORDER = 6'b111111;
+localparam logic [4:0] LCD_BLUE_BORDER = 5'b00000;
+
+// Character code limits
+localparam int CHAR_CODE_MIN = 0;
+localparam int CHAR_CODE_MAX = 127;
+
 `endif

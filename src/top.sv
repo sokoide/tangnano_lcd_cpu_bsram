@@ -1,27 +1,47 @@
+// top.sv - System Integration Module
+//
+// This module integrates all components of the Tang Nano LCD + 6502 CPU system:
+// - Clock generation (PLLs for LCD and CPU/memory domains)
+// - Memory subsystem (RAM, VRAM, Font ROM)
+// - LCD controller for 480x272 display
+// - 6502 CPU core with custom instructions
+// - Clock domain crossing synchronization
+//
+// The system operates with dual clock domains:
+// - 9MHz for LCD pixel timing
+// - 40.5MHz for CPU and memory operations
+//
+// Board Configuration:
+// - Tang Nano 9K: rst_n = ResetButton (active high button)
+// - Tang Nano 20K: rst_n = !ResetButton (active low button)
+//
 module top (
-    input logic ResetButton,
-    input logic XTAL_IN,
+    // Clock and Reset
+    input logic ResetButton,            // Board reset button (polarity depends on board variant)
+    input logic XTAL_IN,                // 27MHz crystal oscillator input
 
-    output logic       LCD_CLK,
-    output logic       LCD_DEN,
-    output logic [4:0] LCD_R,
-    output logic [5:0] LCD_G,
-    output logic [4:0] LCD_B,
+    // LCD Interface
+    output logic       LCD_CLK,         // LCD pixel clock output (9MHz)
+    output logic       LCD_DEN,         // LCD data enable
+    output logic [4:0] LCD_R,           // LCD red channel (5-bit)
+    output logic [5:0] LCD_G,           // LCD green channel (6-bit)
+    output logic [4:0] LCD_B,           // LCD blue channel (5-bit)
 
-    output logic MEMORY_CLK
+    // Debug/Test Outputs
+    output logic MEMORY_CLK             // Memory clock output for debugging (40.5MHz)
 );
 
-  // Tang Nano 9K:
+  // Board-specific reset polarity configuration
+  // Tang Nano 9K: Button is active high
   wire rst_n = ResetButton;
-  // Tang Nano 20K:
-  //   wire rst_n = !ResetButton;
+  // Tang Nano 20K: Button is active low (uncomment line below for 20K)
+  //wire rst_n = !ResetButton;
 
   wire rst = !rst_n;
 
-  // PLL ... make it by IP Generator -> Hard Module -> Clock -> rPLL -> clockin 27, clockout 9
-  // (480+43+8) * (272+8+12) * 60Hz = 9.3MHz
-  // 9MHz / (480+43+8) / (272+8+12) = 58.05Hz
-  // 10MHz / (480+43+8) / (272+8+12) = 64.5Hz
+  // Clock Generation via Phase-Locked Loops (PLLs)
+  // LCD timing: (480+43+8) * (272+8+12) * 58.05Hz ≈ 9MHz
+  // CPU/Memory: Higher frequency for processing performance
   Gowin_rPLL9 rpll9_inst (
       .clkout(LCD_CLK),  //  9MHz
       .clkin (XTAL_IN)   //  27MHz
@@ -63,34 +83,41 @@ module top (
       .vsync (vsync)
   );
 
-  // --- VRAM Read Address Clock Domain Crossing (CDC) Synchronization ---
-  // v_adb 信号 (PixelClk ドメインから MEMORY_CLK ドメインへ) を同期化する
-  logic [9:0] v_adb_sync1;  // 第1段レジスタ
-  logic [9:0] v_adb_sync2;  // 第2段レジスタ (同期化された信号)
+  // Clock Domain Crossing (CDC) Synchronization for VRAM Read Address
+  // 
+  // The v_adb signal crosses from the LCD pixel clock domain (9MHz) to the 
+  // memory clock domain (40.5MHz). A two-stage synchronizer prevents 
+  // metastability and ensures reliable data transfer between domains.
+  //
+  logic [9:0] v_adb_sync1;      // First synchronizer stage
+  logic [9:0] v_adb_sync2;      // Second synchronizer stage (stable output)
 
-  // MEMORY_CLK ドメインで動作する同期化レジスタチェーン
+  // Two-stage synchronizer running in the memory clock domain
   always_ff @(posedge MEMORY_CLK or negedge rst_n) begin
     if (!rst_n) begin
-      v_adb_sync1 <= 10'd0;  // リセット時は0クリア
+      v_adb_sync1 <= 10'd0;      // Clear on reset
       v_adb_sync2 <= 10'd0;
     end else begin
-      v_adb_sync1 <= lcd_inst.v_adb; // PixelClk ドメインからの信号を MEMORY_CLK で捕捉
-      v_adb_sync2 <= v_adb_sync1;   // 捕捉した信号をもう一段レジスタに通し、安定化
+      v_adb_sync1 <= lcd_inst.v_adb;  // Capture LCD domain signal
+      v_adb_sync2 <= v_adb_sync1;     // Stabilize through second register
     end
   end
-  // --- End of CDC Synchronization ---
 
-  // RAM
-  logic cea, ceb, oce;
-  logic reseta, resetb;
-  logic [14:0] ada, adb;
-  logic [7:0] din;
-  logic [7:0] dout;
-  logic v_cea, v_ceb, v_oce;
-  logic v_reseta, v_resetb;
-  logic [9:0] v_ada, v_adb;
-  logic [7:0] v_din;
-  logic [7:0] v_dout;
+  // Memory Interface Signals
+  
+  // Main RAM (32KB) Interface
+  logic [7:0] dout;               // RAM read data
+  logic cea, ceb, oce;            // RAM control signals
+  logic reseta, resetb;           // RAM reset signals
+  logic [14:0] ada, adb;          // RAM addresses (write/read)
+  logic [7:0] din;                // RAM write data
+  
+  // Video RAM (1KB) Interface  
+  logic [7:0] v_dout;             // VRAM read data
+  logic v_cea, v_ceb, v_oce;      // VRAM control signals
+  logic v_reseta, v_resetb;       // VRAM reset signals
+  logic [9:0] v_ada, v_adb;       // VRAM addresses (write/read)
+  logic [7:0] v_din;              // VRAM write data
 
   ram ram_inst (
       // common

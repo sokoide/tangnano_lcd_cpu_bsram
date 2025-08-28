@@ -1,37 +1,78 @@
+// cpu.sv - 6502 CPU Core Implementation
+//
+// This module implements a complete 6502 microprocessor with custom extensions
+// for FPGA-based LCD display systems. The CPU includes:
+//
+// Standard 6502 Features:
+// - All standard addressing modes (immediate, zero page, absolute, indexed, etc.)
+// - Complete instruction set except interrupt-related instructions
+// - Standard registers: A, X, Y, SP, PC, and status flags (C, Z, V, N, etc.)
+// - 64KB addressable memory space with configurable memory map
+//
+// Custom Extensions:
+// - CVR (0xCF): Clear VRAM - Hardware-accelerated VRAM clearing
+// - IFO (0xDF): Info/Debug - Display registers and memory for debugging
+// - HLT (0xEF): Halt - Stop CPU execution while preserving LCD operation
+// - WVS (0xFF): Wait VSync - Synchronize with LCD vertical refresh
+//
+// Memory Map Integration:
+// - 0x0000-0x00FF: Zero Page (256B)
+// - 0x0100-0x01FF: Stack (256B)
+// - 0x0200-0x7BFF: Program RAM (30.5KB)
+// - 0x7C00-0x7FFF: Shadow VRAM (1KB, read-only)
+// - 0xE000-0xE3FF: Text VRAM (1KB, write-only)
+//
+// State Machine Architecture:
+// - Multi-stage fetch/decode/execute pipeline
+// - Separate states for memory operations and custom instructions
+// - Proper handling of different instruction lengths and addressing modes
+//
 `include "consts.svh"
 module cpu (
-    input logic rst_n,
-    input logic clk,
-    input logic [7:0] dout,  // RAM data which was read
-    input logic vsync,  // 1 during LCD vsync
-    input logic [7:0] boot_program[7680],  // Boot program, max size 0x200-0x1FFF (7680 bytes)
-    input logic [15:0] boot_program_length,  // Boot program length
-    output logic [7:0] din,  // RAM data to write
-    output logic [14:0] ada,  // write RAM
-    output logic cea,  // RAM write enable
-    output logic ceb,  // RAM read enable
-    output logic [14:0] adb,  // read RAM
-    output logic [9:0] v_ada,  // write VRAM
-    output logic v_cea,  // VRAM write enable
-    output logic [7:0] v_din  // VRAM data to write
+    // Clock and Reset
+    input logic rst_n,                      // Active-low asynchronous reset
+    input logic clk,                        // System clock (40.5MHz)
+    
+    // Memory Interface
+    input logic [7:0] dout,                 // RAM read data
+    output logic [7:0] din,                 // RAM write data
+    output logic [14:0] ada,                // RAM write address (32KB space)
+    output logic [14:0] adb,                // RAM read address (32KB space)
+    output logic cea,                       // RAM write enable
+    output logic ceb,                       // RAM read enable
+    
+    // Video Memory Interface
+    output logic [9:0] v_ada,               // VRAM write address (1KB space)
+    output logic v_cea,                     // VRAM write enable
+    output logic [7:0] v_din,               // VRAM write data (character codes)
+    
+    // System Integration
+    input logic vsync,                      // LCD vertical sync (for WVS instruction)
+    input logic [7:0] boot_program[7680],   // Boot program ROM (max 30KB)
+    input logic [15:0] boot_program_length  // Actual boot program size
 );
 
-  // Internal registers.
-  logic        [15:0] pc;  // Program Counter
-  logic        [15:0] pc_plus1;
-  logic        [15:0] pc_plus2;
-  logic        [15:0] pc_plus3;
-  logic        [ 7:0] ra;  // A Register
-  logic        [ 7:0] rx;  // X Register
-  logic        [ 7:0] ry;  // Y Register
-  logic        [ 7:0] sp;  // Stack Pointer
-  logic               flg_c;  // carry flag
-  logic               flg_z;  // zero flag
-  logic               flg_i;  // interrupt disable (not used)
-  logic               flg_d;  // desimal mode flag (not used)
-  logic               flg_b;  // break command (not used)
-  logic               flg_v;  // overflow flag
-  logic               flg_n;  // negative flag
+  // 6502 CPU Registers
+  // Program Counter and addressing
+  logic        [15:0] pc;         // Program Counter (16-bit)
+  logic        [15:0] pc_plus1;   // PC + 1 for instruction fetch
+  logic        [15:0] pc_plus2;   // PC + 2 for instruction fetch  
+  logic        [15:0] pc_plus3;   // PC + 3 for instruction fetch
+  
+  // Data Registers
+  logic        [ 7:0] ra;         // Accumulator (A Register)
+  logic        [ 7:0] rx;         // X Index Register
+  logic        [ 7:0] ry;         // Y Index Register
+  logic        [ 7:0] sp;         // Stack Pointer (points into 0x0100-0x01FF)
+  
+  // Status Flags (Processor Status Register)
+  logic               flg_c;      // Carry flag
+  logic               flg_z;      // Zero flag
+  logic               flg_i;      // Interrupt disable (not implemented)
+  logic               flg_d;      // Decimal mode flag (not implemented)
+  logic               flg_b;      // Break command flag (not implemented)
+  logic               flg_v;      // Overflow flag
+  logic               flg_n;      // Negative flag
   logic        [15:0] addr;
   logic signed [15:0] s_offset;
   logic signed [ 7:0] s_imm8;
