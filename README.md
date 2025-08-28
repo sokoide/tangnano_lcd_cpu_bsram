@@ -4,10 +4,15 @@
 
 - **[DEVELOPER.md](./DEVELOPER.md)** - Technical architecture and component diagrams
 - **[README_architecture_ja.md](./README_architecture_ja.md)** - CPU implementation details (Japanese)
+- **[CLAUDE.md](./CLAUDE.md)** - Claude Code integration and project guidance
+- **[claudedocs/](./claudedocs/)** - Code analysis reports and improvement documentation
 
 ## About
 
 * Tang Nano 9K or 20K + 043026-N6(ML) 4.3 inch 480x272 LCD module example
+* Features a complete 6502 CPU implementation with custom instructions
+* Enhanced modular architecture for improved maintainability
+* Comprehensive testing infrastructure with multiple test suites
 * The default is for 9K. To make it for 20K, change the following 3 files
   * `lcd_cpu_bsram.gprj`
 
@@ -44,6 +49,33 @@
       // Tang Nano 20K:
       wire rst_n = !ResetButton;
     ```
+
+## Recent Improvements
+
+### Code Quality and Architecture (2025)
+* **Enhanced Code Quality**: Comprehensive code analysis and systematic improvements
+  - Standardized all documentation to English for international collaboration
+  - Extracted magic numbers to named constants for better maintainability
+  - Improved module organization and interface documentation
+  - Added comprehensive module headers explaining architecture and operation
+
+* **CPU Modularization**: Split monolithic CPU implementation into focused modules
+  - **cpu_decoder.sv**: Instruction decoding and control signal generation
+  - **cpu_alu.sv**: Arithmetic Logic Unit with proper flag handling
+  - **cpu_memory.sv**: Memory interface and address generation
+  - Improved maintainability and enables parallel development
+
+* **Enhanced Testing Infrastructure**: Comprehensive test suite for validation
+  - **tb_cpu.sv**: 9 systematic test cases covering all CPU functionality
+  - **tb_cpu_modules.sv**: Individual module testing with 25+ unit tests
+  - Real-time memory operation monitoring and structured error reporting
+  - Timeout protection and comprehensive test coverage
+
+### Key Features
+* **Modular Design**: Clean separation of concerns for better maintainability
+* **Comprehensive Testing**: Both unit and integration testing capabilities
+* **Documentation**: Extensive technical documentation and code analysis
+* **Quality Assurance**: Systematic code improvements and validation
 
 ## Getting Started
 
