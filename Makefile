@@ -7,6 +7,9 @@ SRCS= \
 	src/lcd.sv \
 	src/ram.sv \
 	src/cpu.sv \
+	src/cpu_decoder.sv \
+	src/cpu_alu.sv \
+	src/cpu_memory.sv \
 	src/gowin_sdpb/gowin_sdpb.v \
 	src/gowin_sdpb/gowin_sdpb_vram.v \
 	src/gowin_prom/gowin_prom_font.v \
