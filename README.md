@@ -3,9 +3,13 @@
 ## 📚 Documentation
 
 - **[DEVELOPER.md](./DEVELOPER.md)** - Technical architecture and component diagrams
+- **[README_architecture_en.md](./README_architecture_en.md)** - CPU core architecture (English)
 - **[README_architecture_ja.md](./README_architecture_ja.md)** - CPU implementation details (Japanese)
 - **[CLAUDE.md](./CLAUDE.md)** - Claude Code integration and project guidance
 - **[claudedocs/](./claudedocs/)** - Code analysis reports and improvement documentation
+- **[AGENTS.md](./AGENTS.md)** - Repository guidelines for contributors
+- **[docs/BUILD.md](./docs/BUILD.md)** - Build, board switch, and tooling guide
+- **[docs/CODING_STYLE.md](./docs/CODING_STYLE.md)** - SystemVerilog coding conventions
 
 ## About
 
@@ -13,7 +17,7 @@
 * Features a complete 6502 CPU implementation with custom instructions
 * Enhanced modular architecture for improved maintainability
 * Comprehensive testing infrastructure with multiple test suites
-* The default is for 9K. To make it for 20K, change the following 3 files
+* The default is for 9K. To build for 20K, prefer using the Makefile switch and update the following files as needed
   * `lcd_cpu_bsram.gprj`
 
     ```xml
@@ -32,14 +36,19 @@
             <File path="src/gowin_rpll_20K/gowin_rpll9.v" type="file.verilog" enable="1"/>
     ```
 
-  * `Makefile`
+  * Build selection (Makefile)
 
-    ```make
-    # Tang Nano 20K
-    DEVICE=GW2AR-18C
-    # Tang Nano 9K
-    # DEVICE=GW1NR-9C
-    ```
+    - Quick switch at build time:
+
+      ```bash
+      make BOARD=20k   # or: make BOARD=9k (default)
+      ```
+
+    - Or override device explicitly:
+
+      ```bash
+      make DEVICE=GW2AR-18C
+      ```
 
   * `src/top.sv`
 
@@ -79,9 +88,45 @@
 
 ## Getting Started
 
+### Tool Paths
+
+If Gowin tools are not in macOS default paths, override per call or via env variables:
+
+```bash
+# One-shot per command
+make GWSH=/path/to/gw_sh PRG=/path/to/programmer_cli download
+
+# Or export once per shell
+export GWSH=/path/to/gw_sh
+export PRG=/path/to/programmer_cli
+make download
+```
+
+Linux notes:
+- Install prerequisites (Ubuntu/Debian): `sudo apt install srecord cc65 golang gtkwave verilator`
+- Typical Gowin paths (adjust as needed):
+  - `GWSH=/opt/GowinEDA/IDE/bin/gw_sh`
+  - `PRG=/opt/GowinEDA/Programmer/bin/programmer_cli`
+- Discover installed paths:
+  ```bash
+  sudo find /opt -type f -name gw_sh -o -name programmer_cli 2>/dev/null
+  ```
+- USB access: ensure proper udev permissions or run `make download` with sudo.
+
 ### Run an Example
 
 ```bash
+# Build bitstream (uses BOARD=9k by default)
+make
+
+# Program Tang Nano via SRAM
+make download
+
+# Lint/Format locally (optional)
+make lint
+make format
+
+# Build an assembly example and regenerate include/boot_program.sv
 cd examples
 # if not installed
 brew install srecord cc65

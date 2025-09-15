@@ -1,6 +1,36 @@
-# 6502 CPUエミュレータ アーキテクチャ詳細
+# 6502 CPUコア アーキテクチャ詳細
 
-このプロジェクトの6502 CPUエミュレータは、Tang Nano 9K/20K FPGA上でSystemVerilogで実装されたシステムです。以下、命令のフェッチと実行がどのように行われるかを詳しく説明します。
+このプロジェクトの6502 CPUコアは、Tang Nano 9K/20K FPGA上でSystemVerilogで実装されたシステムです。以下、命令のフェッチと実行がどのように行われるかを詳しく説明します。
+
+> ビルド補足（Makefile更新）
+> - 基本ビルド: `make`（デフォルトは 9K）
+> - 20K向けビルド: `make BOARD=20k`
+> - デバイス直接指定: `make DEVICE=GW2AR-18C`
+> - 書き込み: `make download`
+> - Lint/Format（任意）: `make lint` / `make format`
+> - 9K/20K切替時は、`lcd_cpu_bsram.gprj`（デバイス/制約）と `src/top.sv`（リセット極性）の更新も必要です。
+> - ツールパスがデフォルトでない場合は、以下のように上書きしてください：
+>
+>   ```bash
+>   # コマンド単位で上書き
+>   make GWSH=/path/to/gw_sh PRG=/path/to/programmer_cli download
+>
+>   # シェルで一度だけ指定
+>   export GWSH=/path/to/gw_sh
+>   export PRG=/path/to/programmer_cli
+>   make download
+>   ```
+>
+> Linux 環境メモ:
+> - 依存パッケージ（Ubuntu/Debian 例）: `sudo apt install srecord cc65 golang gtkwave verilator`
+> - 一般的な Gowin パス（環境により調整）:
+>   - `GWSH=/opt/GowinEDA/IDE/bin/gw_sh`
+>   - `PRG=/opt/GowinEDA/Programmer/bin/programmer_cli`
+> - インストール先が不明な場合:
+>   ```bash
+>   sudo find /opt -type f -name gw_sh -o -name programmer_cli 2>/dev/null
+>   ```
+> - USB アクセス権: udev 設定でアクセス権付与、または `make download` を sudo で実行。
 
 ## 1. 全体的なアーキテクチャ
 
@@ -148,7 +178,7 @@ graph TD
     subgraph "物理メモリ"
         SDPB[32KB SDPB RAM]
         VSDPB[1KB VRAM SDPB]
-        PROM[4KB フォントpROM<br/>ハードウェア専用]
+        PROM[4KB フォントPROM<br/>ハードウェア専用]
     end
     
     ZP --> SDPB
@@ -238,6 +268,22 @@ graph TB
 #### WVS (0xFF): VSyncWait（LCDの垂直同期待機）
 - `FF count`: 'count'回のVSync周期待機
 - CPUとLCD表示の同期制御
+
+---
+
+## 付録: ビルド/ボード切替メモ
+
+- 9K/20K切替は `make BOARD=9k|20k` で実行可能（Makefileの `BOARD` 変数）。
+- `.gprj` のデバイス設定と制約ファイルの選択、`src/top.sv` の `rst_n` 極性はボードに合わせて調整してください。
+- 開発補助:
+  - `make lint`: Verilator による簡易静的チェック（ベンダIPは除外）
+  - `make format`: Verible によるフォーマット（導入済み環境で有効）
+  - ツールパスの上書き例:
+    ```bash
+    make GWSH=/path/to/gw_sh PRG=/path/to/programmer_cli
+    # または
+    export GWSH=/path/to/gw_sh; export PRG=/path/to/programmer_cli; make
+    ```
 - `count=0x3A`で約1秒の待機時間
 
 ## 6. 実行の流れ
