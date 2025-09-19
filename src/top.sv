@@ -33,9 +33,9 @@ module top (
 
   // Board-specific reset polarity configuration
   // Tang Nano 9K: Button is active high
-  wire rst_n = ResetButton;
+  // wire rst_n = ResetButton;
   // Tang Nano 20K: Button is active low (uncomment line below for 20K)
-  //wire rst_n = !ResetButton;
+  wire rst_n = !ResetButton;
 
   wire rst = !rst_n;
 
@@ -84,9 +84,9 @@ module top (
   );
 
   // Clock Domain Crossing (CDC) Synchronization for VRAM Read Address
-  // 
-  // The v_adb signal crosses from the LCD pixel clock domain (9MHz) to the 
-  // memory clock domain (40.5MHz). A two-stage synchronizer prevents 
+  //
+  // The v_adb signal crosses from the LCD pixel clock domain (9MHz) to the
+  // memory clock domain (40.5MHz). A two-stage synchronizer prevents
   // metastability and ensures reliable data transfer between domains.
   //
   logic [9:0] v_adb_sync1;      // First synchronizer stage
@@ -104,15 +104,15 @@ module top (
   end
 
   // Memory Interface Signals
-  
+
   // Main RAM (32KB) Interface
   logic [7:0] dout;               // RAM read data
   logic cea, ceb, oce;            // RAM control signals
   logic reseta, resetb;           // RAM reset signals
   logic [14:0] ada, adb;          // RAM addresses (write/read)
   logic [7:0] din;                // RAM write data
-  
-  // Video RAM (1KB) Interface  
+
+  // Video RAM (1KB) Interface
   logic [7:0] v_dout;             // VRAM read data
   logic v_cea, v_ceb, v_oce;      // VRAM control signals
   logic v_reseta, v_resetb;       // VRAM reset signals
@@ -172,13 +172,13 @@ module top (
       reseta <= 1'b0;
       resetb <= 1'b0;
       oce <= 1'b0;        // RAM output not reflected initially
-      
-      // VRAM control signals  
+
+      // VRAM control signals
       v_reseta <= 1'b0;
       v_resetb <= 1'b0;
       v_ceb <= 1'b1;      // Enable VRAM read
       v_oce <= 1'b0;      // VRAM output not reflected initially
-      
+
       // Font ROM control signals
       f_ce <= 1'b1;       // Enable font ROM
       f_oce <= 1'b1;      // Enable font ROM output

@@ -1,0 +1,6 @@
+          `include "cpu/state_boot.svh"
+          `include "cpu/state_fetch.svh"
+          `include "cpu/state_decode.svh"
+          `include "cpu/state_write_req.svh"
+          `include "cpu/state_show_info.svh"
+          `include "cpu/state_clear_vram.svh"
