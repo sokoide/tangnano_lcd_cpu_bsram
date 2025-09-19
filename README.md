@@ -22,19 +22,19 @@ make BOARD=20k download
   - `lcd_cpu_bsram.gprj`
 
     ```xml
-      <!-- Tang Nano 9K -->
-        <!-- <Device name="GW1NR-9C" pn="GW1NR-LV9QN88PC6/I5">gw1nr9c-004</Device> -->
-        <!-- Tang Nano 20K -->
-        <Device name="GW2AR-18C" pn="GW2AR-LV18QN88C8/I7">gw2ar18c-000</Device>
+    <!-- Tang Nano 9K -->
+    <!-- <Device name="GW1NR-9C" pn="GW1NR-LV9QN88PC6/I5">gw1nr9c-004</Device> -->
+    <!-- Tang Nano 20K -->
+    <Device name="GW2AR-18C" pn="GW2AR-LV18QN88C8/I7">gw2ar18c-000</Device>
 
-        <!-- Tang Nano 9K -->
-        <!-- <File path="src/lcd_cpu_bsram_9K.cst" type="file.cst" enable="1"/>
-        <File path="src/gowin_rpll_9K/gowin_rpll40.v" type="file.verilog" enable="1"/>
-        <File path="src/gowin_rpll_9K/gowin_rpll9.v" type="file.verilog" enable="1"/> -->
-        <!-- Tang Nano 20K -->
-        <File path="src/lcd_cpu_bsram_20K.cst" type="file.cst" enable="1"/>
-        <File path="src/gowin_rpll_20K/gowin_rpll40.v" type="file.verilog" enable="1"/>
-        <File path="src/gowin_rpll_20K/gowin_rpll9.v" type="file.verilog" enable="1"/>
+    <!-- Tang Nano 9K -->
+    <!-- <File path="src/lcd_cpu_bsram_9K.cst" type="file.cst" enable="1"/>
+    <File path="src/gowin_rpll_9K/gowin_rpll40.v" type="file.verilog" enable="1"/>
+    <File path="src/gowin_rpll_9K/gowin_rpll9.v" type="file.verilog" enable="1"/> -->
+    <!-- Tang Nano 20K -->
+    <File path="src/lcd_cpu_bsram_20K.cst" type="file.cst" enable="1"/>
+    <File path="src/gowin_rpll_20K/gowin_rpll40.v" type="file.verilog" enable="1"/>
+    <File path="src/gowin_rpll_20K/gowin_rpll9.v" type="file.verilog" enable="1"/>
     ```
 
   - `src/top.sv`

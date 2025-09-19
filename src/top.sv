@@ -33,9 +33,9 @@ module top (
 
   // Board-specific reset polarity configuration
   // Tang Nano 9K: Button is active high
-  // wire rst_n = ResetButton;
+  wire rst_n = ResetButton;
   // Tang Nano 20K: Button is active low (uncomment line below for 20K)
-  wire rst_n = !ResetButton;
+  // wire rst_n = !ResetButton;
 
   wire rst = !rst_n;
 
