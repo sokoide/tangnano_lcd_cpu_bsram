@@ -4,20 +4,23 @@ A complete SystemVerilog implementation of a 6502 microprocessor with LCD contro
 
 ## 🚀 Quick Start
 
-```bash
-# Clone and build (Tang Nano 9K default)
-git clone <repository-url>
-cd lcd_cpu_bsram
-make
+- For Tang Nano 9K
 
-# Program FPGA
-make download
+  - Build and Download
 
-# Build for Tang Nano 20K
-make BOARD=20k download
-```
+    ```bash
+    # Clone and build
+    git clone <repository-url>
+    cd lcd_cpu_bsram
+    make
 
-- The default config is for 9K. To build for 20K, update the following files as needed
+    # Download
+    make download
+    ```
+
+- For Tang Nano 20K
+
+  - Update the following files
 
   - `lcd_cpu_bsram.gprj`
 
@@ -40,11 +43,25 @@ make BOARD=20k download
   - `src/top.sv`
 
   ```systemverilog
-    // Tang Nano 9K:
-    //  wire rst_n = ResetButton;
-    // Tang Nano 20K:
-    wire rst_n = !ResetButton;
+      // Tang Nano 9K:
+      //  wire rst_n = ResetButton;
+      // Tang Nano 20K:
+      wire rst_n = !ResetButton;
   ```
+
+  - Make
+
+    ```bash
+    # BOARD is optional
+    make BOARD=20k download
+    ```
+
+  - Download
+
+    ```bash
+    # BOARD is mandatory
+    make BOARD=20k download
+    ```
 
 ## ✨ Features
 
