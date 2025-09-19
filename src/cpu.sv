@@ -33,7 +33,7 @@ module cpu (
     // Clock and Reset
     input logic rst_n,                      // Active-low asynchronous reset
     input logic clk,                        // System clock (40.5MHz)
-    
+
     // Memory Interface
     input logic [7:0] dout,                 // RAM read data
     output logic [7:0] din,                 // RAM write data
@@ -41,12 +41,12 @@ module cpu (
     output logic [14:0] adb,                // RAM read address (32KB space)
     output logic cea,                       // RAM write enable
     output logic ceb,                       // RAM read enable
-    
+
     // Video Memory Interface
     output logic [9:0] v_ada,               // VRAM write address (1KB space)
     output logic v_cea,                     // VRAM write enable
     output logic [7:0] v_din,               // VRAM write data (character codes)
-    
+
     // System Integration
     input logic vsync,                      // LCD vertical sync (for WVS instruction)
     input logic [7:0] boot_program[7680],   // Boot program ROM (max 30KB)
@@ -59,15 +59,15 @@ module cpu (
   // Program Counter and addressing
   logic        [15:0] pc;         // Program Counter (16-bit)
   logic        [15:0] pc_plus1;   // PC + 1 for instruction fetch
-  logic        [15:0] pc_plus2;   // PC + 2 for instruction fetch  
+  logic        [15:0] pc_plus2;   // PC + 2 for instruction fetch
   logic        [15:0] pc_plus3;   // PC + 3 for instruction fetch
-  
+
   // Data Registers
   logic        [ 7:0] ra;         // Accumulator (A Register)
   logic        [ 7:0] rx;         // X Index Register
   logic        [ 7:0] ry;         // Y Index Register
   logic        [ 7:0] sp;         // Stack Pointer (points into 0x0100-0x01FF)
-  
+
   // Status Flags (Processor Status Register)
   logic               flg_c;      // Carry flag
   logic               flg_z;      // Zero flag

@@ -16,7 +16,7 @@ source_files:
     path: deps/gw1n/prim_sim.v
   - language: verilog
     path: src/cpu.sv
-    options: +define+DEBUG_MODE -incdir ./include
+    options: +define+DEBUG_MODE -incdir ./include:./src
   - language: verilog
     path: src/gowin_sdpb/gowin_sdpb.v
     options: +define+DEBUG_MODE -incdir ./include
