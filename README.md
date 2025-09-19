@@ -78,11 +78,13 @@ A complete SystemVerilog implementation of a 6502 microprocessor with LCD contro
 | ---------------------------------------------------------------------- | ----------------------------------------- | -------------------------- |
 | **[docs/DEVELOPER.md](./docs/DEVELOPER.md)**                           | Technical architecture and learning guide | FPGA developers & learners |
 | **[docs/README_architecture_en.md](./docs/README_architecture_en.md)** | Detailed CPU architecture                 | Advanced developers        |
-| **[docs/README_architecture_ja.md](./docs/README_architecture_ja.md)** | CPU implementation details (Japanese)     | 日本語での技術詳細         |
+| **[docs/README_architecture_ja.md](./docs/README_architecture_ja.md)** | CPU implementation details (Japanese)     | Advanced developers (Ja)   |
 | **[docs/BUILD.md](./docs/BUILD.md)**                                   | Build system and tooling                  | All developers             |
 | **[docs/INSTRUCTIONS.md](./docs/INSTRUCTIONS.md)**                     | CPU supported instructions                | All developers             |
 | **[docs/LCD.md](./docs/LCD.md)**                                       | LCD specification                         | Who need LCD info          |
 | **[docs/CODING_STYLE.md](./docs/CODING_STYLE.md)**                     | SystemVerilog conventions                 | Contributors               |
+| **[docs/QUALITY_en.md](./docs/QUALITY_en.md)**                         | Code quality                              | All developers             |
+| **[docs/QUALITY_ja.md](./docs/QUALITY_ja.md)**                         | Code quality (Japanease)                  | All developers (Ja)        |
 | **[CLAUDE.md](./CLAUDE.md)**                                           | AI development integration                | Claude Code users          |
 
 ## 🛠️ System Requirements
