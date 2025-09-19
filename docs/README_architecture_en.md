@@ -1,82 +1,30 @@
-# FPGA Developer Guide
+# 6502 CPU Architecture Comprehensive Guide
 
-A comprehensive learning guide for FPGA developers working with the Tang Nano 6502 CPU project. This document progresses from basic concepts to advanced implementation details.
+A detailed technical reference for the 6502 CPU core implemented in SystemVerilog on Tang Nano 9K/20K FPGAs. This document is structured to support progressive learning from basic concepts to advanced implementation details.
 
-## 🎯 Learning Path
+## 📖 Learning Roadmap
 
-**Beginner**: Start with [System Overview](#system-overview) and [Getting Started](#getting-started)
-**Intermediate**: Study [Architecture](#architecture) and [Build System](#build-system)
-**Advanced**: Deep dive into [CPU Implementation](#cpu-implementation) and [Custom Extensions](#custom-extensions)
+**Beginner**: Start with [System Overview](#system-overview) and [Basic Architecture](#basic-architecture)
+**Intermediate**: Study [CPU Implementation](#cpu-implementation) and [Memory System](#memory-system)
+**Advanced**: Explore [Custom Instructions](#custom-instructions) and [Optimization Techniques](#optimization-techniques)
 
-## 📋 System Overview
+## 🎯 System Overview
 
-This project demonstrates a complete computer system implementation on FPGA, combining:
+This project demonstrates a complete computer system implementation on FPGA, serving as an educational platform for:
 
-- **6502 CPU**: A classic 8-bit microprocessor with custom extensions
-- **Display System**: Hardware-accelerated text rendering on LCD
-- **Memory Hierarchy**: Multiple memory types with different access patterns
-- **Cross-Platform Build**: Support for Tang Nano 9K and 20K boards
+### Core Components
+- **6502 CPU**: Authentic 6502 microprocessor with custom extension instructions
+- **LCD Display System**: 480×272 pixel character-based text display
+- **Memory Hierarchy**: Integrated RAM, VRAM, and Font ROM subsystems
+- **Assembly Development**: cc65 toolchain for 6502 programming
 
-### Key Learning Concepts
+### Learning Objectives
+- **Clock Domain Design**: Managing multiple clock frequencies (27MHz → 9MHz/40.5MHz)
+- **State Machine Architecture**: Complex CPU instruction execution pipeline
+- **Memory Controllers**: SDPB RAM, VRAM, and pROM interfaces
+- **Hardware/Software Integration**: Assembly programming with FPGA implementation
 
-- **Clock Domain Crossing**: Managing multiple clock frequencies (27MHz → 9MHz/40.5MHz)
-- **Memory Controllers**: SDPB RAM, VRAM, and pROM integration
-- **State Machines**: Complex CPU instruction execution pipeline
-- **Hardware/Software Interface**: Assembly programming meets FPGA implementation
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-**Hardware Knowledge:**
-- Basic digital logic and state machines
-- Understanding of clocked circuits and timing
-- Familiarity with memory interfaces
-
-**Software Tools:**
-- **Gowin EDA**: FPGA synthesis and place & route
-- **cc65**: 6502 assembler and linker
-- **Make**: Build automation
-- **DSIM Studio** (optional): Advanced simulation environment
-
-### Quick Setup
-
-```bash
-# 1. Clone and explore
-git clone <repository>
-cd lcd_cpu_bsram
-ls -la src/ docs/ examples/
-
-# 2. Build for your board
-make BOARD=9k    # Tang Nano 9K (default)
-make BOARD=20k   # Tang Nano 20K
-
-# 3. Program FPGA
-make download
-
-# 4. Try assembly programming
-cd examples
-make clean && make
-cd .. && make download
-```
-
-### Understanding the Build Flow
-
-```mermaid
-graph LR
-    ASM[Assembly Source<br/>simple5.s] --> CC65[cc65 Assembler]
-    CC65 --> HEX[Intel HEX<br/>example.hex]
-    HEX --> CONV[hex_fpga Converter]
-    CONV --> SV[SystemVerilog<br/>boot_program.sv]
-
-    SV --> SYNTH[Gowin Synthesis]
-    HDL[HDL Sources<br/>src/*.sv] --> SYNTH
-    SYNTH --> BITSTREAM[FPGA Bitstream<br/>impl/pnr/project.fs]
-    BITSTREAM --> PROG[programmer_cli]
-    PROG --> FPGA[Tang Nano FPGA]
-```
-
-## 🏗️ Architecture
+## 🏗️ Basic Architecture
 
 ### System Block Diagram
 
@@ -112,7 +60,7 @@ graph TB
         BOOTROM --> CPU
     end
 
-    subgraph "External"
+    subgraph "External Devices"
         BUTTON[Reset Button]
         DISPLAY[480×272 LCD<br/>043026-N6(ML)]
     end
@@ -121,7 +69,44 @@ graph TB
     LCD --> DISPLAY
 ```
 
-### Memory Architecture Deep Dive
+### Development Environment Setup
+
+```bash
+# 1. Build (Tang Nano 9K default)
+make                    # Basic build
+make BOARD=20k         # Tang Nano 20K target
+
+# 2. FPGA Programming
+make download
+
+# 3. Assembly Program Development
+cd examples
+make clean && make     # Build simple5.s (default)
+cd .. && make download # Program FPGA
+
+# 4. Custom Tool Paths (if needed)
+make GWSH=/path/to/gw_sh PRG=/path/to/programmer_cli download
+```
+
+### Build Flow Understanding
+
+```mermaid
+graph LR
+    ASM[Assembly Source<br/>simple5.s] --> CC65[cc65 Assembler]
+    CC65 --> HEX[Intel HEX<br/>example.hex]
+    HEX --> CONV[hex_fpga Converter]
+    CONV --> SV[SystemVerilog<br/>boot_program.sv]
+
+    SV --> SYNTH[Gowin Synthesis]
+    HDL[HDL Sources<br/>src/*.sv] --> SYNTH
+    SYNTH --> BITSTREAM[FPGA Bitstream<br/>impl/pnr/project.fs]
+    BITSTREAM --> PROG[programmer_cli]
+    PROG --> FPGA[Tang Nano FPGA]
+```
+
+## 🧠 Memory System
+
+### Address Space Design
 
 The system implements a sophisticated memory hierarchy optimized for both CPU access and display rendering:
 
@@ -139,87 +124,34 @@ CPU Address Space (64KB addressable):
 └─────────────────┴─────────────────┴──────────────────────────────────┘
 ```
 
-**Key Design Decisions:**
+### Key Design Decisions
 
 1. **Dual VRAM Access**: Shadow VRAM allows CPU to read display content while LCD controller has dedicated write access
 2. **Memory-Mapped I/O**: VRAM appears as normal memory to CPU, hardware handles display timing
 3. **Font ROM Isolation**: 4KB font data is LCD-controller-only, saving CPU address space
 
-### Module Hierarchy
+### File Organization
 
 ```
 src/
 ├── top.sv              # System integration and clock management
-├── cpu.sv              # 6502 CPU core with modular components
+├── cpu.sv              # Modular 6502 CPU core design
 ├── lcd.sv              # LCD timing and character rendering
 ├── gowin_rpll_9K/      # Tang Nano 9K PLL configurations
 └── gowin_rpll_20K/     # Tang Nano 20K PLL configurations
 
 include/
 ├── consts.svh          # System-wide constants and parameters
-├── cpu_pkg.sv          # CPU-specific types and enums
+├── cpu_pkg.sv          # CPU-specific types and enumerations
 ├── cpu_tasks.sv        # Reusable CPU tasks and functions
 └── boot_program.sv     # Auto-generated from assembly (examples/)
 ```
 
-## 🔧 Build System
-
-### Makefile Targets
-
-```bash
-# Core build targets
-make                    # Build bitstream (default: 9K)
-make clean             # Clean generated files
-make download          # Program FPGA via SRAM
-
-# Board-specific builds
-make BOARD=9k          # Tang Nano 9K configuration
-make BOARD=20k         # Tang Nano 20K configuration
-make DEVICE=GW2AR-18C  # Override device directly
-
-# Development tools
-make lint              # Run SystemVerilog linter
-make format            # Format code with standard style
-make simulation        # Run testbench (if configured)
-
-# Custom tool paths
-make GWSH=/custom/path/gw_sh PRG=/custom/path/programmer_cli download
-```
-
-### Board Configuration Management
-
-The build system automatically handles board differences:
-
-| Configuration | Tang Nano 9K | Tang Nano 20K |
-|---------------|--------------|---------------|
-| **Device** | GW1NR-9C | GW2AR-18C |
-| **Package** | QN88PC6/I5 | QN88C8/I7 |
-| **Reset Logic** | `rst_n = ResetButton` | `rst_n = !ResetButton` |
-| **Constraints** | `lcd_cpu_bsram_9K.cst` | `lcd_cpu_bsram_20K.cst` |
-| **PLL Files** | `gowin_rpll_9K/*.v` | `gowin_rpll_20K/*.v` |
-
-### Assembly Program Integration
-
-```bash
-cd examples/
-# Edit Makefile to select program:
-# SRCS = simple5.s
-
-make clean && make
-# Generates:
-# - example.hex (Intel HEX format)
-# - example.lst (Assembly listing)
-# - ../include/boot_program.sv (SystemVerilog include)
-
-cd ../
-make download  # Build FPGA with new program
-```
-
-## 🧠 CPU Implementation
+## ⚙️ CPU Implementation
 
 ### 6502 Core Architecture
 
-The CPU implementation follows a modular design for maintainability:
+The CPU implementation follows a modular design approach for maintainability:
 
 ```systemverilog
 // Main CPU module structure
@@ -247,7 +179,7 @@ module cpu (
 
 ### State Machine Design
 
-The CPU uses a multi-stage pipeline:
+The CPU uses a multi-stage pipeline for instruction execution:
 
 ```mermaid
 stateDiagram-v2
@@ -293,6 +225,45 @@ end
     fetch_opcode(3);      // Next instruction (3 bytes)
 end
 ```
+
+### 6502 Instruction Set Implementation
+
+The CPU implements the complete standard 6502 instruction set with the following coverage:
+
+**Implemented Instructions:**
+- **Load/Store**: LDA, LDX, LDY, STA, STX, STY (all addressing modes)
+- **Arithmetic**: ADC, SBC with decimal mode support
+- **Logic**: AND, ORA, EOR with all standard addressing modes
+- **Shifts/Rotates**: ASL, LSR, ROL, ROR (accumulator and memory)
+- **Increments/Decrements**: INC, DEC, INX, INY, DEX, DEY
+- **Comparisons**: CMP, CPX, CPY with flag setting
+- **Branches**: BEQ, BNE, BCC, BCS, BPL, BMI, BVC, BVS
+- **Jumps/Subroutines**: JMP (absolute/indirect), JSR, RTS
+- **Stack Operations**: PHA, PLA, PHP, PLP
+- **Register Transfers**: TAX, TAY, TXA, TYA, TSX, TXS
+- **Flag Operations**: CLC, SEC, CLV (CLD, SED, CLI, SEI not implemented)
+- **Miscellaneous**: NOP, BIT
+
+**Not Implemented (Interrupt-Related):**
+- BRK, RTI, CLI, SEI - Interrupt handling not required for this design
+
+### Addressing Modes
+
+| Mode | Example | Description |
+|------|---------|-------------|
+| **Immediate** | `LDA #$41` | Operand is the actual value |
+| **Zero Page** | `LDA $10` | 8-bit address in zero page (0x00-0xFF) |
+| **Zero Page,X** | `LDA $10,X` | Zero page address plus X register |
+| **Zero Page,Y** | `LDX $10,Y` | Zero page address plus Y register |
+| **Absolute** | `LDA $1234` | Full 16-bit address |
+| **Absolute,X** | `LDA $1234,X` | Absolute address plus X register |
+| **Absolute,Y** | `LDA $1234,Y` | Absolute address plus Y register |
+| **Indirect** | `JMP ($1234)` | Jump to address stored at given address |
+| **(Indirect,X)** | `LDA ($10,X)` | Indirect address from zero page plus X |
+| **(Indirect),Y** | `LDA ($10),Y` | Indirect address from zero page, then add Y |
+| **Relative** | `BEQ $10` | PC-relative offset for branches |
+| **Implied** | `NOP` | No operand required |
+| **Accumulator** | `ASL A` | Operation on accumulator |
 
 ## 🎨 Display System
 
@@ -347,11 +318,19 @@ Vertical Timing:
 Frame Rate: 9MHz ÷ (531 × 292) ≈ 58 FPS
 ```
 
-## 🔍 Custom Extensions
+### Font System
 
-### Custom Instructions
+The display system uses the [Sweet16Font](https://github.com/kmar/Sweet16Font) (Boost licensed):
+- **Character Size**: 16×8 pixels (height × width)
+- **Character Set**: ASCII 0-127 (128 characters)
+- **Storage**: 4KB pROM (16 bytes × 256 character slots)
+- **Access**: LCD controller only (not CPU-addressable)
 
-The CPU implements four custom instructions beyond standard 6502:
+## 🔧 Custom Instructions
+
+### Extension Instruction Set
+
+Four custom instructions extend the standard 6502 for display and debugging:
 
 **CVR (0xCF) - Clear VRAM:**
 ```systemverilog
@@ -378,6 +357,28 @@ end
     end
     // Synchronize VSync signal across clock domains
     {vsync_sync, vsync_meta} <= {vsync_meta, vsync};
+end
+```
+
+**IFO (0xDF) - Debug Information:**
+```systemverilog
+8'hDF: begin  // IFO - Info/Debug
+    // Display register and memory contents
+    $display("PC=%04X A=%02X X=%02X Y=%02X SP=%02X", pc, ra, rx, ry, sp);
+    $display("FLAGS: C=%b Z=%b V=%b N=%b", flg_c, flg_z, flg_v, flg_n);
+    // Display specified memory range
+    display_memory_range(operands[15:0]);
+    fetch_opcode(2);
+end
+```
+
+**HLT (0xEF) - CPU Halt:**
+```systemverilog
+8'hEF: begin  // HLT - Halt CPU
+    // Transition CPU to halt state (LCD controller continues)
+    state <= HALT;
+    // Debug halt message
+    $display("CPU HALTED at PC=%04X", pc);
 end
 ```
 
@@ -469,7 +470,7 @@ module tb_custom;
 endmodule
 ```
 
-## 🔧 Development Tips
+## 💡 Development Tips
 
 ### Debugging Strategies
 
@@ -550,39 +551,166 @@ initial begin
 end
 ```
 
-## 📚 Further Learning
+## 📚 Advanced Topics
 
-### Advanced Topics
+### FPGA-Specific Optimizations
 
-1. **FPGA-Specific Optimizations**
-   - Gowin primitive usage
-   - Block RAM configuration
-   - DSP slice utilization
+**1. Gowin Primitive Usage:**
+- SDPB (Simple Dual Port Block RAM) for memory controllers
+- pROM (Program ROM) for font storage
+- PLL (Phase-Locked Loop) for clock generation
 
-2. **CPU Architecture Extensions**
-   - Adding new instruction sets
-   - Implementing interrupts
-   - Cache design considerations
+**2. Resource Utilization:**
+- LUT (Look-Up Table) optimization for combinational logic
+- FF (Flip-Flop) placement for sequential elements
+- DSP slice usage for arithmetic operations
 
-3. **Display System Enhancements**
-   - Sprite rendering
-   - Hardware scrolling
-   - Color palette management
+**3. Timing Closure:**
+- Critical path analysis and optimization
+- Clock skew management
+- Setup and hold time considerations
+
+### CPU Architecture Extensions
+
+**1. Instruction Set Extensions:**
+```systemverilog
+// Example: Adding a multiply instruction (0xDB)
+8'hDB: begin  // MUL - Multiply A with operand
+    automatic logic [15:0] result = ra * operands[7:0];
+    ra = result[7:0];        // Store low byte in accumulator
+    flg_c = result[15:8] != 0; // Set carry if overflow
+    flg_z = (ra == 8'h00);   // Update zero flag
+    flg_n = ra[7];           // Update negative flag
+    fetch_opcode(2);
+end
+```
+
+**2. Interrupt Implementation:**
+```systemverilog
+// Interrupt handling framework (not currently implemented)
+logic irq_pending;
+logic [15:0] irq_vector;
+
+// In main state machine
+if (irq_pending && !flg_i) begin
+    // Save PC and status to stack
+    // Jump to interrupt vector
+    // Set interrupt disable flag
+end
+```
+
+**3. Cache Design Considerations:**
+```systemverilog
+// Simple instruction cache example
+logic [7:0] icache_data[16];
+logic [11:0] icache_tags[16];
+logic icache_valid[16];
+
+// Cache lookup logic
+wire [3:0] cache_index = pc[3:0];
+wire cache_hit = icache_valid[cache_index] &&
+                 icache_tags[cache_index] == pc[15:4];
+```
+
+### Display System Enhancements
+
+**1. Sprite Rendering:**
+```systemverilog
+// Sprite overlay system
+typedef struct {
+    logic [8:0] x, y;    // Position
+    logic [7:0] char;    // Character code
+    logic [2:0] color;   // Color palette
+    logic enabled;       // Sprite enable
+} sprite_t;
+
+sprite_t sprites[8];  // Support for 8 sprites
+```
+
+**2. Hardware Scrolling:**
+```systemverilog
+// Scrolling offset registers
+logic [5:0] scroll_x;  // Horizontal scroll (0-59)
+logic [4:0] scroll_y;  // Vertical scroll (0-16)
+
+// Modify character position calculation
+wire [5:0] char_col = ((x / CHAR_WIDTH) + scroll_x) % COLUMNS;
+wire [4:0] char_row = ((y / CHAR_HEIGHT) + scroll_y) % ROWS;
+```
+
+**3. Color Palette Management:**
+```systemverilog
+// Programmable color palette
+logic [15:0] color_palette[16];  // 16 colors, RGB565 format
+
+// Color lookup based on character attributes
+wire [3:0] color_index = char_attributes[3:0];
+wire [15:0] pixel_color = color_palette[color_index];
+```
+
+## 📖 Reference Materials
+
+### Instruction Set Reference
+
+Complete 6502 instruction set documentation with cycle counts, flags affected, and addressing modes. See the main project documentation for detailed instruction tables.
+
+### Memory Map Reference
+
+| Address Range | Size | Purpose | Access |
+|---------------|------|---------|--------|
+| 0x0000-0x00FF | 256B | Zero Page | CPU R/W |
+| 0x0100-0x01FF | 256B | Stack | CPU R/W |
+| 0x0200-0x7BFF | 30.5KB | Program RAM | CPU R/W |
+| 0x7C00-0x7FFF | 1KB | Shadow VRAM | CPU R |
+| 0x8000-0xDFFF | 24KB | Unmapped | - |
+| 0xE000-0xE3FF | 1KB | Text VRAM | CPU W |
+| 0xE400-0xEFFF | 3KB | Unmapped | - |
+| 0xF000-0xFFFF | 4KB | Font ROM | LCD only |
+
+### Register Reference
+
+**CPU Registers:**
+- **PC**: Program Counter (16-bit)
+- **A**: Accumulator (8-bit)
+- **X**: X Index Register (8-bit)
+- **Y**: Y Index Register (8-bit)
+- **SP**: Stack Pointer (8-bit, points into 0x0100-0x01FF)
+
+**Status Flags:**
+- **C**: Carry flag
+- **Z**: Zero flag
+- **I**: Interrupt disable (not used)
+- **D**: Decimal mode (not used)
+- **B**: Break flag (not used)
+- **V**: Overflow flag
+- **N**: Negative flag
+
+## 🤝 Contributing
+
+### Code Standards
+
+Follow the established coding conventions:
+- Use `localparam` for constants
+- Prefix internal signals with module name
+- Document complex state machines
+- Use meaningful signal names
+- Add module headers explaining functionality
+
+### Testing Requirements
+
+All new features should include:
+- Unit tests for individual components
+- Integration tests for system-level functionality
+- Waveform verification for timing-critical paths
+- Documentation updates
 
 ### Recommended Reading
 
-- **6502 Documentation**: Original MOS Technology manuals
+- **6502 Documentation**: Original MOS Technology manuals and programming guides
 - **FPGA Design**: "Digital Design and Computer Architecture" by Harris & Harris
 - **SystemVerilog**: "SystemVerilog for Design" by Sutherland, Davidmann & Flake
 - **Tang Nano Documentation**: Gowin FPGA user guides and application notes
 
-### Community and Support
-
-- **Project Repository**: Issues and discussions
-- **Tang Nano Community**: Hardware-specific questions
-- **6502 Forums**: Vintage computing and emulation communities
-- **FPGA Communities**: General FPGA design discussions
-
 ---
 
-This guide provides a foundation for understanding and extending the Tang Nano 6502 CPU project. Start with the basics and gradually work through more complex topics as you become comfortable with the codebase and FPGA development workflow.
+This comprehensive guide provides the foundation for understanding, using, and extending the Tang Nano 6502 CPU project. Begin with the basics and progressively work through more complex topics as you become familiar with the codebase and FPGA development workflow.
