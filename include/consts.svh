@@ -37,7 +37,7 @@ localparam int CHAR_FETCH_OFFSET_1 = -5;  // VRAM address calculation timing
 localparam int CHAR_FETCH_OFFSET_2 = -4;  // Character data fetch timing
 localparam int CHAR_FETCH_OFFSET_3 = -3;  // Font address calculation timing
 localparam int CHAR_FETCH_OFFSET_4 = -2;  // Font data fetch timing
-localparam int CHAR_RENDER_OFFSET = -1;   // Character rendering offset
+localparam int CHAR_RENDER_OFFSET = 1;   // Character rendering offset
 
 // LCD Color Definitions (RGB565 format)
 localparam logic [4:0] LCD_RED_OFF = 5'b00000;
